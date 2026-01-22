@@ -1,0 +1,60 @@
+# Claude Code Commands Configuration
+# React Native (Expo) Example
+
+packageManager: yarn
+
+workflow:
+  type: staging
+  developmentBranch: develop
+  productionBranch: main
+
+branches:
+  feature: "{type}/{ticket}-{description}"
+  release: "release/{version}"
+  sync: "sync/main-to-develop"
+
+commits:
+  format: "[{type}] {message} ({ticket})"
+  types: [Feature, Fix, Hotfix, Refactor, Docs, Test, Chore, Style]
+  requireTicket: true
+  ticketPattern: "^[A-Z]+-\\d+$"
+
+pullRequests:
+  targetBranch: develop
+  reviewers:
+    - mobile-team
+  labels:
+    - needs-review
+    - mobile
+    - react-native
+
+# Issue tracker uses MCP server for authentication
+# Configure Linear MCP in ~/.claude/settings.json
+issueTracker:
+  type: linear
+
+versioning:
+  file: package.json
+
+attribution:
+  enabled: false
+
+testing:
+  unit: "yarn test"
+  e2e: "yarn test:e2e"
+  lint: "yarn lint"
+  typeCheck: "yarn typecheck"
+  build: "eas build --platform all --profile preview"
+
+release:
+  generateChangelog: true
+  changelogCategories:
+    - name: "Features"
+      prefixes: ["[Feature]"]
+      emoji: "sparkles"
+    - name: "Bug Fixes"
+      prefixes: ["[Fix]", "[Hotfix]"]
+      emoji: "bug"
+    - name: "UI/UX"
+      prefixes: ["[Style]"]
+      emoji: "art"

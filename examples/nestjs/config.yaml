@@ -1,0 +1,72 @@
+# Claude Code Commands Configuration
+# NestJS Backend API Example
+
+packageManager: npm
+
+workflow:
+  type: staging
+  developmentBranch: staging
+  productionBranch: main
+
+branches:
+  feature: "{type}/{ticket}-{description}"
+  release: "release/{version}"
+  sync: "sync/main-to-staging"
+
+commits:
+  format: "[{type}] {message} ({ticket})"
+  types: [Feature, Fix, Hotfix, Refactor, Docs, Test, Chore]
+  requireTicket: true
+  ticketPattern: "^[A-Z]+-\\d+$"
+
+pullRequests:
+  targetBranch: staging
+  reviewers:
+    - backend-team
+  labels:
+    - needs-review
+    - backend
+
+# Issue tracker uses MCP server for authentication
+# Configure Linear MCP in ~/.claude/settings.json
+issueTracker:
+  type: linear
+
+versioning:
+  file: package.json
+
+attribution:
+  enabled: false
+
+testing:
+  unit: "npm run test"
+  e2e: "npm run test:e2e"
+  lint: "npm run lint"
+  typeCheck: "npm run typecheck"
+  build: "npm run build"
+
+qa:
+  apiBaseUrl: ${API_BASE_URL}
+  testPlansDir: tests/qa
+  resultsDir: tests/qa/results
+  timeout: 10
+
+release:
+  watchFiles:
+    openapi: docs/openapi.json
+    migrations: prisma/migrations/**/migration.sql
+    schema: prisma/schema.prisma
+  generateChangelog: true
+  changelogCategories:
+    - name: "Bug Fixes"
+      prefixes: ["[Fix]", "[FIX]", "fix:"]
+      emoji: "bug"
+    - name: "Features"
+      prefixes: ["[Feature]", "feat:"]
+      emoji: "sparkles"
+    - name: "Performance"
+      prefixes: ["[Perf]", "perf:"]
+      emoji: "zap"
+    - name: "Documentation"
+      prefixes: ["[Docs]", "docs:"]
+      emoji: "memo"

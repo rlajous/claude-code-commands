@@ -1,0 +1,166 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+<!-- Replace with your project description -->
+
+{PROJECT_NAME} is a {BRIEF_DESCRIPTION}.
+
+**Tech Stack:**
+
+- Runtime: {Node.js 20 / Python 3.12 / etc.}
+- Framework: {NestJS / Next.js / FastAPI / etc.}
+- Database: {PostgreSQL / MongoDB / etc.}
+- Package Manager: {npm / pnpm / yarn / uv}
+
+## Development Commands
+
+<!-- Update these commands for your project -->
+
+```bash
+# Install dependencies
+{npm install / pnpm install / uv sync}
+
+# Run development server
+{npm run start:dev / pnpm dev / python -m uvicorn main:app --reload}
+
+# Run tests
+{npm test / pnpm test / pytest}
+
+# Run linting
+{npm run lint / pnpm lint / ruff check .}
+
+# Build for production
+{npm run build / pnpm build / python -m build}
+```
+
+## Project Structure
+
+<!-- Update with your actual project structure -->
+
+```
+{project}/
+├── src/                    # Source code
+│   ├── modules/            # Feature modules
+│   ├── common/             # Shared utilities
+│   └── main.ts             # Entry point
+├── tests/                  # Test files
+├── docs/                   # Documentation
+└── package.json            # Dependencies
+```
+
+## Git Workflow
+
+This project uses the Claude Code slash commands for Git workflow:
+
+| Command        | Purpose                                      |
+| -------------- | -------------------------------------------- |
+| `/start`       | Create feature branch from ticket            |
+| `/commit`      | Stage and commit with conventions            |
+| `/finish`      | Create PR with comprehensive description     |
+| `/release`     | Create release branch and PR to main         |
+| `/release-notes` | Generate GitHub release notes              |
+| `/sync`        | Back-merge main to development branch        |
+
+### Branch Strategy
+
+- **main**: Production-ready code
+- **staging**: Integration/QA testing
+- **feature/{ticket}-{description}**: Feature branches
+- **fix/{ticket}-{description}**: Bug fix branches
+- **release/{version}**: Release branches
+
+### Commit Format
+
+```
+[Type] Message (TICKET-ID)
+```
+
+Types: Feature, Fix, Hotfix, Refactor, Docs, Test, Chore
+
+## Code Standards
+
+### Style Guide
+
+<!-- Update with your standards -->
+
+- Follow {ESLint / Black / Prettier} configuration
+- Use TypeScript strict mode
+- Write tests for new features
+- Document public APIs
+
+### Testing
+
+<!-- Update with your testing approach -->
+
+- Unit tests: `tests/unit/`
+- Integration tests: `tests/integration/`
+- E2E tests: `tests/e2e/`
+
+Minimum coverage: {80%}
+
+## Environment Variables
+
+<!-- List required environment variables -->
+
+```bash
+# Required
+DATABASE_URL=           # PostgreSQL connection string
+API_KEY=                # External API key
+
+# Optional
+LOG_LEVEL=info          # Logging verbosity
+```
+
+## Common Tasks
+
+### Adding a New Feature
+
+1. Run `/start` to create a feature branch
+2. Implement the feature with tests
+3. Run `/commit` to commit changes
+4. Run `/finish` to create the PR
+
+### Creating a Release
+
+1. Ensure all features are merged to staging
+2. Run `/release` on staging branch
+3. Review and merge the release PR
+4. Run `/release-notes` to create GitHub release
+5. Run `/sync` to back-merge to staging
+
+### Fixing a Bug
+
+1. Run `/start` with fix type
+2. Write a failing test for the bug
+3. Fix the bug
+4. Run `/commit` and `/finish`
+
+## API Documentation
+
+<!-- If applicable -->
+
+API documentation is available at:
+
+- OpenAPI spec: `docs/openapi.json`
+- Swagger UI: `http://localhost:3000/api/docs` (dev mode)
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: {Common problem}
+**Solution**: {How to fix it}
+
+**Issue**: Tests failing locally
+**Solution**: Ensure all dependencies are installed and database is running
+
+## Additional Resources
+
+<!-- Links to relevant documentation -->
+
+- [Project Wiki]({WIKI_URL})
+- [API Reference]({API_DOCS_URL})
+- [Architecture Decision Records](./docs/adr/)
