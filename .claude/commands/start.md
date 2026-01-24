@@ -99,33 +99,33 @@ If a ticket ID was provided and issue tracker is configured:
 
 ### Auto-Detect Issue Tracker Type
 
-Based on ticket format:
+Based on ticket format and available MCP servers:
 
-- `^[A-Z]+-\d+$` with Linear API key -> Linear
-- `^[A-Z]+-\d+$` with Jira config -> Jira
-- `^#?\d+$` or GitHub URL -> GitHub Issues
+- `^[A-Z]+-\d+$` with Linear MCP available -> Linear
+- `^[A-Z]+-\d+$` with Jira config/MCP available -> Jira
+- `^#?\d+$` or GitHub URL -> GitHub Issues (via `gh` CLI)
 
 ### Linear Integration
 
-If Linear is detected and `LINEAR_API_KEY` is available:
+If Linear ticket format is detected, use the Linear MCP server:
 
-```bash
-# Fetch ticket details via Linear MCP or API
-# Store: title, description, status, assignee
+```
+# Fetch ticket details via Linear MCP
+mcp__linear__get_issue(id: ticketId)
 ```
 
-Use Linear MCP tools if available:
-
-- `mcp__plugin_linear_linear__get_issue` with the issue ID
+The MCP server handles authentication automatically via OAuth.
 
 ### Jira Integration
 
-If Jira is configured:
+If Jira is configured, use the Jira MCP server:
 
-```bash
-# Use Jira API to fetch ticket
-# Requires: JIRA_API_TOKEN, JIRA_EMAIL, jira.baseUrl
 ```
+# Fetch ticket details via Jira MCP
+mcp__jira__get_issue(issueKey: ticketId)
+```
+
+The MCP server handles authentication automatically. The `jira.baseUrl` from config is used to identify the Jira instance.
 
 ### GitHub Issues
 
@@ -277,12 +277,12 @@ Agent: Brief description? -> "fix login timeout"
 Result: Branch fix/proj-123-fix-login-timeout created
 ```
 
-### With Linear Integration
+### With Linear Integration (via MCP)
 
 ```
 User: /start
 Agent: What is the ticket ID? -> "ENG-456"
-[Fetches from Linear: "Add OAuth2 support"]
+[Uses Linear MCP to fetch: "Add OAuth2 support"]
 Agent: What type? -> "feature"
 Agent: Description? -> "oauth2-authentication"
 Result: Branch feature/eng-456-oauth2-authentication created

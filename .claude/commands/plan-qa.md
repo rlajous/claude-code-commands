@@ -77,12 +77,12 @@ const description = args.replace(ticketMatch, '').replace(urlMatch, '').trim();
 
 ## Step 3: Fetch Ticket Details (If ID Provided)
 
-### Linear Integration
+### Linear Integration (via MCP)
 
-If ticket matches Linear format and MCP available:
+If ticket matches Linear format, use the Linear MCP server:
 
 ```
-mcp__plugin_linear_linear__get_issue(id: ticketId)
+mcp__linear__get_issue(id: ticketId)
 ```
 
 Extract:
@@ -92,19 +92,28 @@ Extract:
 - Acceptance criteria (from comments or description)
 - Labels/tags
 
-### Jira Integration
+The MCP server handles authentication automatically via OAuth.
 
-If Jira configured:
+### Jira Integration (via MCP)
 
-```bash
-curl -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
-  "${JIRA_BASE_URL}/rest/api/3/issue/${TICKET_ID}" \
-  | jq '{title: .fields.summary, description: .fields.description}'
+If Jira configured, use the Jira MCP server:
+
 ```
+mcp__jira__get_issue(issueKey: ticketId)
+```
+
+Extract:
+
+- Summary (title)
+- Description
+- Acceptance criteria
+- Labels
+
+The MCP server handles authentication automatically.
 
 ### GitHub Issues
 
-If GitHub issue format (#123):
+If GitHub issue format (#123), use the `gh` CLI:
 
 ```bash
 gh issue view ${ISSUE_NUMBER} --json title,body,labels

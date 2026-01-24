@@ -28,10 +28,10 @@ pullRequests:
     - mobile
     - react-native
 
+# Issue tracker uses MCP server for authentication
+# Configure Linear MCP in ~/.claude/settings.json
 issueTracker:
   type: linear
-  linear:
-    apiKey: ${LINEAR_API_KEY}
 
 versioning:
   file: package.json

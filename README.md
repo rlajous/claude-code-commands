@@ -208,7 +208,7 @@ commits:
   requireTicket: false
 
 issueTracker:
-  type: jira
+  type: jira  # Uses MCP server for authentication
   jira:
     baseUrl: https://company.atlassian.net
 ```
@@ -217,26 +217,39 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for complete reference.
 
 ## Issue Tracker Integration
 
-### Linear
+Commands integrate with issue trackers via **MCP servers** (recommended) for automatic authentication, or can fall back to manual API configuration.
 
-```yaml
-issueTracker:
-  type: linear
-  linear:
-    apiKey: ${LINEAR_API_KEY}
+### Linear (via MCP)
+
+```json
+// In ~/.claude/settings.json
+{
+  "mcpServers": {
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/linear-mcp"]
+    }
+  }
+}
 ```
 
 Commands will fetch ticket details, update status, and link PRs.
 
-### Jira
+### Jira (via MCP)
 
-```yaml
-issueTracker:
-  type: jira
-  jira:
-    baseUrl: https://company.atlassian.net
-    apiToken: ${JIRA_API_TOKEN}
-    email: ${JIRA_EMAIL}
+```json
+// In ~/.claude/settings.json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/jira-mcp"],
+      "env": {
+        "JIRA_INSTANCE_URL": "https://company.atlassian.net"
+      }
+    }
+  }
+}
 ```
 
 ### GitHub Issues
@@ -246,7 +259,7 @@ issueTracker:
   type: github
 ```
 
-Uses `gh` CLI for issue integration.
+Uses `gh` CLI for issue integration (no additional setup required).
 
 ## Examples
 
@@ -368,12 +381,13 @@ gh auth login
 
 ### Issue Tracker Not Working
 
-Check environment variables:
+Check MCP server configuration in `~/.claude/settings.json`:
 
 ```bash
-echo $LINEAR_API_KEY
-echo $JIRA_API_TOKEN
+cat ~/.claude/settings.json | grep -A 10 mcpServers
 ```
+
+See [INSTALLATION.md](./INSTALLATION.md) for MCP server setup instructions.
 
 ## Contributing
 

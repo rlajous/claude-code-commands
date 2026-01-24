@@ -7,7 +7,7 @@ This guide walks you through setting up Claude Code Commands in your project.
 - [Claude Code CLI](https://claude.ai/code) installed
 - [Git](https://git-scm.com/) installed
 - [GitHub CLI](https://cli.github.com/) (`gh`) for PR creation
-- (Optional) Issue tracker API keys for Linear/Jira integration
+- (Optional) MCP servers for Linear/Jira integration
 
 ## Quick Installation
 
@@ -142,48 +142,68 @@ gh auth login
 
 ## Issue Tracker Setup
 
-### Linear
+Commands integrate with issue trackers via **MCP (Model Context Protocol) servers**. MCP servers handle authentication automatically through OAuth or system credentials.
 
-1. Get your API key from [Linear Settings](https://linear.app/settings/api)
-2. Set environment variable:
+### Linear (via MCP)
 
-```bash
-export LINEAR_API_KEY=lin_api_xxxxx
+1. Add the Linear MCP server to your Claude Code settings:
+
+```json
+// In ~/.claude/settings.json or .claude/settings.json
+{
+  "mcpServers": {
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/linear-mcp"]
+    }
+  }
+}
 ```
 
-3. Configure (optional):
+2. On first use, the MCP server will prompt for OAuth authentication.
+
+3. Configure issue tracker type (optional):
 
 ```yaml
+# .claude/config.yaml
 issueTracker:
   type: linear
-  linear:
-    apiKey: ${LINEAR_API_KEY}
 ```
 
-### Jira
+### Jira (via MCP)
 
-1. Generate API token from [Atlassian Account](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Set environment variables:
+1. Add the Jira MCP server to your Claude Code settings:
 
-```bash
-export JIRA_API_TOKEN=your-token
-export JIRA_EMAIL=your-email@company.com
+```json
+// In ~/.claude/settings.json or .claude/settings.json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/jira-mcp"],
+      "env": {
+        "JIRA_INSTANCE_URL": "https://your-company.atlassian.net"
+      }
+    }
+  }
+}
 ```
 
-3. Configure:
+2. On first use, the MCP server will prompt for Atlassian authentication.
+
+3. Configure issue tracker type:
 
 ```yaml
+# .claude/config.yaml
 issueTracker:
   type: jira
   jira:
     baseUrl: https://your-company.atlassian.net
-    apiToken: ${JIRA_API_TOKEN}
-    email: ${JIRA_EMAIL}
 ```
 
 ### GitHub Issues
 
-No additional setup required. Uses `gh` CLI.
+No additional setup required. Uses `gh` CLI (already authenticated).
 
 ```yaml
 issueTracker:
@@ -271,13 +291,19 @@ gh auth status  # Check status
 gh auth login   # Re-authenticate
 ```
 
-### Environment Variables Not Set
+### Issue Tracker Not Connected
 
-Add to your shell profile (`.bashrc`, `.zshrc`):
+Ensure MCP servers are configured in your Claude Code settings:
 
 ```bash
-export LINEAR_API_KEY=your-key
-export JIRA_API_TOKEN=your-token
+# Check if MCP servers are configured
+cat ~/.claude/settings.json | grep mcpServers
+```
+
+If using environment variables for other integrations, add to your shell profile (`.bashrc`, `.zshrc`):
+
+```bash
+export API_BASE_URL=https://api.example.com
 ```
 
 ### Permission Denied

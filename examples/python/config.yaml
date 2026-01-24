@@ -27,12 +27,12 @@ pullRequests:
     - needs-review
     - python
 
+# Issue tracker uses MCP server for authentication
+# Configure Jira MCP in ~/.claude/settings.json with JIRA_INSTANCE_URL
 issueTracker:
   type: jira
   jira:
     baseUrl: https://company.atlassian.net
-    apiToken: ${JIRA_API_TOKEN}
-    email: ${JIRA_EMAIL}
 
 versioning:
   file: pyproject.toml

@@ -95,37 +95,41 @@ pullRequests:
 # ==============================================================================
 # ISSUE TRACKER INTEGRATION
 # ==============================================================================
+# Authentication is handled by MCP servers (recommended) which manage OAuth/tokens
+# automatically. Configure MCP servers in ~/.claude/settings.json:
+#
+# {
+#   "mcpServers": {
+#     "linear": {
+#       "command": "npx",
+#       "args": ["-y", "@anthropic/linear-mcp"]
+#     },
+#     "jira": {
+#       "command": "npx",
+#       "args": ["-y", "@anthropic/jira-mcp"],
+#       "env": {
+#         "JIRA_INSTANCE_URL": "https://your-org.atlassian.net"
+#       }
+#     }
+#   }
+# }
+#
+# See INSTALLATION.md for detailed MCP setup instructions.
+# ==============================================================================
 issueTracker:
   # Tracker type for automatic detection and linking
   # Options:
   #   auto   - Detect from ticket format (recommended)
-  #   linear - Linear.app integration
-  #   jira   - Atlassian Jira integration
-  #   github - GitHub Issues integration
+  #   linear - Linear.app integration (via MCP server)
+  #   jira   - Atlassian Jira integration (via MCP server)
+  #   github - GitHub Issues integration (via gh CLI)
   #   none   - Disable issue tracking features
   type: auto
 
-  # Linear-specific settings
-  linear:
-    # API key from environment variable
-    # Get yours at: https://linear.app/settings/api
-    apiKey: ${LINEAR_API_KEY}
-
-    # Team key for ticket prefixes (e.g., "ENG" for ENG-123)
-    # Leave empty for auto-detection
-    # teamKey: ""
-
-  # Jira-specific settings
+  # Jira-specific settings (only baseUrl needed - auth handled by MCP)
   jira:
-    # Your Jira instance URL
+    # Your Jira instance URL (must match JIRA_INSTANCE_URL in MCP config)
     baseUrl: https://your-org.atlassian.net
-
-    # API token from environment variable
-    # Generate at: https://id.atlassian.com/manage-profile/security/api-tokens
-    apiToken: ${JIRA_API_TOKEN}
-
-    # Your Jira email (required for API auth)
-    email: ${JIRA_EMAIL}
 
     # Project key for ticket prefixes (e.g., "PROJ" for PROJ-123)
     # Leave empty for auto-detection

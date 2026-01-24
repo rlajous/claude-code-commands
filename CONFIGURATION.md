@@ -37,15 +37,11 @@ pullRequests:
   reviewers: []
   labels: []
 
-# Issue tracker integration
+# Issue tracker integration (uses MCP servers for auth)
 issueTracker:
   type: auto          # auto | linear | jira | github | none
-  linear:
-    apiKey: ${LINEAR_API_KEY}
   jira:
-    baseUrl: https://company.atlassian.net
-    apiToken: ${JIRA_API_TOKEN}
-    email: ${JIRA_EMAIL}
+    baseUrl: https://company.atlassian.net  # Only baseUrl needed
 
 # Version management
 versioning:
@@ -204,26 +200,46 @@ pullRequests:
 
 ### Issue Tracker
 
+Issue tracker integration uses **MCP servers** for authentication. Configure MCP servers in `~/.claude/settings.json` or `.claude/settings.json`.
+
 ```yaml
 issueTracker:
   # Tracker type
   # auto: Detect from ticket format
-  # linear: Linear.app
-  # jira: Atlassian Jira
-  # github: GitHub Issues
+  # linear: Linear.app (via MCP server)
+  # jira: Atlassian Jira (via MCP server)
+  # github: GitHub Issues (via gh CLI)
   # none: Disable integration
   type: auto
 
-  # Linear settings
-  linear:
-    apiKey: ${LINEAR_API_KEY}
-
-  # Jira settings
+  # Jira settings (only baseUrl needed - auth handled by MCP)
   jira:
     baseUrl: https://company.atlassian.net
-    apiToken: ${JIRA_API_TOKEN}
-    email: ${JIRA_EMAIL}
 ```
+
+#### MCP Server Setup
+
+Add to your Claude Code settings (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/linear-mcp"]
+    },
+    "jira": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/jira-mcp"],
+      "env": {
+        "JIRA_INSTANCE_URL": "https://company.atlassian.net"
+      }
+    }
+  }
+}
+```
+
+See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions.
 
 ### Versioning
 
@@ -316,13 +332,12 @@ release:
 Use `${VAR_NAME}` syntax for environment variables:
 
 ```yaml
-issueTracker:
-  linear:
-    apiKey: ${LINEAR_API_KEY}
-
 qa:
   apiBaseUrl: ${API_BASE_URL}
+  sqsQueueUrl: ${SQS_QUEUE_URL}
 ```
+
+**Note:** Issue tracker authentication is handled by MCP servers and does not require environment variables. See [INSTALLATION.md](./INSTALLATION.md) for MCP setup.
 
 ## Configuration Priority
 
