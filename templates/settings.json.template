@@ -1,6 +1,18 @@
 {
-  "// HOOKS CONFIGURATION TEMPLATE": "Copy this to ~/.claude/settings.json or .claude/settings.json",
-  "// Documentation": "https://code.claude.com/docs/en/hooks",
+  "// SETTINGS CONFIGURATION TEMPLATE": "Copy this to ~/.claude/settings.json or .claude/settings.json",
+  "// Documentation": "https://docs.anthropic.com/en/docs/claude-code",
+  "// Quick Setup": "Run /setup command to configure interactively",
+
+  "// MCP SERVERS": "Configure MCP servers for issue tracker integration",
+  "// MCP Documentation": "https://docs.anthropic.com/en/docs/claude-code/mcp-servers",
+
+  "mcpServers": {
+    "// instructions": "Add MCP servers for issue tracker integration. Run /setup for guided configuration.",
+    "// example-linear": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@anthropic/linear-mcp\"] }",
+    "// example-jira": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@anthropic/jira-mcp\"], \"env\": { \"JIRA_INSTANCE_URL\": \"https://your-company.atlassian.net\" } }"
+  },
+
+  "// HOOKS CONFIGURATION": "Automate actions during Claude Code execution",
 
   "hooks": {
     "// PostToolUse hooks": "Run after a tool is used",

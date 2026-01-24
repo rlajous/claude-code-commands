@@ -9,6 +9,28 @@ This guide walks you through setting up Claude Code Commands in your project.
 - [GitHub CLI](https://cli.github.com/) (`gh`) for PR creation
 - (Optional) MCP servers for Linear/Jira integration
 
+## Quick Setup (Recommended)
+
+After copying the commands to your project, run the interactive setup:
+
+```
+/setup
+```
+
+This guides you through configuring:
+- **Issue tracker integration** - Linear, Jira, or GitHub Issues
+- **MCP server setup** - Automatic configuration for your chosen tracker
+- **Workflow settings** - Branch naming, commit formats, and more
+
+The setup command will:
+1. Ask which issue tracker(s) you use
+2. Configure MCP servers in your settings.json
+3. Optionally set up `.claude/config.yaml` for workflow customization
+
+You can run `/setup` at any time to reconfigure.
+
+---
+
 ## Quick Installation
 
 ### Option 1: Copy Commands Directly (Recommended)
@@ -74,6 +96,7 @@ After installation, your project should have:
 your-project/
 ├── .claude/
 │   ├── commands/             # Slash commands
+│   │   ├── setup.md          # Interactive setup wizard
 │   │   ├── start.md
 │   │   ├── commit.md
 │   │   ├── finish.md

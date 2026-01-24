@@ -11,6 +11,7 @@ This repository contains production-ready Claude Code slash commands that automa
 ```
 .claude/
 ├── commands/              # Slash commands with YAML frontmatter
+│   ├── setup.md           # Interactive setup wizard
 │   ├── start.md           # Create feature branch from ticket
 │   ├── commit.md          # Stage and commit with conventions
 │   ├── finish.md          # Create PR with full description
@@ -54,6 +55,7 @@ Each command file in `.claude/commands/` defines a slash command:
 
 | Command          | Purpose                                        |
 | ---------------- | ---------------------------------------------- |
+| `/setup`         | Interactive setup for MCP servers and config   |
 | `/start`         | Create feature branch from ticket ID           |
 | `/commit`        | Stage and commit with formatted message        |
 | `/finish`        | Push branch and create PR                      |
