@@ -317,23 +317,27 @@ gh pr edit {PR_NUMBER} --add-assignee @me
 
 ## Step 8: Link to Issue Tracker
 
-### Linear
+### Linear (via MCP)
 
-If Linear MCP available, update ticket status:
+If Linear MCP server is available, update ticket status:
 
 ```
-mcp__plugin_linear_linear__update_issue
-  id: {ticket_id}
-  state: "In Review"
+mcp__linear__update_issue(id: ticket_id, state: "In Review")
 ```
 
-### Jira
+The MCP server handles authentication automatically.
 
-If Jira configured, add PR link to ticket via API.
+### Jira (via MCP)
+
+If Jira MCP server is available, add PR link and update status:
+
+```
+mcp__jira__add_comment(issueKey: ticket_id, body: "PR: {PR_URL}")
+```
 
 ### GitHub Issues
 
-GitHub automatically links PRs with "Fixes #123" syntax.
+GitHub automatically links PRs with "Fixes #123" syntax (no additional action needed).
 
 ## Step 9: Confirm and Cleanup
 
