@@ -1,0 +1,59 @@
+# Claude Code Commands Configuration
+# Python FastAPI Example
+
+packageManager: uv
+
+workflow:
+  type: staging
+  developmentBranch: staging
+  productionBranch: main
+
+branches:
+  feature: "{type}/{ticket}-{description}"
+  release: "release/{version}"
+  sync: "sync/main-to-staging"
+
+commits:
+  format: "[{type}] {message} ({ticket})"
+  types: [Feature, Fix, Hotfix, Refactor, Docs, Test, Chore]
+  requireTicket: true
+  ticketPattern: "^[A-Z]+-\\d+$"
+
+pullRequests:
+  targetBranch: staging
+  reviewers:
+    - python-team
+  labels:
+    - needs-review
+    - python
+
+issueTracker:
+  type: jira
+  jira:
+    baseUrl: https://company.atlassian.net
+    apiToken: ${JIRA_API_TOKEN}
+    email: ${JIRA_EMAIL}
+
+versioning:
+  file: pyproject.toml
+
+attribution:
+  enabled: false
+
+testing:
+  unit: "uv run pytest"
+  e2e: "uv run pytest tests/e2e"
+  lint: "uv run ruff check ."
+  typeCheck: "uv run mypy ."
+  build: "uv build"
+
+qa:
+  apiBaseUrl: ${API_BASE_URL}
+  testPlansDir: tests/qa
+  resultsDir: tests/qa/results
+  timeout: 15
+
+release:
+  watchFiles:
+    migrations: alembic/versions/*.py
+  generateChangelog: true

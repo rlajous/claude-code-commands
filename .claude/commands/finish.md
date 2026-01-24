@@ -1,219 +1,476 @@
 ---
 description: Create a pull request with comprehensive description following repo best practices
+disable-model-invocation: true
+allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion
 ---
 
-You are helping create a pull request with a comprehensive description. Your task is to gather information, generate the PR description, push the branch, and create the PR.
+You are helping create a pull request with a comprehensive description. Your task is to gather information, generate the PR description, push the branch, and create the PR using project conventions.
 
-## Step 1: Load Context
+## Step 1: Load Configuration
 
-Load the context from `.claude/.pr-context.json`.
-
-If the file doesn't exist or is incomplete:
-
-- Ask the user for missing information (ticket ID, branch name, commit message)
-- Inform them they should run `/start` and `/commit` first for the best experience
-
-## Step 2: Gather Changed Files
-
-Run the following commands to understand what changed:
+Check for configuration and context:
 
 ```bash
-git diff --name-only staging...HEAD
-git diff --stat staging...HEAD
+# Check for config and context files
+[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+
+# Get current branch
+git branch --show-current
 ```
 
-Show the user the list of changed files.
+**Load from `.claude/config.yaml` (if exists):**
 
-## Step 3: Gather PR Information
+```yaml
+workflow:
+  developmentBranch: staging
+  productionBranch: main
+pullRequests:
+  targetBranch: staging
+  reviewers: []
+  labels: []
+issueTracker:
+  type: auto
+```
 
-Ask the user for the following information (use AskUserQuestion tool with multiple questions):
+**Load from `.claude/.pr-context.json` (if exists):**
 
-### Question 1: Issues Fixed
+```json
+{
+  "ticket_id": "PROJ-1234",
+  "ticket_url": "https://...",
+  "ticket_title": "Ticket title",
+  "branch": "fix/proj-1234-description",
+  "type": "fix",
+  "description": "Short description"
+}
+```
 
-**Question**: "What issues did this PR fix? List each problem and its solution."
-**Format**: Provide as a numbered list
+**Default Values (when no config):**
+
+```yaml
+pullRequests:
+  targetBranch: staging
+  reviewers: []
+  labels: []
+```
+
+If context file is missing or incomplete:
+
+- Inform the user they should run `/start` and `/commit` first
+- Ask for missing information (ticket ID, branch name)
+
+## Step 2: Verify State
+
+Check current git state:
+
+```bash
+# Current branch
+CURRENT_BRANCH=$(git branch --show-current)
+
+# Commits on this branch vs target
+TARGET_BRANCH=$(config.pullRequests.targetBranch || "staging")
+git log --oneline ${TARGET_BRANCH}..HEAD
+
+# Any uncommitted changes?
+git status --short
+```
+
+**Warnings:**
+
+- If uncommitted changes exist: "You have uncommitted changes. Run `/commit` first?"
+- If no commits on branch: "No commits to create PR. Make changes and run `/commit` first."
+- If on target branch: "You're on the target branch. Switch to a feature branch first."
+
+## Step 3: Gather Changed Files
+
+Analyze what changed:
+
+```bash
+# Files changed vs target branch
+TARGET_BRANCH=$(config.pullRequests.targetBranch || "staging")
+git diff --name-only ${TARGET_BRANCH}...HEAD
+git diff --stat ${TARGET_BRANCH}...HEAD
+
+# Commit messages on this branch
+git log --oneline ${TARGET_BRANCH}..HEAD
+```
+
+Display summary:
+
+```
+Changes on this branch:
+
+Files changed: 5
+Commits: 3
+
+Files:
+  M src/services/auth.ts (+45, -12)
+  M src/controllers/user.ts (+23, -8)
+  A src/utils/validation.ts (+67)
+  M tests/auth.test.ts (+89, -0)
+  M package.json (+2, -1)
+
+Commits:
+  abc1234 [Fix] Update authentication flow (PROJ-1234)
+  def5678 [Fix] Add input validation (PROJ-1234)
+  ghi9012 [Fix] Add unit tests (PROJ-1234)
+```
+
+## Step 4: Gather PR Information
+
+Ask the user for additional context (use AskUserQuestion tool):
+
+### Question 1: Summary of Changes
+
+**Question**: "Briefly describe what this PR does and why"
+
+**Example**: "Fixes authentication timeout by implementing token refresh and adding proper error handling"
+
+### Question 2: What Issues Were Fixed
+
+**Question**: "What issues did this PR fix? List each problem and solution."
+
+**Format**: Numbered list
+
 **Example**:
 
 ```
-1. Missing token_info for some tokens → Always returns object
-2. Inconsistent field names → Standardized to name, symbol, logo
-3. Loose typing → Strong typing with ConsolidatedTokenMetadata
+1. Token expiry not handled -> Added automatic token refresh
+2. No validation on user input -> Added input sanitization
+3. Missing error messages -> Added user-friendly error responses
 ```
 
-### Question 2: Why (Root Cause)
+### Question 3: Testing Instructions
 
-**Question**: "Explain the root cause of the problem and why this fix was necessary."
-**Example**:
+**Question**: "How should reviewers test these changes?"
 
-```
-Some chains could return undefined instead of empty object. Type was any instead of proper ConsolidatedTokenMetadata.
-```
+**Options:**
 
-### Question 3: Test Tokens/Addresses
+1. Run existing tests (default)
+2. Manual testing required - will provide instructions
+3. Both automated and manual testing needed
 
-**Question**: "What tokens or addresses can be used to test this fix? Include chain and expected behavior."
-**Format**: Table with Token/Address, Chain, Expected Result
-**Example**:
-
-```
-| Token | Chain | Address | Expected |
-|-------|-------|---------|----------|
-| KRI | eth | 0xb3c22eb9... | 1 LP entry |
-| PEPE | eth | 0x69825081... | Multiple DEXes |
-```
+If manual testing, ask for specific test steps.
 
 ### Question 4: Breaking Changes
 
-**Question**: "Are there any breaking changes? If yes, describe them."
-**Options**: "Yes" / "No"
-**Follow-up if Yes**: "Describe the breaking changes"
+**Question**: "Are there any breaking changes?"
 
-## Step 4: Generate PR Description
+**Options:**
 
-Use this standardized template:
+- No breaking changes (default)
+- Yes, there are breaking changes
+
+If yes, ask for description of breaking changes.
+
+## Step 5: Generate PR Description
+
+Use this template and fill with collected data:
 
 ````markdown
 ## Description
 
-Fixes {ticket_id}
+{Fixes|Closes|Relates to} {ticket_id}
 
-{High-level overview from commit message and context}
+{High-level summary from user input}
 
-### Issues Fixed
+### Changes
 
-1. ❌ **{Problem}** → ✅ {Solution}
+{For each commit or logical change, create a bullet point}
+
+- **{Component/Area}**: {Description of change}
 
 ### Why
 
-**Root Cause**: {Explain the root cause}
+{Root cause explanation from user}
 
-**Fix**: {Explain what was changed to fix it}
-
-### What Changed
-
-| File          | Change                        |
-| ------------- | ----------------------------- |
-| `{file_path}` | {Brief description of change} |
+{Solution explanation}
 
 ---
 
 ## Testing
 
-### Run Tests
+### Automated Tests
 
 ```bash
-npm run test -- {relevant test files}
+{testing.unit command or auto-detected}
 ```
 
-### Local API Testing
+### Manual Testing
+
+{If manual testing required, include steps}
+
+{If API endpoint, include curl example:}
 
 ```bash
-# Start services
-docker-compose up -d
-npm run start:dev
-
-# Test endpoint
-curl -H "x-api-key: xxx" \
-  "http://localhost:3000/api/v1/{endpoint}" \
-  | jq '{relevant_field}'
+curl -X {METHOD} "{base_url}/{endpoint}" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json"
 ```
 
 ### Expected Result
 
-**Before (bug):** {Describe broken behavior}
-**After (fixed):** {Describe correct behavior}
-
-```json
-{
-  // Expected response
-}
-```
-
-### Test Tokens
-
-| Token  | Chain   | Address     |
-| ------ | ------- | ----------- |
-| {name} | {chain} | `{address}` |
+**Before**: {Description of broken behavior}
+**After**: {Description of fixed behavior}
 
 ---
 
 ## Checklist
 
-- [x] Tests pass locally
-- [x] Local API testing verified
-- [x] No breaking changes
+- [ ] Tests pass locally
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Documentation updated (if needed)
+{If breaking changes:}
+- [ ] Breaking changes documented
+- [ ] Migration guide provided
 ````
 
-## Step 5: Push Branch
+### Customize for Issue Tracker
 
-Run the following command:
+**Linear:**
+
+```markdown
+## Description
+
+Fixes {ticket_id}
+
+{Linear will auto-link to the ticket}
+```
+
+**Jira:**
+
+```markdown
+## Description
+
+Fixes [{ticket_id}]({jira_base_url}/browse/{ticket_id})
+```
+
+**GitHub Issues:**
+
+```markdown
+## Description
+
+Fixes #{issue_number}
+```
+
+## Step 6: Push Branch
 
 ```bash
+# Push branch to remote with upstream tracking
 git push -u origin {branch_name}
 ```
 
-If the branch is already pushed and has changes, inform the user and ask if they want to force push or just update.
+**Error Handling:**
 
-## Step 6: Create PR
+- If branch already pushed with changes: Ask to force push or just update
+- If push fails: Show error and suggest solutions
 
-Format the PR title as: `[{Type}] {Summary} ({TICKET_ID})`
+## Step 7: Create PR
 
-Examples:
+### Format PR Title
 
-- `[Fix] Standardize token_info schema across all chains (PROJ-1234)`
-- `[Feature] Add holder analysis endpoint (PROJ-1000)`
+Use commit message format from config (default: `[{type}] {message} ({ticket})`):
 
-Run the following command:
-
-```bash
-gh pr create --base staging --title "{PR_TITLE}" --body "$(cat <<'EOF'
-{GENERATED_DESCRIPTION}
-EOF
-)" --reviewer your-org/engineers  # Change to your reviewer team
+```
+[Fix] Update authentication flow (PROJ-1234)
+[Feature] Add dark mode support (ENG-456)
+[Hotfix] Fix critical security issue (ABC-789)
 ```
 
-After creating the PR, assign it to the current user:
+### Create PR with gh CLI
+
+```bash
+# Determine target branch
+TARGET_BRANCH=$(config.pullRequests.targetBranch || "staging")
+
+# Create PR
+gh pr create \
+  --base "${TARGET_BRANCH}" \
+  --title "{PR_TITLE}" \
+  --body "$(cat <<'EOF'
+{GENERATED_DESCRIPTION}
+EOF
+)"
+```
+
+### Add Reviewers (If Configured)
+
+```bash
+# From config.pullRequests.reviewers
+gh pr edit {PR_NUMBER} --add-reviewer "user1,user2,team/name"
+```
+
+### Add Labels (If Configured)
+
+```bash
+# From config.pullRequests.labels
+gh pr edit {PR_NUMBER} --add-label "needs-review,bug"
+```
+
+### Assign to Self
 
 ```bash
 gh pr edit {PR_NUMBER} --add-assignee @me
 ```
 
-## Step 7: Confirm and Cleanup
+## Step 8: Link to Issue Tracker
 
-Output a confirmation message:
+### Linear
+
+If Linear MCP available, update ticket status:
 
 ```
-✅ Branch pushed: {branch_name}
-✅ PR created: {PR_URL}
-✅ Title: {PR_TITLE}
-✅ Assigned to: @me
-✅ Reviewers: @your-org/engineers
-
-PR #{number} is ready for review!
+mcp__plugin_linear_linear__update_issue
+  id: {ticket_id}
+  state: "In Review"
 ```
 
-Optionally clean up the context file:
+### Jira
+
+If Jira configured, add PR link to ticket via API.
+
+### GitHub Issues
+
+GitHub automatically links PRs with "Fixes #123" syntax.
+
+## Step 9: Confirm and Cleanup
+
+Output confirmation:
+
+```
+Branch pushed: {branch_name}
+PR created: {PR_URL}
+Title: {PR_TITLE}
+Target: {target_branch}
+Reviewers: {reviewers_list or "None configured"}
+Labels: {labels_list or "None"}
+
+PR is ready for review!
+```
+
+### Optional Cleanup
+
+Ask if user wants to clean up context:
 
 ```bash
+# Remove context file (optional)
 rm .claude/.pr-context.json
 ```
 
-## Important Notes
+Or keep for reference until PR is merged.
 
-- Always use `--base staging` for the PR (not main)
-- The PR title MUST match the commit message format: `[Type] Summary (PROJ-XXXX)`
-- Always include the **Testing** section with:
-  - Test commands to run
-  - Local API testing curl commands (use `x-api-key: xxx` for local or configure your local API key)
-  - Expected results with JSON examples
-  - Test tokens/addresses table
-- Keep the PR description concise - use tables for file changes
-- Show the PR URL to the user after creation
-- If `gh` command fails, provide instructions for manual PR creation
+## Configuration Reference
+
+| Setting                   | Default    | Description                     |
+| ------------------------- | ---------- | ------------------------------- |
+| `pullRequests.targetBranch` | `staging`  | Default base branch for PRs     |
+| `pullRequests.reviewers`  | `[]`       | Default reviewers               |
+| `pullRequests.labels`     | `[]`       | Default labels                  |
+| `issueTracker.type`       | `auto`     | Issue tracker integration       |
+| `workflow.developmentBranch` | `staging` | Development branch name        |
 
 ## Error Handling
 
-- If `gh` is not installed, instruct user to install it or create PR manually
-- If branch is not pushed, push it first
-- If user is not authenticated with GitHub, provide instructions
-- If PR creation fails, show the full error message and suggest fixes
+| Scenario                   | Action                                          |
+| -------------------------- | ----------------------------------------------- |
+| `gh` not installed         | Provide installation instructions               |
+| Not authenticated          | Run `gh auth login` instructions                |
+| No commits on branch       | Suggest running `/commit` first                 |
+| Uncommitted changes        | Suggest running `/commit` first                 |
+| Branch not pushed          | Push automatically before PR                    |
+| PR already exists          | Show existing PR URL, ask to update             |
+| Context file missing       | Gather info manually, suggest `/start`          |
+| Target branch doesn't exist | Error with suggestion                          |
+
+## Examples
+
+### Standard Flow
+
+```
+User: /finish
+Agent: [Shows 5 files changed, 3 commits]
+Agent: Describe what this PR does? -> "Fixes auth timeout"
+Agent: What issues were fixed? -> "1. Token expiry -> Added refresh"
+Agent: How to test? -> "Run existing tests"
+Agent: Breaking changes? -> "No"
+Result: PR #123 created
+        URL: https://github.com/org/repo/pull/123
+```
+
+### With Reviewers and Labels
+
+```
+User: /finish
+Agent: [Gathers info]
+Result: PR #124 created
+        Reviewers: @alice, @bob, @team/backend
+        Labels: needs-review, feature
+```
+
+### With Linear Integration
+
+```
+User: /finish
+Agent: [Creates PR]
+Agent: [Updates Linear ticket ENG-456 to "In Review"]
+Result: PR #125 created
+        Ticket ENG-456 updated to "In Review"
+```
+
+## PR Description Templates
+
+### Bug Fix Template
+
+```markdown
+## Description
+
+Fixes {ticket_id}
+
+This PR fixes {brief description of bug}.
+
+### Root Cause
+
+{Explanation of why the bug occurred}
+
+### Solution
+
+{How the fix addresses the root cause}
+
+### Changes
+
+- {Change 1}
+- {Change 2}
+
+## Testing
+
+{Test instructions}
+```
+
+### Feature Template
+
+```markdown
+## Description
+
+Implements {ticket_id}
+
+This PR adds {feature name} which allows users to {capability}.
+
+### Implementation
+
+{High-level overview of implementation approach}
+
+### Changes
+
+- {Change 1}
+- {Change 2}
+
+## Testing
+
+{Test instructions}
+
+## Screenshots
+
+{If UI changes, include before/after screenshots}
+```

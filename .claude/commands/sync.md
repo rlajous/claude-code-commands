@@ -1,98 +1,150 @@
 ---
 description: Back-merge main to staging after a release to keep branches synchronized
+disable-model-invocation: true
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
-You are helping sync main branch changes back to staging. This command should be run AFTER a release has been merged to main and deployed to keep branches aligned.
+You are helping sync the production branch changes back to the development branch. This command should be run AFTER a release has been merged to production and deployed to keep branches aligned.
 
-## Step 1: Verify Current State
+## Step 1: Load Configuration
 
-Check that you're on main branch and it's up-to-date:
-
-```bash
-git branch --show-current
-git pull origin main
-```
-
-If not on main:
-
-```
-⚠️ You should be on main branch to create a sync PR.
-Please run: git checkout main && git pull
-```
-
-## Step 2: Get Current Version
-
-Read the version from package.json to reference in PR:
+Check for configuration:
 
 ```bash
-VERSION=$(node -p "require('./package.json').version")
+[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
 ```
 
-This will be used in the PR title/description.
+**Load from `.claude/config.yaml` (if exists):**
 
-## Step 3: Check What Needs to be Synced
+```yaml
+workflow:
+  developmentBranch: staging
+  productionBranch: main
+branches:
+  sync: "sync/main-to-{devBranch}"
+versioning:
+  file: auto
+```
 
-Show the user what commits will be synced from main to staging:
+**Default Values:**
+
+```yaml
+workflow:
+  developmentBranch: staging
+  productionBranch: main
+branches:
+  sync: "sync/main-to-{devBranch}"
+```
+
+## Step 2: Verify Current State
+
+Check that you're on the production branch and up-to-date:
 
 ```bash
-git log origin/staging..origin/main --oneline --no-merges
+PROD_BRANCH=$(config.workflow.productionBranch || "main")
+DEV_BRANCH=$(config.workflow.developmentBranch || "staging")
+
+# Get current branch
+CURRENT=$(git branch --show-current)
+
+# Pull latest
+git pull origin ${PROD_BRANCH}
 ```
 
-Display the commits:
+**Validation:**
+
+- If not on production branch:
+  ```
+  You should be on {PROD_BRANCH} branch to create a sync PR.
+  Run: git checkout {PROD_BRANCH} && git pull
+  ```
+
+## Step 3: Get Current Version
+
+Read the version for reference in PR:
+
+```bash
+# Auto-detect version file
+if [ -f "package.json" ]; then
+  VERSION=$(node -p "require('./package.json').version")
+elif [ -f "pyproject.toml" ]; then
+  VERSION=$(grep -Po '(?<=version = ")[^"]*' pyproject.toml)
+elif [ -f "Cargo.toml" ]; then
+  VERSION=$(grep -Po '(?<=^version = ")[^"]*' Cargo.toml)
+elif [ -f "VERSION" ]; then
+  VERSION=$(cat VERSION)
+else
+  VERSION="unknown"
+fi
+```
+
+## Step 4: Check What Needs Syncing
+
+Show what commits will be synced:
+
+```bash
+git fetch origin ${DEV_BRANCH}
+git log origin/${DEV_BRANCH}..origin/${PROD_BRANCH} --oneline --no-merges
+```
+
+Display to user:
 
 ```
-Commits to be synced from main to staging:
+Commits to sync from {PROD_BRANCH} to {DEV_BRANCH}:
 
-{LIST_OF_COMMITS}
+abc1234 2.77.0
+def5678 Merge pull request #679 from org/release/2.77.0
+ghi9012 [Fix] Hotfix for production issue (#680)
 
-These are the changes from release v{VERSION} that need to be back-merged to staging.
+These changes from release v{VERSION} need to be back-merged.
 ```
 
-If there are no commits to sync:
+**If No Commits:**
 
 ```
-✅ Staging is already up-to-date with main. No sync needed.
+{DEV_BRANCH} is already up-to-date with {PROD_BRANCH}.
+No sync needed!
 ```
 
 Exit early if nothing to sync.
 
-## Step 4: Create Sync Branch
+## Step 5: Create Sync Branch
 
-Create a sync branch from main:
-
-```bash
-git checkout -b sync/main-to-staging
-```
-
-Alternative naming (if preferred): `sync/main-to-staging-{VERSION}` or `sync/main-to-staging-{TIMESTAMP}`
-
-## Step 5: Push Sync Branch
-
-Push the sync branch:
+Generate sync branch name from pattern:
 
 ```bash
-git push -u origin sync/main-to-staging
+SYNC_PATTERN=$(config.branches.sync || "sync/main-to-{devBranch}")
+SYNC_BRANCH=${SYNC_PATTERN/\{devBranch\}/${DEV_BRANCH}}
+
+# Create sync branch from production
+git checkout -b ${SYNC_BRANCH}
 ```
 
-## Step 5.5: Rebase Sync Branch onto Staging (Critical!)
+Example: `sync/main-to-staging`
 
-**IMPORTANT**: Before creating the PR, rebase the sync branch onto staging to skip commits that are already in staging.
-
-Fetch latest staging and rebase:
+## Step 6: Push Sync Branch
 
 ```bash
-git fetch origin staging
-git rebase origin/staging
+git push -u origin ${SYNC_BRANCH}
 ```
 
-**What will happen:**
+## Step 7: Rebase onto Development Branch
 
-- Git will automatically skip commits that are already in staging
-- Usually 90% of commits will be skipped (already merged via feature PRs)
-- Typically only the version bump commit remains
-- This is the expected and correct behavior!
+**Critical Step**: Rebase to skip commits already in development:
 
-Example output:
+```bash
+git fetch origin ${DEV_BRANCH}
+git rebase origin/${DEV_BRANCH}
+```
+
+**What Happens:**
+
+- Git automatically skips commits already in development branch
+- Usually 90%+ of commits are skipped (already merged via feature PRs)
+- Typically only version bump commit remains
+- This is expected and correct!
+
+**Example Output:**
 
 ```
 warning: skipped previously applied commit 357fab94
@@ -101,198 +153,186 @@ warning: skipped previously applied commit 9de0e8fd
 Successfully rebased and updated refs/heads/sync/main-to-staging.
 ```
 
-After rebase, force-push the updated branch:
+After rebase, force-push:
 
 ```bash
-git push origin sync/main-to-staging --force-with-lease
+git push origin ${SYNC_BRANCH} --force-with-lease
 ```
 
-Check what commits remain after rebase:
+Check remaining commits:
 
 ```bash
-git log origin/staging..sync/main-to-staging --oneline
+git log origin/${DEV_BRANCH}..${SYNC_BRANCH} --oneline
 ```
 
-**Expected result**: Usually just 1 commit (the version bump from `npm version`).
+**Expected Result**: Usually just 1-2 commits (version bump, release merge commit).
 
-If you see 0 commits, it means staging already has everything from main and no sync is needed.
+If 0 commits remain, development is already in sync - no PR needed.
 
-## Step 6: Generate Sync PR Description
-
-Use the following template:
+## Step 8: Generate Sync PR Description
 
 ```markdown
-# Sync main to staging (Post-Release v{VERSION})
+# Sync {PROD_BRANCH} to {DEV_BRANCH} (Post-Release v{VERSION})
 
 ## Description
 
-Back-merge production changes from main to staging to keep branches aligned after release v{VERSION} deployment.
+Back-merge production changes from {PROD_BRANCH} to {DEV_BRANCH} to keep branches aligned after release v{VERSION} deployment.
 
 ### Commits Being Synced
 
-{LIST_COMMITS_WITH_TITLES}
+{LIST_OF_REMAINING_COMMITS}
 
 ### Purpose
 
-This PR ensures staging branch includes all production changes and version bumps from the latest release. This is a standard post-release sync operation that maintains branch alignment between staging and main.
+This PR ensures {DEV_BRANCH} branch includes all production changes and version bumps from the latest release. This is a standard post-release sync operation.
 
 ### What's Included
 
 - Version bump to {VERSION}
-- All bug fixes, features, and improvements from release v{VERSION}
+- Any hotfixes that went to production
 - Release PR merge commit
 
 ## Checklist
 
-- [x] Main branch is up-to-date
-- [x] No conflicts with staging (auto-checked by GitHub)
-- [ ] Code review completed (fast-track approval expected for sync PRs)
-- [ ] Ready to merge to staging
+- [x] {PROD_BRANCH} branch is up-to-date
+- [x] Rebased onto {DEV_BRANCH} to skip duplicate commits
+- [ ] Code review completed (fast-track expected)
+- [ ] Ready to merge
 
 ---
 
-**Note**: This is an automated sync PR. All changes have already been reviewed and merged to main via the release PR.
+**Note**: This is an automated sync PR. All changes have already been reviewed and merged to {PROD_BRANCH} via the release PR.
 ```
 
-## Step 7: Create PR to Staging
-
-Create the PR using gh CLI:
+## Step 9: Create PR to Development
 
 ```bash
-gh pr create --base staging --title "[SYNC] Back-merge main to staging (post-release v{VERSION})" --body "$(cat <<'EOF'
+gh pr create \
+  --base ${DEV_BRANCH} \
+  --title "[SYNC] Back-merge ${PROD_BRANCH} to ${DEV_BRANCH} (post-release v${VERSION})" \
+  --body "$(cat <<'EOF'
 {GENERATED_DESCRIPTION}
 EOF
 )"
 ```
 
-**Important**: Always use `--base staging` for sync PRs (not main).
+**Important**: Sync PRs target development branch (opposite of feature PRs).
 
-## Step 8: Confirm and Next Steps
-
-Output a confirmation message:
+## Step 10: Confirm
 
 ```
-✅ Sync branch created: sync/main-to-staging
-✅ PR created: {PR_URL}
-✅ Title: [SYNC] Back-merge main to staging (post-release v{VERSION})
+Sync branch created: {SYNC_BRANCH}
+PR created: {PR_URL}
+Title: [SYNC] Back-merge {PROD_BRANCH} to {DEV_BRANCH} (post-release v{VERSION})
 
-This sync PR back-merges all changes from release v{VERSION} to staging.
+This sync PR back-merges changes from release v{VERSION}.
 
 Next steps:
-1. Review the PR (should be straightforward - all changes already reviewed)
-2. Get fast-track approval (sync PRs are typically approved quickly)
-3. Merge PR to staging
-4. Staging and main are now synchronized!
+1. Review PR (should be straightforward)
+2. Get fast-track approval
+3. Merge to {DEV_BRANCH}
 
 ---
 
-✨ Release workflow complete! ✨
-- Release v{VERSION} deployed to production ✓
-- GitHub release enhanced with detailed notes ✓
-- Main and staging branches synchronized ✓
+Release workflow complete!
+- Release v{VERSION} deployed to production
+- GitHub release created with detailed notes
+- {PROD_BRANCH} and {DEV_BRANCH} synchronized
 ```
 
-## Important Notes
+## Configuration Reference
 
-- Sync PRs always go from main → staging (opposite of regular feature PRs)
-- This should be done after EVERY release to keep branches aligned
-- Sync PRs typically get fast-track approval since changes were already reviewed
-- The sync ensures staging has the version bump and any hotfixes
-- This is a critical step - skipping it leads to merge conflicts later
+| Setting                      | Default                    | Description                    |
+| ---------------------------- | -------------------------- | ------------------------------ |
+| `workflow.developmentBranch` | `staging`                  | Development branch name        |
+| `workflow.productionBranch`  | `main`                     | Production branch name         |
+| `branches.sync`              | `sync/main-to-{devBranch}` | Sync branch naming pattern     |
 
 ## Error Handling
 
-- If not on main: Instruct to checkout main
-- If no commits to sync: Skip PR creation, branches are aligned
-- If sync branch already exists: Ask if they want to delete and recreate
-- If `gh pr create` fails: Provide manual PR creation instructions
-- If there are conflicts: Show conflicts and provide resolution guidance
+| Scenario                | Action                                         |
+| ----------------------- | ---------------------------------------------- |
+| Not on production branch | Instruct to checkout and pull                 |
+| No commits to sync      | Exit early with success message               |
+| Sync branch exists      | Ask to delete and recreate                    |
+| Rebase conflicts        | Show resolution instructions                  |
+| gh not authenticated    | Provide auth instructions                     |
 
 ## Conflict Resolution
 
-If GitHub detects conflicts during sync:
-
-1. Show the user the conflicting files
-2. Provide instructions:
+If conflicts occur during rebase:
 
 ```
-⚠️ Conflicts detected in the following files:
-{CONFLICTING_FILES}
+Conflicts detected during rebase:
+
+{LIST_OF_CONFLICTING_FILES}
 
 To resolve:
-1. git checkout sync/main-to-staging
-2. git merge origin/staging
-3. Resolve conflicts in the listed files
-4. git add {CONFLICTING_FILES}
-5. git commit -m "Resolve sync conflicts"
-6. git push origin sync/main-to-staging
 
-The PR will automatically update.
-```
+1. Open each file and resolve conflicts
+2. Stage resolved files:
+   git add {files}
+3. Continue rebase:
+   git rebase --continue
+4. Force push:
+   git push origin {SYNC_BRANCH} --force-with-lease
 
-## Example Complete Flow
-
-```bash
-# User runs: /sync
-# Checks: on main, up-to-date ✓
-# Gets: version 2.77.0 from package.json
-# Lists: 3 commits to sync (release merge + version bump + changelog)
-# Creates: sync/main-to-staging branch
-# Pushes: sync/main-to-staging
-# Creates: PR #680 to staging
-# Output: Success message with next steps
-```
-
-## Example Sync PR Description
-
-```markdown
-# Sync main to staging (Post-Release v2.77.0)
-
-## Description
-
-Back-merge production changes from main to staging to keep branches aligned after release v2.77.0 deployment.
-
-### Commits Being Synced
-
-- Merge pull request #679 from your-org/release/2.77.0
-- 2.77.0 (version bump)
-- Merge pull request #662 from your-org/fix/trending-coins
-- Merge pull request #655 from your-org/fix/holder-analysis
-
-### Purpose
-
-This PR ensures staging branch includes all production changes and version bumps from the latest release. This is a standard post-release sync operation that maintains branch alignment between staging and main.
-
-### What's Included
-
-- Version bump to 2.77.0
-- All bug fixes, features, and improvements from release v2.77.0
-- Release PR merge commit
-
-## Checklist
-
-- [x] Main branch is up-to-date
-- [x] No conflicts with staging
-- [ ] Code review completed (fast-track approval expected for sync PRs)
-- [ ] Ready to merge to staging
-
----
-
-**Note**: This is an automated sync PR. All changes have already been reviewed and merged to main via the release PR.
+Or abort and resolve manually:
+   git rebase --abort
 ```
 
 ## When to Run This Command
 
 **Always run `/sync` after:**
 
-1. Release PR merged to main
-2. Hotfix PR merged to main
-3. Any direct merge to main that needs to be in staging
+1. Release PR merged to production
+2. Hotfix PR merged to production
+3. Any direct merge to production that needs to be in development
 
 **Typical sequence:**
 
 ```
-/release → Review → Merge to main → Deploy → /release-notes → /sync → Merge sync PR
+/release → Review → Merge → Deploy → /release-notes → /sync → Merge sync PR
 ```
 
-This ensures staging always reflects what's in production.
+## Example Flow
+
+```bash
+# User runs: /sync
+# Checks: on main, up-to-date ✓
+# Gets: version 2.77.0 from package.json
+# Lists: 5 commits to sync initially
+# Creates: sync/main-to-staging branch
+# Pushes: sync/main-to-staging
+# Rebases: onto origin/staging
+# Result: 4 commits skipped, 1 remains (version bump)
+# Force pushes: updated branch
+# Creates: PR #680 to staging
+# Output: Success with completion message
+```
+
+## Alternative Workflows
+
+### Tag-Based Workflow
+
+For projects without a staging branch:
+
+```yaml
+workflow:
+  type: tag-based
+  developmentBranch: develop
+  productionBranch: main
+```
+
+### Direct Workflow
+
+For simpler projects:
+
+```yaml
+workflow:
+  type: direct
+  developmentBranch: main
+  productionBranch: main
+```
+
+In direct workflow, sync is not needed as there's only one branch.

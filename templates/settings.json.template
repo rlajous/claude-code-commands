@@ -1,0 +1,121 @@
+{
+  "// HOOKS CONFIGURATION TEMPLATE": "Copy this to ~/.claude/settings.json or .claude/settings.json",
+  "// Documentation": "https://code.claude.com/docs/en/hooks",
+
+  "hooks": {
+    "// PostToolUse hooks": "Run after a tool is used",
+    "PostToolUse": [
+      {
+        "// description": "Auto-format files after Write or Edit",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run lint:fix -- $CLAUDE_FILE_PATH 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "// description": "Run type check after TypeScript file changes",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[[ $CLAUDE_FILE_PATH == *.ts ]] && npx tsc --noEmit 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+
+    "// PreToolUse hooks": "Run before a tool is used (can block)",
+    "PreToolUse": [
+      {
+        "// description": "Prevent direct commits to main/master",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_BASH_COMMAND\" | grep -qE 'git commit.*(-m|--message)' && git branch --show-current | grep -qE '^(main|master)$'; then echo 'BLOCK: Direct commits to main/master are not allowed. Use a feature branch.' && exit 1; fi"
+          }
+        ]
+      },
+      {
+        "// description": "Prevent force push",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_BASH_COMMAND\" | grep -qE 'git push.*(-f|--force)[^-]'; then echo 'BLOCK: Force push requires explicit user confirmation.' && exit 1; fi"
+          }
+        ]
+      }
+    ],
+
+    "// SessionStart hooks": "Run when a Claude session starts",
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "// description": "Log session start",
+            "type": "command",
+            "command": "echo \"Claude session started at $(date)\" >> .claude/session.log 2>/dev/null || true"
+          },
+          {
+            "// description": "Check for uncommitted changes on session start",
+            "type": "command",
+            "command": "git status --porcelain 2>/dev/null | head -5"
+          }
+        ]
+      }
+    ],
+
+    "// SessionEnd hooks": "Run when a Claude session ends",
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "// description": "Log session end",
+            "type": "command",
+            "command": "echo \"Claude session ended at $(date)\" >> .claude/session.log 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+
+    "// Notification hooks": "Send notifications on events",
+    "Notification": [
+      {
+        "// description": "Notify on task completion (macOS)",
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Task completed\" with title \"Claude Code\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+
+  "// Additional settings": "Other Claude Code settings",
+
+  "permissions": {
+    "// description": "Pre-approved tool permissions",
+    "allow": [
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Bash(npm test)",
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)"
+    ]
+  }
+}

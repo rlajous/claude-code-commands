@@ -1,0 +1,67 @@
+{
+  "name": "git-workflow",
+  "description": "Production-ready slash commands for Git workflow automation including PR creation, release management, and QA testing",
+  "version": "1.0.0",
+  "author": {
+    "name": "Community"
+  },
+  "repository": "https://github.com/your-org/claude-code-commands",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "workflow",
+    "pr",
+    "release",
+    "qa",
+    "testing",
+    "automation"
+  ],
+  "skills": [
+    {
+      "name": "start",
+      "description": "Create a feature branch from a ticket ID"
+    },
+    {
+      "name": "commit",
+      "description": "Stage and commit changes with proper formatting"
+    },
+    {
+      "name": "finish",
+      "description": "Create a pull request with comprehensive description"
+    },
+    {
+      "name": "release",
+      "description": "Create a release branch and PR to main"
+    },
+    {
+      "name": "release-notes",
+      "description": "Generate GitHub release with detailed notes"
+    },
+    {
+      "name": "sync",
+      "description": "Back-merge main to development branch"
+    },
+    {
+      "name": "plan-qa",
+      "description": "Generate QA test plan from ticket"
+    },
+    {
+      "name": "start-qa",
+      "description": "Execute QA tests from plan file"
+    }
+  ],
+  "agents": [
+    {
+      "name": "pr-reviewer",
+      "description": "Expert code reviewer for quality, security, and best practices"
+    },
+    {
+      "name": "release-validator",
+      "description": "Validates release readiness by checking tests, build, and dependencies"
+    },
+    {
+      "name": "qa-executor",
+      "description": "Executes QA test plans with detailed reporting"
+    }
+  ]
+}

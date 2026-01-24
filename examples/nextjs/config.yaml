@@ -1,0 +1,60 @@
+# Claude Code Commands Configuration
+# Next.js Frontend Example
+
+packageManager: pnpm
+
+workflow:
+  type: staging
+  developmentBranch: develop
+  productionBranch: main
+
+branches:
+  feature: "{type}/{ticket}-{description}"
+  release: "release/{version}"
+  sync: "sync/main-to-develop"
+
+commits:
+  format: "{type}: {message} ({ticket})"
+  types: [feat, fix, hotfix, refactor, docs, test, chore, style]
+  requireTicket: false
+  ticketPattern: "^[A-Z]+-\\d+$"
+
+pullRequests:
+  targetBranch: develop
+  reviewers:
+    - frontend-team
+  labels:
+    - needs-review
+    - frontend
+
+issueTracker:
+  type: github
+
+versioning:
+  file: package.json
+
+attribution:
+  enabled: false
+
+testing:
+  unit: "pnpm test"
+  e2e: "pnpm test:e2e"
+  lint: "pnpm lint"
+  typeCheck: "pnpm typecheck"
+  build: "pnpm build"
+
+release:
+  generateChangelog: true
+  changelogCategories:
+    - name: "Features"
+      prefixes: ["feat:", "feat("]
+      emoji: "sparkles"
+    - name: "Bug Fixes"
+      prefixes: ["fix:", "fix("]
+      emoji: "bug"
+    - name: "Styling"
+      prefixes: ["style:", "style("]
+      emoji: "art"
+    - name: "Performance"
+      prefixes: ["perf:", "perf("]
+      emoji: "zap"

@@ -1,238 +1,377 @@
 ---
 description: Create a release branch and PR to main with auto-extracted changes from staging
+disable-model-invocation: true
+allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit
 ---
 
-You are helping create a production release. Your task is to create a release branch from staging, bump the version, auto-extract changes, and create a comprehensive release PR to main.
+You are helping create a production release. Your task is to create a release branch from the development branch, bump the version, extract changes, and create a comprehensive release PR to the production branch.
 
-## Step 1: Verify Current State
+## Step 1: Load Configuration
 
-Check that you're on staging branch and it's up-to-date:
+Check for configuration:
 
 ```bash
-git branch --show-current
+[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+```
+
+**Load from `.claude/config.yaml` (if exists):**
+
+```yaml
+workflow:
+  type: staging # staging | tag-based | direct
+  developmentBranch: staging
+  productionBranch: main
+branches:
+  release: "release/{version}"
+versioning:
+  file: auto # auto | package.json | pyproject.toml | VERSION | Cargo.toml
+release:
+  watchFiles:
+    openapi: docs/openapi.json
+    migrations: prisma/migrations/**/migration.sql
+    schema: prisma/schema.prisma
+  generateChangelog: true
+```
+
+**Default Values:**
+
+```yaml
+workflow:
+  developmentBranch: staging
+  productionBranch: main
+branches:
+  release: "release/{version}"
+versioning:
+  file: auto
+```
+
+## Step 2: Verify Current State
+
+Check that you're on the development branch and up-to-date:
+
+```bash
+# Get configured branches
+DEV_BRANCH=$(config.workflow.developmentBranch || "staging")
+PROD_BRANCH=$(config.workflow.productionBranch || "main")
+
+# Check current branch
+CURRENT=$(git branch --show-current)
+echo "Current branch: $CURRENT"
+echo "Expected: $DEV_BRANCH"
+
+# Fetch latest
 git fetch origin
+
+# Check if up-to-date
 git status
 ```
 
-If not on staging:
+**Validation:**
 
-```
-⚠️ You must be on staging branch to create a release.
-Please run: git checkout staging && git pull
+- If not on development branch:
+  ```
+  You must be on {DEV_BRANCH} branch to create a release.
+  Run: git checkout {DEV_BRANCH} && git pull
+  ```
+- If behind remote:
+  ```
+  Your {DEV_BRANCH} branch is behind origin.
+  Run: git pull origin {DEV_BRANCH}
+  ```
+- If there are uncommitted changes:
+  ```
+  You have uncommitted changes. Commit or stash them first.
+  ```
+
+## Step 3: Detect Version File
+
+Auto-detect or use configured version file:
+
+```bash
+# Check for version files in order of priority
+if [ -f "package.json" ]; then
+  VERSION_FILE="package.json"
+  VERSION_TYPE="node"
+elif [ -f "pyproject.toml" ]; then
+  VERSION_FILE="pyproject.toml"
+  VERSION_TYPE="python"
+elif [ -f "Cargo.toml" ]; then
+  VERSION_FILE="Cargo.toml"
+  VERSION_TYPE="rust"
+elif [ -f "VERSION" ]; then
+  VERSION_FILE="VERSION"
+  VERSION_TYPE="plain"
+elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+  VERSION_FILE="build.gradle"
+  VERSION_TYPE="gradle"
+else
+  VERSION_FILE="VERSION"
+  VERSION_TYPE="plain"
+fi
 ```
 
-If behind origin/staging:
+**Read Current Version:**
 
-```
-⚠️ Your staging branch is behind origin/staging.
-Please run: git pull origin staging
-```
+| Type     | Command                                                    |
+| -------- | ---------------------------------------------------------- |
+| Node.js  | `node -p "require('./package.json').version"`              |
+| Python   | `grep -Po '(?<=version = ")[^"]*' pyproject.toml`          |
+| Rust     | `grep -Po '(?<=^version = ")[^"]*' Cargo.toml`             |
+| Plain    | `cat VERSION`                                              |
+| Gradle   | `grep -Po '(?<=version = ")[^"]*' build.gradle`            |
 
-## Step 2: Ask for Version Type
+## Step 4: Ask for Version Type
 
 Ask the user which version bump to perform (use AskUserQuestion tool):
 
-- **Question**: "What type of version bump for this release?"
-- **Options**:
-  - **minor**: New features (2.76.0 → 2.77.0)
-  - **patch**: Bug fixes only (2.76.0 → 2.76.1)
-  - **major**: Breaking changes (2.76.0 → 3.0.0)
+**Question**: "What type of version bump for this release?"
 
-## Step 3: Calculate New Version
+**Options**:
 
-Read current version from package.json and calculate new version:
+- **patch**: Bug fixes only (1.2.3 → 1.2.4)
+- **minor**: New features, backward compatible (1.2.3 → 1.3.0)
+- **major**: Breaking changes (1.2.3 → 2.0.0)
+
+**Display**:
+
+```
+Current version: {CURRENT_VERSION}
+Version file: {VERSION_FILE}
+
+Select version bump:
+- patch: {CURRENT} → {PATCH_VERSION}
+- minor: {CURRENT} → {MINOR_VERSION}
+- major: {CURRENT} → {MAJOR_VERSION}
+```
+
+## Step 5: Calculate New Version
+
+Based on user selection:
+
+```
+Current: 1.2.3
+Patch:   1.2.4
+Minor:   1.3.0
+Major:   2.0.0
+```
+
+**Version Calculation Logic:**
+
+```javascript
+// Parse version
+const [major, minor, patch] = currentVersion.split('.').map(Number);
+
+// Calculate new version based on type
+switch (bumpType) {
+  case 'patch':
+    return `${major}.${minor}.${patch + 1}`;
+  case 'minor':
+    return `${major}.${minor + 1}.0`;
+  case 'major':
+    return `${major + 1}.0.0`;
+}
+```
+
+Confirm with user:
+
+```
+Current version: 1.2.3
+New version: 1.3.0
+
+Proceed with release v1.3.0?
+```
+
+## Step 6: Extract Changes from Development Branch
+
+Get commits between production and development:
 
 ```bash
-# Get current version
-CURRENT_VERSION=$(node -p "require('./package.json').version")
+PROD_BRANCH=$(config.workflow.productionBranch || "main")
+DEV_BRANCH=$(config.workflow.developmentBranch || "staging")
 
-# Calculate new version based on user's choice
-# For minor: 2.76.0 → 2.77.0
-# For patch: 2.76.0 → 2.76.1
-# For major: 2.76.0 → 3.0.0
+git log origin/${PROD_BRANCH}..origin/${DEV_BRANCH} --pretty=format:"%s" --no-merges
 ```
 
-Show the user:
+**Categorize Commits:**
 
-```
-Current version: 2.76.0
-New version will be: 2.77.0
-```
+Parse commits and group by type:
 
-## Step 4: Auto-Extract Changes from Staging
+| Category         | Match Patterns                                 |
+| ---------------- | ---------------------------------------------- |
+| Bug Fixes        | `[Fix]`, `[FIX]`, `fix:`, `fix(`               |
+| Features         | `[Feature]`, `feat:`, `feat(`                  |
+| Improvements     | `[Refactor]`, `[Perf]`, `improve`, `enhance`   |
+| Documentation    | `[Docs]`, `docs:`                              |
+| Other            | Everything else                                |
 
-Run the following commands to extract commits between main and staging:
+**Extract PR Numbers:**
 
 ```bash
-git log origin/main..origin/staging --pretty=format:"%s" --no-merges
+# Extract PR references: #123, (#456)
+echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | sort -u
 ```
 
-Parse the commits and categorize them:
-
-- **Bug Fixes**: Lines starting with `[Fix]`, `[FIX]`, `fix:`
-- **Features**: Lines starting with `[Feature]`, `feat:`, `feature:`
-- **Improvements**: Lines with "Improve", "enhance", "optimization"
-
-Extract PR numbers using regex: `#(\d+)`
-
-Example output structure:
-
-```
-### Bug Fixes
-- Fix trending coins endpoint and date formatting (#662)
-- Improve holder analysis accuracy with per-address queries (#655)
-- Fix EIP-7702 delegated EOA detection (#661)
-
-### Features
-- Add cross-chain risk tag aggregation for EVM addresses (#648)
-
-### Improvements
-- Preserve holder concentration measurement precision (#647)
-```
-
-## Step 4.5: Detect OpenAPI Changes (Optional Check)
-
-Check if the OpenAPI specification has been modified between main and staging:
-
-```bash
-# Check for OpenAPI changes
-# Configure your OpenAPI file path:
-OPENAPI_FILE="docs/openapi.json"  # Change to your OpenAPI spec path
-
-# Verify file exists on both branches
-if git cat-file -e origin/staging:${OPENAPI_FILE} 2>/dev/null && \
-   git cat-file -e origin/main:${OPENAPI_FILE} 2>/dev/null; then
-
-  # Check if file has changes
-  if git diff --quiet origin/main..origin/staging -- "${OPENAPI_FILE}"; then
-    OPENAPI_CHANGED="false"
-    echo "OpenAPI spec: No changes detected"
-  else
-    OPENAPI_CHANGED="true"
-    echo "OpenAPI spec: Changes detected"
-
-    # Extract current version from the file
-    OPENAPI_VERSION=$(node -p "try { require('./${OPENAPI_FILE}').info.version } catch(e) { 'unknown' }" 2>/dev/null || echo "unknown")
-    echo "Current OpenAPI version: ${OPENAPI_VERSION}"
-  fi
-else
-  # File doesn't exist on one or both branches - skip detection
-  OPENAPI_CHANGED="false"
-  echo "OpenAPI spec: File not found on both branches, skipping detection"
-fi
-```
-
-**Store these variables for use in Step 12**:
-
-- `OPENAPI_CHANGED`: "true" or "false"
-- `OPENAPI_VERSION`: version string or "unknown"
-
-**Note**: This check never fails the release process. If any command errors, we default to `OPENAPI_CHANGED="false"`.
-
-## Step 4.6: Detect Database Migration Changes
-
-Check if database migrations have been added between main and staging:
-
-```bash
-# Check for new migration files
-MIGRATION_FILES=$(git diff --name-only --diff-filter=A origin/main..origin/staging -- 'prisma/migrations/**/migration.sql')
-MIGRATION_COUNT=$(echo "$MIGRATION_FILES" | grep -c "migration.sql" || echo "0")
-
-if [ "$MIGRATION_COUNT" -gt 0 ]; then
-  MIGRATIONS_CHANGED="true"
-
-  # Extract migration folder names
-  MIGRATION_NAMES=$(echo "$MIGRATION_FILES" | xargs dirname | xargs -n1 basename | paste -sd "," -)
-
-  echo "Database migrations: Changes detected"
-  echo "Migration count: $MIGRATION_COUNT"
-  echo "Migration folders: $MIGRATION_NAMES"
-else
-  MIGRATIONS_CHANGED="false"
-  echo "Database migrations: No changes detected"
-fi
-
-# Check if schema changed
-if git diff --quiet origin/main..origin/staging -- prisma/schema.prisma; then
-  SCHEMA_CHANGED="false"
-else
-  SCHEMA_CHANGED="true"
-  echo "Prisma schema: Changes detected"
-fi
-```
-
-**Store these variables for use in Step 12**:
-
-- `MIGRATIONS_CHANGED`: "true" or "false"
-- `MIGRATION_COUNT`: number of new migrations
-- `MIGRATION_NAMES`: comma-separated migration folder names
-- `SCHEMA_CHANGED`: "true" or "false"
-
-**Note**: This check is informational only and does not block the release.
-
-## Step 5: Extract Contributors
-
-Get list of contributors from commits:
-
-```bash
-git log origin/main..origin/staging --format='%an' --no-merges | sort -u
-```
-
-Format as: `@username1 @username2 @username3`
-
-## Step 6: Create Release Branch
-
-Create the release branch from staging:
-
-```bash
-git checkout -b release/{NEW_VERSION}
-```
-
-Example: `release/2.77.0`
-
-## Step 7: Merge Main into Release Branch
-
-Merge main into the release branch to ensure it includes any hotfixes:
-
-```bash
-git fetch origin main
-git merge origin/main --no-edit
-```
-
-This ensures the release branch has all changes from both staging and main.
-
-## Step 8: Bump Version
-
-Run npm version command:
-
-```bash
-npm version {TYPE}
-```
-
-This will:
-
-- Update package.json and package-lock.json
-- Create a commit with message "{VERSION}"
-- Create a git tag "v{VERSION}"
-
-**Important**: Do NOT use `--no-git-tag-version`. We want the tag created.
-
-## Step 9: Push Release Branch
-
-Push the release branch with tags:
-
-```bash
-git push -u origin release/{VERSION} --follow-tags
-```
-
-## Step 10: Generate Release PR Description
-
-Use the following template and fill with extracted data:
+**Example Output:**
 
 ```markdown
+### Bug Fixes
+
+- Fix trending coins endpoint and date formatting (#662)
+- Improve holder analysis accuracy (#655)
+
+### Features
+
+- Add cross-chain risk tag aggregation (#648)
+
+### Improvements
+
+- Preserve holder concentration precision (#647)
+```
+
+## Step 7: Detect Special Changes
+
+### OpenAPI Changes
+
+If `release.watchFiles.openapi` is configured:
+
+```bash
+OPENAPI_FILE=$(config.release.watchFiles.openapi || "docs/openapi.json")
+
+if git diff --quiet origin/${PROD_BRANCH}..origin/${DEV_BRANCH} -- "${OPENAPI_FILE}"; then
+  OPENAPI_CHANGED=false
+else
+  OPENAPI_CHANGED=true
+  # Extract version from OpenAPI spec if present
+  OPENAPI_VERSION=$(jq -r '.info.version // "unknown"' "${OPENAPI_FILE}" 2>/dev/null)
+fi
+```
+
+### Database Migrations
+
+If `release.watchFiles.migrations` is configured:
+
+```bash
+MIGRATION_PATTERN=$(config.release.watchFiles.migrations || "prisma/migrations/**/migration.sql")
+
+MIGRATION_FILES=$(git diff --name-only --diff-filter=A origin/${PROD_BRANCH}..origin/${DEV_BRANCH} -- "${MIGRATION_PATTERN}")
+MIGRATION_COUNT=$(echo "$MIGRATION_FILES" | grep -c . || echo 0)
+
+if [ "$MIGRATION_COUNT" -gt 0 ]; then
+  MIGRATIONS_CHANGED=true
+  MIGRATION_NAMES=$(echo "$MIGRATION_FILES" | xargs -n1 dirname | xargs -n1 basename | paste -sd "," -)
+fi
+```
+
+### Schema Changes
+
+```bash
+SCHEMA_FILE=$(config.release.watchFiles.schema || "prisma/schema.prisma")
+
+if git diff --quiet origin/${PROD_BRANCH}..origin/${DEV_BRANCH} -- "${SCHEMA_FILE}"; then
+  SCHEMA_CHANGED=false
+else
+  SCHEMA_CHANGED=true
+fi
+```
+
+## Step 8: Extract Contributors
+
+Get list of contributors:
+
+```bash
+git log origin/${PROD_BRANCH}..origin/${DEV_BRANCH} --format='%an' --no-merges | sort -u
+```
+
+Format as GitHub mentions: `@username1 @username2 @username3`
+
+## Step 9: Create Release Branch
+
+```bash
+RELEASE_BRANCH_PATTERN=$(config.branches.release || "release/{version}")
+RELEASE_BRANCH=${RELEASE_BRANCH_PATTERN/\{version\}/${NEW_VERSION}}
+
+# Create release branch from development
+git checkout -b ${RELEASE_BRANCH}
+```
+
+Example: `release/1.3.0`
+
+## Step 10: Merge Production into Release
+
+Ensure release branch has any hotfixes from production:
+
+```bash
+git fetch origin ${PROD_BRANCH}
+git merge origin/${PROD_BRANCH} --no-edit
+```
+
+This ensures the release includes:
+
+- All development changes
+- Any hotfixes that went directly to production
+
+## Step 11: Bump Version
+
+Based on detected version file type:
+
+### Node.js (package.json)
+
+```bash
+npm version ${BUMP_TYPE} --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "${NEW_VERSION}"
+git tag "v${NEW_VERSION}"
+```
+
+### Python (pyproject.toml)
+
+```bash
+# Using poetry
+poetry version ${BUMP_TYPE}
+git add pyproject.toml
+git commit -m "${NEW_VERSION}"
+git tag "v${NEW_VERSION}"
+
+# Or using hatch
+hatch version ${BUMP_TYPE}
+
+# Or manual sed
+sed -i 's/version = "[^"]*"/version = "'${NEW_VERSION}'"/' pyproject.toml
+```
+
+### Rust (Cargo.toml)
+
+```bash
+# Using cargo-edit
+cargo set-version ${NEW_VERSION}
+git add Cargo.toml Cargo.lock
+git commit -m "${NEW_VERSION}"
+git tag "v${NEW_VERSION}"
+```
+
+### Plain VERSION file
+
+```bash
+echo "${NEW_VERSION}" > VERSION
+git add VERSION
+git commit -m "${NEW_VERSION}"
+git tag "v${NEW_VERSION}"
+```
+
+## Step 12: Push Release Branch
+
+```bash
+git push -u origin ${RELEASE_BRANCH} --follow-tags
+```
+
+## Step 13: Generate Release PR Description
+
+Use this template:
+
+````markdown
 ## Release v{VERSION}
 
-This release includes multiple bug fixes, new features, and improvements from staging.
+This release includes {summary of changes} from {DEV_BRANCH}.
 
 ### Key Changes
 
@@ -244,166 +383,162 @@ This release includes multiple bug fixes, new features, and improvements from st
 
 ### Testing & QA
 
-All changes have been tested on staging environment and are ready for production deployment.
+All changes have been tested on {DEV_BRANCH} environment and are ready for production deployment.
 
 ---
 
 **Release Checklist:**
 
-- [x] Version bumped to {VERSION} in package.json
-- [x] All tests passing on staging
+- [x] Version bumped to {VERSION}
+- [x] All tests passing on {DEV_BRANCH}
 - [ ] Code review completed
 - [ ] CI checks passing
 - [ ] Ready for production deployment
+````
+
+**If Migrations Detected:**
+
+```markdown
+## Database Migration Alert
+
+This release includes {MIGRATION_COUNT} database migration(s):
+{MIGRATION_NAMES}
+
+**Pre-Deployment:**
+
+- [ ] Verify migrations ran successfully in {DEV_BRANCH}
+- [ ] Review migration SQL for issues
+- [ ] Coordinate deployment timing with team
+- [ ] Prepare rollback plan
+
+**Post-Deployment:**
+
+- [ ] Monitor deployment logs
+- [ ] Verify database schema
+- [ ] Run smoke tests
 ```
 
-## Step 11: Create PR to Main
+**If OpenAPI Changed:**
 
-Create the PR using gh CLI:
+```markdown
+## API Documentation Update
+
+The OpenAPI specification was modified in this release.
+Current spec version: {OPENAPI_VERSION}
+
+After merge, create documentation tag:
 
 ```bash
-gh pr create --base main --title "[RELEASE] v{VERSION}" --body "$(cat <<'EOF'
+git tag docs-v{OPENAPI_VERSION}
+git push origin docs-v{OPENAPI_VERSION}
+```
+```
+
+## Step 14: Create PR to Production
+
+```bash
+PROD_BRANCH=$(config.workflow.productionBranch || "main")
+
+gh pr create \
+  --base ${PROD_BRANCH} \
+  --title "[RELEASE] v${NEW_VERSION}" \
+  --body "$(cat <<'EOF'
 {GENERATED_DESCRIPTION}
 EOF
 )"
 ```
 
-**Important**: Always use `--base main` for release PRs.
+**Important:** Release PRs always target production branch (main).
 
-## Step 12: Confirm and Next Steps
-
-Output a confirmation message with conditional OpenAPI reminder:
+## Step 15: Confirm and Next Steps
 
 ```
-✅ Release branch created: release/{VERSION}
-✅ Version bumped to {VERSION}
-✅ PR created: {PR_URL}
-✅ Title: [RELEASE] v{VERSION}
+Release branch created: {RELEASE_BRANCH}
+Version bumped: {OLD_VERSION} → {NEW_VERSION}
+PR created: {PR_URL}
+Title: [RELEASE] v{NEW_VERSION}
 
 Next steps:
 1. Review the PR for accuracy
-2. Get team approval (mention all contributors in PR)
-3. Merge PR to main (use "Squash and merge")
-4. GitHub Actions will auto-deploy to production
-5. Run `/release-notes` to CREATE the GitHub release with detailed notes
-6. Run `/sync` to back-merge main to staging
+2. Get team approval
+3. Merge PR to {PROD_BRANCH} (use "Squash and merge")
+4. Run /release-notes to create GitHub release
+5. Run /sync to back-merge {PROD_BRANCH} to {DEV_BRANCH}
 ```
 
-**If MIGRATIONS_CHANGED="true", append this critical section**:
+## Configuration Reference
 
-```
-🗄️ DATABASE MIGRATION ALERT - PRODUCTION DEPLOYMENT
-
-This release includes ${MIGRATION_COUNT} database migration(s):
-${MIGRATION_NAMES}
-
-⚠️ CRITICAL: Migrations run automatically via docker/entrypoint.sh during ECS deployment
-
-POST-MERGE ACTIONS REQUIRED:
-
-1. Before Merge to Main:
-   ✅ Verify migrations ran successfully in staging
-   ✅ Verify staging application is fully functional
-   ✅ Review migration SQL for issues (locks, data loss, etc.)
-   ✅ Coordinate team: notify about deployment timing
-   ✅ Prepare rollback plan if needed
-
-2. During Production Deployment (after merge):
-   👀 Monitor ECS task logs in real-time
-   👀 Watch CloudWatch for migration execution
-   👀 Check Datadog for application errors
-   ⏱️ Be available for immediate response if issues occur
-
-3. Migration Execution:
-   - Runs automatically: npx prisma migrate deploy (in entrypoint.sh)
-   - Before app starts: node dist/src/main.js
-   - If migration fails: ECS task will crash and not start
-   - Auto-rollback may occur if task health checks fail
-
-4. Post-Deployment Verification:
-   - Check database schema matches expectations
-   - Run smoke tests on critical endpoints
-   - Monitor performance metrics for degradation
-   - Verify data integrity if migration involved data changes
-
-5. If Migration Fails:
-   - ECS task will crash loop
-   - Check task logs for migration error details
-   - Options: (a) Fix migration and redeploy, (b) Manual database fix, (c) Rollback entire release
-   - Coordinate with DevOps for database access if needed
-
-Migration Verification Checklist:
-- [ ] Staging migration completed successfully
-- [ ] Staging application fully tested after migration
-- [ ] Team notified about production migration timing
-- [ ] Monitoring dashboards ready (CloudWatch, Datadog)
-- [ ] Rollback plan documented and ready
-- [ ] Database backup confirmed (RDS automatic backup)
-- [ ] On-call engineer available during deployment
-
-Database Schema Changes: ${SCHEMA_CHANGED === "true" ? "Yes - Prisma schema modified" : "No schema.prisma changes"}
-
-See docs/database-migration-checklist.md for full deployment checklist.
-See docker/entrypoint.sh for migration execution details.
-```
-
-**If OPENAPI_CHANGED="true", append this additional section**:
-
-````
-📚 OpenAPI Documentation Update Detected
-
-The OpenAPI specification was modified in this release.
-Current version: {OPENAPI_VERSION}
-
-After the release PR is merged to main, create a documentation tag to publish the updated spec:
-
-```bash
-# Checkout main and pull the merged changes
-git checkout main && git pull origin main
-
-# Create and push the documentation tag
-git tag docs-v{OPENAPI_VERSION}
-git push origin docs-v{OPENAPI_VERSION}
-````
-
-This will trigger the documentation publishing workflow (if configured):
-`.github/workflows/docs-publish.yml`
-
-Note: If the version in the OpenAPI spec needs updating, do so before creating the tag.
-
-````
-
-## Important Notes
-
-- Release PRs always target `main` branch (not staging)
-- The version bump happens on the release branch before creating PR
-- `npm version` automatically creates a git tag
-- GitHub Actions (`version.yml`) will verify version bump before allowing merge
-- After merge, `deploy-prod.yml` will deploy to production (does NOT create GitHub release)
-- The `/release-notes` command creates the GitHub release with enhanced notes
-- Contributors should be mentioned in the PR for notification
+| Setting                       | Default              | Description                    |
+| ----------------------------- | -------------------- | ------------------------------ |
+| `workflow.developmentBranch`  | `staging`            | Development/integration branch |
+| `workflow.productionBranch`   | `main`               | Production branch              |
+| `branches.release`            | `release/{version}`  | Release branch pattern         |
+| `versioning.file`             | `auto`               | Version file location          |
+| `release.watchFiles.openapi`  | -                    | OpenAPI spec path              |
+| `release.watchFiles.migrations` | -                  | Migration files pattern        |
+| `release.watchFiles.schema`   | -                    | Schema file path               |
+| `release.generateChangelog`   | `true`               | Generate changelog             |
 
 ## Error Handling
 
-- If not on staging: Instruct to checkout staging
-- If release branch already exists: Ask if they want to delete and recreate
-- If `npm version` fails: Show error and ask user to fix manually
-- If `gh pr create` fails: Provide manual PR creation instructions
-- If there are no commits between staging and main: Warn user there's nothing to release
+| Scenario                    | Action                                         |
+| --------------------------- | ---------------------------------------------- |
+| Not on development branch   | Instruct to checkout and pull                  |
+| Behind remote               | Instruct to pull latest                        |
+| Release branch exists       | Ask to delete and recreate                     |
+| No commits to release       | Warn nothing to release                        |
+| Version bump fails          | Show error, manual instructions                |
+| Merge conflicts             | Show conflict resolution instructions          |
+| `gh` not authenticated      | Provide auth instructions                      |
+
+## Version File Examples
+
+### package.json
+
+```json
+{
+  "name": "my-app",
+  "version": "1.2.3"
+}
+```
+
+### pyproject.toml
+
+```toml
+[project]
+name = "my-app"
+version = "1.2.3"
+```
+
+### Cargo.toml
+
+```toml
+[package]
+name = "my-app"
+version = "1.2.3"
+```
+
+### VERSION
+
+```
+1.2.3
+```
 
 ## Example Complete Flow
 
 ```bash
 # User runs: /release
 # Checks: on staging, up-to-date ✓
+# Detects: package.json with version 2.76.0
 # Asks: What type? → User selects "minor"
 # Shows: 2.76.0 → 2.77.0
 # Extracts: 15 commits (8 fixes, 4 features, 3 improvements)
-# Contributors: @rlajous @jtru13 @valentin-ratti
+# Detects: 2 new migrations, OpenAPI changes
+# Contributors: @alice @bob @charlie
 # Creates: release/2.77.0 branch
 # Merges: origin/main into release branch
-# Runs: npm version minor (updates to 2.77.0)
+# Runs: npm version minor
 # Pushes: release/2.77.0 with tags
 # Creates: PR #679 to main
-# Output: Success message with next steps
-````
+# Output: Success message with next steps and migration alert
+```

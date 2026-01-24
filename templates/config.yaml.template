@@ -1,0 +1,263 @@
+# Claude Code Commands Configuration
+# Copy this file to .claude/config.yaml in your project root
+# All settings have sensible defaults - configure only what you need
+
+# ==============================================================================
+# PACKAGE MANAGER
+# ==============================================================================
+# Auto-detected from lock files if not specified
+# Options: auto | npm | pnpm | yarn | bun | uv | pip | cargo | go
+packageManager: auto
+
+# ==============================================================================
+# GIT WORKFLOW
+# ==============================================================================
+workflow:
+  # Workflow type determines branch strategy
+  # Options:
+  #   staging    - feature -> staging -> main (recommended)
+  #   tag-based  - feature -> main with version tags
+  #   direct     - feature -> main (no staging)
+  type: staging
+
+  # Development/integration branch name
+  # Common values: staging, develop, dev
+  developmentBranch: staging
+
+  # Production branch name
+  # Common values: main, master, production
+  productionBranch: main
+
+# ==============================================================================
+# BRANCH NAMING
+# ==============================================================================
+branches:
+  # Feature branch pattern
+  # Variables: {type}, {ticket}, {description}
+  feature: "{type}/{ticket}-{description}"
+
+  # Release branch pattern
+  # Variables: {version}
+  release: "release/{version}"
+
+  # Sync branch pattern (for back-merging)
+  # Variables: {devBranch}, {version}
+  sync: "sync/main-to-{devBranch}"
+
+# ==============================================================================
+# COMMIT MESSAGE FORMAT
+# ==============================================================================
+commits:
+  # Commit message format
+  # Variables: {type}, {message}, {ticket}
+  format: "[{type}] {message} ({ticket})"
+
+  # Allowed commit types (will be capitalized)
+  types:
+    - Feature
+    - Fix
+    - Hotfix
+    - Refactor
+    - Docs
+    - Test
+    - Chore
+    - Style
+    - Perf
+
+  # Require ticket ID in all commits
+  # If true, commits without ticket ID will prompt for one
+  requireTicket: false
+
+  # Regex pattern for ticket validation
+  # Default matches formats like: PROJ-123, ABC-1, TEAM-9999
+  ticketPattern: "^[A-Z]+-\\d+$"
+
+# ==============================================================================
+# PULL REQUEST SETTINGS
+# ==============================================================================
+pullRequests:
+  # Default target branch for feature PRs
+  # Usually matches workflow.developmentBranch
+  targetBranch: staging
+
+  # Default reviewers (GitHub usernames or team slugs)
+  # Example: ["octocat", "my-org/frontend-team"]
+  reviewers: []
+
+  # Default labels to apply to new PRs
+  # Example: ["needs-review", "feature"]
+  labels: []
+
+  # PR description template (optional)
+  # If not set, commands generate their own descriptions
+  # template: ".github/PULL_REQUEST_TEMPLATE.md"
+
+# ==============================================================================
+# ISSUE TRACKER INTEGRATION
+# ==============================================================================
+issueTracker:
+  # Tracker type for automatic detection and linking
+  # Options:
+  #   auto   - Detect from ticket format (recommended)
+  #   linear - Linear.app integration
+  #   jira   - Atlassian Jira integration
+  #   github - GitHub Issues integration
+  #   none   - Disable issue tracking features
+  type: auto
+
+  # Linear-specific settings
+  linear:
+    # API key from environment variable
+    # Get yours at: https://linear.app/settings/api
+    apiKey: ${LINEAR_API_KEY}
+
+    # Team key for ticket prefixes (e.g., "ENG" for ENG-123)
+    # Leave empty for auto-detection
+    # teamKey: ""
+
+  # Jira-specific settings
+  jira:
+    # Your Jira instance URL
+    baseUrl: https://your-org.atlassian.net
+
+    # API token from environment variable
+    # Generate at: https://id.atlassian.com/manage-profile/security/api-tokens
+    apiToken: ${JIRA_API_TOKEN}
+
+    # Your Jira email (required for API auth)
+    email: ${JIRA_EMAIL}
+
+    # Project key for ticket prefixes (e.g., "PROJ" for PROJ-123)
+    # Leave empty for auto-detection
+    # projectKey: ""
+
+  # GitHub-specific settings
+  github:
+    # Repository in format "owner/repo"
+    # Leave empty to use current repository
+    # repository: ""
+
+# ==============================================================================
+# VERSION MANAGEMENT
+# ==============================================================================
+versioning:
+  # Version file location
+  # Options:
+  #   auto           - Auto-detect from project type
+  #   package.json   - Node.js projects
+  #   pyproject.toml - Python projects (PEP 621)
+  #   setup.py       - Python projects (legacy)
+  #   VERSION        - Plain text file
+  #   Cargo.toml     - Rust projects
+  #   build.gradle   - Java/Kotlin projects
+  file: auto
+
+  # Version bump command (auto-detected if not specified)
+  # Examples:
+  #   npm version {type} --no-git-tag-version
+  #   poetry version {type}
+  #   cargo set-version --bump {type}
+  # command: auto
+
+  # Changelog file location (optional)
+  # Set to generate/update changelog during releases
+  # changelog: CHANGELOG.md
+
+# ==============================================================================
+# AI ATTRIBUTION
+# ==============================================================================
+attribution:
+  # Add AI co-author to commits
+  # Default: false (opt-in)
+  enabled: false
+
+  # Attribution format in commit message
+  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+
+# ==============================================================================
+# TESTING COMMANDS
+# ==============================================================================
+testing:
+  # Unit test command
+  unit: auto  # Auto-detected from package manager
+
+  # End-to-end test command
+  e2e: auto
+
+  # Lint command
+  lint: auto
+
+  # Type check command
+  typeCheck: auto
+
+  # Build command
+  build: auto
+
+# ==============================================================================
+# QA TEST SETTINGS
+# ==============================================================================
+qa:
+  # Base URL for API tests (can use env var)
+  apiBaseUrl: ${API_BASE_URL}
+
+  # Directory for test plan files
+  testPlansDir: tests/qa
+
+  # Directory for test results
+  resultsDir: tests/qa/results
+
+  # Default timeout for API calls (seconds)
+  timeout: 10
+
+  # SQS queue URL for event verification (optional)
+  sqsQueueUrl: ${SQS_QUEUE_URL}
+
+# ==============================================================================
+# RELEASE SETTINGS
+# ==============================================================================
+release:
+  # Files to check for changes during release
+  # Used to provide warnings/checklists in release notes
+  watchFiles:
+    # OpenAPI/Swagger spec changes
+    openapi: docs/openapi.json
+
+    # Database migrations (glob pattern)
+    migrations: prisma/migrations/**/migration.sql
+
+    # Schema file
+    schema: prisma/schema.prisma
+
+  # Generate changelog from commits
+  generateChangelog: true
+
+  # Changelog categories (matched against commit prefixes)
+  changelogCategories:
+    - name: "Bug Fixes"
+      prefixes: ["[Fix]", "[FIX]", "fix:", "fix("]
+      emoji: "bug"
+    - name: "Features"
+      prefixes: ["[Feature]", "feat:", "feat("]
+      emoji: "sparkles"
+    - name: "Improvements"
+      prefixes: ["[Refactor]", "[Perf]", "refactor:", "perf:"]
+      emoji: "zap"
+    - name: "Documentation"
+      prefixes: ["[Docs]", "docs:"]
+      emoji: "memo"
+    - name: "Other"
+      prefixes: []
+      emoji: "package"
+
+# ==============================================================================
+# CUSTOM SCRIPTS (Optional)
+# ==============================================================================
+# scripts:
+#   # Run before creating a PR
+#   prePR: "npm run lint && npm test"
+#
+#   # Run before creating a release
+#   preRelease: "npm run build"
+#
+#   # Run after successful release
+#   postRelease: "npm run deploy:docs"
