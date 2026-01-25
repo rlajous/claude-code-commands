@@ -87,7 +87,7 @@ Each agent file in `.claude/agents/` defines a specialized AI assistant:
 
 ### TDD Flow
 
-```
+```text
 /start → /tdd → /commit → /finish
 ```
 
@@ -114,7 +114,7 @@ Commands read from `.claude/config.yaml` with this priority:
 - `issueTracker`: Linear, Jira, or GitHub integration
 - `versioning`: Version file location
 - `release`: Watch files, changelog categories
-- `tdd`: Test-Driven Development settings (confirmations, max attempts)
+- `qa.tdd`: Test-Driven Development settings (confirmations, max attempts)
 
 ## Skills Format
 

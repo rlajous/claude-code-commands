@@ -173,7 +173,7 @@ See [SKILLS.md](./SKILLS.md) for complete documentation.
 
 ### TDD Flow
 
-```
+```text
 /start → /tdd → /commit → /finish
 ```
 

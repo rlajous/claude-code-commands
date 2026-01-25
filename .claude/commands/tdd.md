@@ -20,12 +20,13 @@ Check for configuration and context:
 **Load from `.claude/config.yaml` (if exists):**
 
 ```yaml
-tdd:
-  confirmBeforeGreen: true
-  confirmBeforeRefactor: true
-  maxRedAttempts: 3
-  runFullSuiteEachPhase: false
-  autoStartServer: false
+qa:
+  tdd:
+    confirmBeforeGreen: true
+    confirmBeforeRefactor: true
+    maxRedAttempts: 3
+    runFullSuiteEachPhase: false
+    autoStartServer: false
 testing:
   unit: auto
   lint: auto
@@ -37,12 +38,13 @@ issueTracker:
 **Default Values (when no config):**
 
 ```yaml
-tdd:
-  confirmBeforeGreen: true
-  confirmBeforeRefactor: true
-  maxRedAttempts: 3
-  runFullSuiteEachPhase: false
-  autoStartServer: false
+qa:
+  tdd:
+    confirmBeforeGreen: true
+    confirmBeforeRefactor: true
+    maxRedAttempts: 3
+    runFullSuiteEachPhase: false
+    autoStartServer: false
 ```
 
 ## Step 2: Parse Arguments
@@ -241,7 +243,7 @@ For bugs, attempt to reproduce the issue:
 
 ### Optional: Start Development Server
 
-If `tdd.autoStartServer: true`:
+If `qa.tdd.autoStartServer: true`:
 
 ```bash
 # Detect and start dev server (background)
@@ -378,7 +380,7 @@ Track attempts (default: `maxRedAttempts: 3`). If max reached:
 
 ### Confirmation (If Configured)
 
-If `tdd.confirmBeforeGreen: true`:
+If `qa.tdd.confirmBeforeGreen: true`:
 
 **Question**: "RED phase complete. Tests are failing as expected. Proceed to GREEN phase?"
 
@@ -426,7 +428,7 @@ Track attempts. If struggling:
 
 ### Optional: Run Full Suite
 
-If `tdd.runFullSuiteEachPhase: true`:
+If `qa.tdd.runFullSuiteEachPhase: true`:
 
 ```bash
 # Run full test suite
@@ -439,7 +441,7 @@ Ensure no regressions were introduced.
 
 ### Confirmation (If Configured)
 
-If `tdd.confirmBeforeRefactor: true`:
+If `qa.tdd.confirmBeforeRefactor: true`:
 
 **Question**: "GREEN phase complete. All tests pass. Proceed to REFACTOR phase?"
 
@@ -584,11 +586,11 @@ Next Steps:
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
-| `tdd.confirmBeforeGreen` | `true` | Pause for confirmation before GREEN phase |
-| `tdd.confirmBeforeRefactor` | `true` | Pause for confirmation before REFACTOR phase |
-| `tdd.maxRedAttempts` | `3` | Maximum attempts to achieve RED (failing tests) |
-| `tdd.runFullSuiteEachPhase` | `false` | Run full test suite after each phase |
-| `tdd.autoStartServer` | `false` | Auto-start dev server for bug reproduction |
+| `qa.tdd.confirmBeforeGreen` | `true` | Pause for confirmation before GREEN phase |
+| `qa.tdd.confirmBeforeRefactor` | `true` | Pause for confirmation before REFACTOR phase |
+| `qa.tdd.maxRedAttempts` | `3` | Maximum attempts to achieve RED (failing tests) |
+| `qa.tdd.runFullSuiteEachPhase` | `false` | Run full test suite after each phase |
+| `qa.tdd.autoStartServer` | `false` | Auto-start dev server for bug reproduction |
 
 ## Error Handling
 
