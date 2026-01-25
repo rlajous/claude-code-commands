@@ -13,7 +13,7 @@ This guide walks you through setting up Claude Code Commands in your project.
 
 After copying the commands to your project, run the interactive setup:
 
-```
+```bash
 /setup
 ```
 
@@ -37,7 +37,7 @@ You can run `/setup` at any time to reconfigure.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/claude-code-commands.git
+git clone https://github.com/rlajous/claude-code-commands.git
 
 # Copy commands to your project
 cp -r claude-code-commands/.claude/commands your-project/.claude/
@@ -58,7 +58,7 @@ Install the entire repository as a Claude Code plugin:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/claude-code-commands.git ~/claude-plugins/git-workflow
+git clone https://github.com/rlajous/claude-code-commands.git ~/claude-plugins/git-workflow
 
 # Use with --plugin-dir flag
 claude --plugin-dir ~/claude-plugins/git-workflow
@@ -78,14 +78,16 @@ mkdir -p .claude/commands
 
 ```bash
 # Download commands
-curl -o .claude/commands/start.md https://raw.githubusercontent.com/.../start.md
-curl -o .claude/commands/commit.md https://raw.githubusercontent.com/.../commit.md
-curl -o .claude/commands/finish.md https://raw.githubusercontent.com/.../finish.md
-curl -o .claude/commands/release.md https://raw.githubusercontent.com/.../release.md
-curl -o .claude/commands/release-notes.md https://raw.githubusercontent.com/.../release-notes.md
-curl -o .claude/commands/sync.md https://raw.githubusercontent.com/.../sync.md
-curl -o .claude/commands/plan-qa.md https://raw.githubusercontent.com/.../plan-qa.md
-curl -o .claude/commands/start-qa.md https://raw.githubusercontent.com/.../start-qa.md
+curl -o .claude/commands/setup.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/setup.md
+curl -o .claude/commands/start.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/start.md
+curl -o .claude/commands/tdd.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/tdd.md
+curl -o .claude/commands/commit.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/commit.md
+curl -o .claude/commands/finish.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/finish.md
+curl -o .claude/commands/release.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/release.md
+curl -o .claude/commands/release-notes.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/release-notes.md
+curl -o .claude/commands/sync.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/sync.md
+curl -o .claude/commands/plan-qa.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/plan-qa.md
+curl -o .claude/commands/start-qa.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/start-qa.md
 ```
 
 ## Directory Structure
@@ -98,6 +100,7 @@ your-project/
 │   ├── commands/             # Slash commands
 │   │   ├── setup.md          # Interactive setup wizard
 │   │   ├── start.md
+│   │   ├── tdd.md
 │   │   ├── commit.md
 │   │   ├── finish.md
 │   │   ├── release.md

@@ -19,7 +19,7 @@ Production-ready slash commands for Claude Code that automate your Git workflow,
 
 ```bash
 # Clone this repository
-git clone https://github.com/your-org/claude-code-commands.git
+git clone https://github.com/rlajous/claude-code-commands.git
 
 # Copy commands to your project
 cp -r claude-code-commands/.claude/commands your-project/.claude/
@@ -45,7 +45,15 @@ pullRequests:
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
-### 3. Use the Commands
+### 3. Run Setup (Recommended)
+
+```bash
+/setup
+```
+
+This guides you through configuring issue trackers and MCP servers.
+
+### 4. Use the Commands
 
 ```bash
 # Start a new feature
@@ -62,6 +70,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
 | Command | Description |
 |---------|-------------|
+| `/setup` | Interactive setup wizard for MCP and config |
 | `/start` | Create a feature branch from a ticket ID |
 | `/tdd` | Implement ticket using Test-Driven Development |
 | `/commit` | Stage and commit with conventional format |
@@ -157,6 +166,8 @@ disable-model-invocation: true
 ```
 
 See [SKILLS.md](./SKILLS.md) for complete documentation.
+
+Discover more skills at [skills.sh](https://skills.sh/).
 
 ## Workflow
 
@@ -310,7 +321,7 @@ Auto-detected from project:
 
 ```bash
 # Clone and copy to your project
-git clone https://github.com/your-org/claude-code-commands.git
+git clone https://github.com/rlajous/claude-code-commands.git
 cp -r claude-code-commands/.claude your-project/
 ```
 
