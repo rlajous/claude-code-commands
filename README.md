@@ -63,6 +63,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 | Command | Description |
 |---------|-------------|
 | `/start` | Create a feature branch from a ticket ID |
+| `/tdd` | Implement ticket using Test-Driven Development |
 | `/commit` | Stage and commit with conventional format |
 | `/finish` | Push branch and create PR with full description |
 | `/release` | Create release branch with version bump |
@@ -167,6 +168,20 @@ See [SKILLS.md](./SKILLS.md) for complete documentation.
 
 1. **`/start`** - Creates feature branch, fetches ticket details
 2. **Work** - Make your code changes
+3. **`/commit`** - Stages files, creates formatted commit
+4. **`/finish`** - Pushes branch, creates comprehensive PR
+
+### TDD Flow
+
+```
+/start → /tdd → /commit → /finish
+```
+
+1. **`/start`** - Creates feature branch, fetches ticket details
+2. **`/tdd`** - Implement using Test-Driven Development:
+   - **RED** - Write failing tests based on acceptance criteria
+   - **GREEN** - Implement minimum code to pass tests
+   - **REFACTOR** - Clean up code while keeping tests green
 3. **`/commit`** - Stages files, creates formatted commit
 4. **`/finish`** - Pushes branch, creates comprehensive PR
 

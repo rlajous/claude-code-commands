@@ -13,6 +13,7 @@ This repository contains production-ready Claude Code slash commands that automa
 ├── commands/              # Slash commands with YAML frontmatter
 │   ├── setup.md           # Interactive setup wizard
 │   ├── start.md           # Create feature branch from ticket
+│   ├── tdd.md             # Test-Driven Development workflow
 │   ├── commit.md          # Stage and commit with conventions
 │   ├── finish.md          # Create PR with full description
 │   ├── release.md         # Create release branch and PR
@@ -57,6 +58,7 @@ Each command file in `.claude/commands/` defines a slash command:
 | ---------------- | ---------------------------------------------- |
 | `/setup`         | Interactive setup for MCP servers and config   |
 | `/start`         | Create feature branch from ticket ID           |
+| `/tdd`           | Implement ticket using TDD (RED-GREEN-REFACTOR)|
 | `/commit`        | Stage and commit with formatted message        |
 | `/finish`        | Push branch and create PR                      |
 | `/release`       | Create release branch, bump version, PR to main |
@@ -83,6 +85,12 @@ Each agent file in `.claude/agents/` defines a specialized AI assistant:
 /start → make changes → /commit → /finish
 ```
 
+### TDD Flow
+
+```
+/start → /tdd → /commit → /finish
+```
+
 ### Release Flow
 
 ```
@@ -106,6 +114,7 @@ Commands read from `.claude/config.yaml` with this priority:
 - `issueTracker`: Linear, Jira, or GitHub integration
 - `versioning`: Version file location
 - `release`: Watch files, changelog categories
+- `tdd`: Test-Driven Development settings (confirmations, max attempts)
 
 ## Skills Format
 

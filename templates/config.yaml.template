@@ -217,6 +217,30 @@ qa:
   sqsQueueUrl: ${SQS_QUEUE_URL}
 
 # ==============================================================================
+# TDD SETTINGS
+# ==============================================================================
+tdd:
+  # Pause for confirmation before GREEN phase (implementing code)
+  # Set to false for faster workflow without prompts
+  confirmBeforeGreen: true
+
+  # Pause for confirmation before REFACTOR phase
+  # Set to false to automatically proceed to refactoring
+  confirmBeforeRefactor: true
+
+  # Maximum attempts to reach RED (failing tests)
+  # Prevents infinite loops if tests unexpectedly pass
+  maxRedAttempts: 3
+
+  # Run full test suite after each phase (RED, GREEN, REFACTOR)
+  # Ensures no regressions, but slower
+  runFullSuiteEachPhase: false
+
+  # Auto-start dev server for bug reproduction
+  # Only applies to bug tickets
+  autoStartServer: false
+
+# ==============================================================================
 # RELEASE SETTINGS
 # ==============================================================================
 release:
