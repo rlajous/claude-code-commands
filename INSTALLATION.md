@@ -100,6 +100,7 @@ your-project/
 │   ├── commands/             # Slash commands
 │   │   ├── setup.md          # Interactive setup wizard
 │   │   ├── start.md
+│   │   ├── tdd.md
 │   │   ├── commit.md
 │   │   ├── finish.md
 │   │   ├── release.md
