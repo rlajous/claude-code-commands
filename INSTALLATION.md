@@ -13,7 +13,7 @@ This guide walks you through setting up Claude Code Commands in your project.
 
 After copying the commands to your project, run the interactive setup:
 
-```
+```bash
 /setup
 ```
 

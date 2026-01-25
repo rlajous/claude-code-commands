@@ -47,7 +47,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
 ### 3. Run Setup (Recommended)
 
-```
+```bash
 /setup
 ```
 
