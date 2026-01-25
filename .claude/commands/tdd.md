@@ -119,7 +119,7 @@ Extract:
 If GitHub format detected:
 
 ```bash
-gh issue view {issue_number} --json title,body,labels
+gh issue view {issue_number} --repo {owner}/{repo} --json title,body,labels
 ```
 
 ### Determine Ticket Type
@@ -412,8 +412,16 @@ Write the minimum code necessary to make tests pass:
 ### Run Tests - Verify GREEN
 
 ```bash
-# Run tests again
+# Run tests again (use the same target as RED phase)
+
+# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
+
+# Go:
+go test ./...              # or: go test ./path -run TestName
+
+# Rust:
+cargo test <pattern>       # or: cargo test --package <pkg>
 ```
 
 **Expected:** Tests should PASS (GREEN phase)
@@ -482,7 +490,14 @@ Review and improve the implementation:
 After each refactoring change:
 
 ```bash
+# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
+
+# Go:
+go test ./...              # or: go test ./path -run TestName
+
+# Rust:
+cargo test <pattern>       # or: cargo test --package <pkg>
 ```
 
 Ensure tests remain GREEN throughout refactoring.
