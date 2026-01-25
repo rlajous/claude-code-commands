@@ -335,13 +335,23 @@ describe('NewFeature', () => {
 ### Run Tests - Verify RED
 
 ```bash
-# Run the specific test file
+# Run the specific test target (varies by framework)
+
+# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
 
-# Example:
+# Go:
+go test ./...              # or: go test ./path -run TestName
+
+# Rust:
+cargo test <pattern>       # or: cargo test --package <pkg>
+
+# Examples:
 # npm test -- tests/auth.test.ts
 # pnpm vitest run tests/auth.test.ts
 # pytest tests/test_auth.py
+# go test ./services -run TestAuth
+# cargo test auth_service
 ```
 
 **Expected:** Tests should FAIL (RED phase)

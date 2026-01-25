@@ -8,7 +8,7 @@ Skills in Claude Code use **YAML frontmatter** in markdown files. There is no JS
 
 Reference: https://code.claude.com/docs/en/skills
 
-Discover more skills: https://skills.sh/
+Discover more skills: [skills.sh](https://skills.sh/)
 
 ## Frontmatter Fields
 
