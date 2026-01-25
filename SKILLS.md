@@ -8,6 +8,8 @@ Skills in Claude Code use **YAML frontmatter** in markdown files. There is no JS
 
 Reference: https://code.claude.com/docs/en/skills
 
+Discover more skills: [skills.sh](https://skills.sh/)
+
 ## Frontmatter Fields
 
 Each command file in `.claude/commands/` can include the following frontmatter fields:
@@ -110,6 +112,7 @@ model: haiku   # Fastest, for simple tasks
 | Command | Description | Arguments |
 |---------|-------------|-----------|
 | `/start` | Create feature branch from ticket | `[ticket-id]` |
+| `/tdd` | Implement ticket using TDD (RED-GREEN-REFACTOR) | `<ticket-id>` |
 | `/commit` | Stage and commit with formatting | - |
 | `/finish` | Create PR with description | - |
 
@@ -181,6 +184,20 @@ Commands are designed to work together in workflows:
 3. `/commit` - Stage and commit
 4. `/finish` - Push and create PR
 
+### TDD Flow
+
+```text
+/start → /tdd → /commit → /finish
+```
+
+1. `/start PROJ-123` - Create branch from ticket
+2. `/tdd PROJ-123` - Implement using TDD:
+   - **RED**: Write failing tests based on acceptance criteria
+   - **GREEN**: Implement minimum code to pass tests
+   - **REFACTOR**: Clean up code while keeping tests green
+3. `/commit` - Stage and commit
+4. `/finish` - Push and create PR
+
 ### Release Flow
 
 ```
@@ -228,6 +245,7 @@ The filename (without `.md`) becomes the command name.
 .claude/
 ├── commands/           # Slash commands
 │   ├── start.md
+│   ├── tdd.md
 │   ├── commit.md
 │   ├── finish.md
 │   ├── release.md
