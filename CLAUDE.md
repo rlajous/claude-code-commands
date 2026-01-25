@@ -175,3 +175,7 @@ When modifying commands:
 2. Check command steps are numbered correctly
 3. Ensure config references match schema
 4. Test with and without config file
+
+## Git Commits
+
+When creating git commits, do NOT include Co-Authored-By lines in commit messages.
