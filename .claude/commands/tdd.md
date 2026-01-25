@@ -49,7 +49,7 @@ tdd:
 
 Extract from `$ARGUMENTS`:
 
-```
+```text
 $ARGUMENTS
 ```
 
@@ -88,7 +88,7 @@ Based on ticket format and available MCP servers:
 
 If Linear ticket format is detected, use the Linear MCP server:
 
-```
+```text
 mcp__linear__get_issue(id: ticketId)
 ```
 
@@ -102,7 +102,7 @@ Extract:
 
 If Jira is configured, use the Jira MCP server:
 
-```
+```text
 mcp__jira__get_issue(issueKey: ticketId)
 ```
 
@@ -553,7 +553,7 @@ This enables `/commit` to generate better commit messages and `/finish` to inclu
 
 Output a completion summary:
 
-```
+```text
 TDD Workflow Complete!
 
 Ticket: {TICKET_ID} - {TICKET_TITLE}
@@ -606,7 +606,7 @@ Next Steps:
 
 ### Bug Fix Flow
 
-```
+```text
 User: /tdd ENG-456
 
 Agent: [Fetches ticket from Linear]
@@ -656,7 +656,7 @@ Agent: TDD Complete!
 
 ### Feature Flow
 
-```
+```text
 User: /tdd PROJ-789
 
 Agent: [Fetches ticket]
@@ -689,7 +689,7 @@ Agent: TDD Complete!
 
 ### No Ticket Flow
 
-```
+```text
 User: /tdd
 
 Agent: What is the ticket ID?

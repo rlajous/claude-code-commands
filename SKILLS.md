@@ -184,7 +184,7 @@ Commands are designed to work together in workflows:
 
 ### TDD Flow
 
-```
+```text
 /start → /tdd → /commit → /finish
 ```
 
