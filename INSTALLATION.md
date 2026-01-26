@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide walks you through setting up Claude Code Commands in your project.
+This guide walks you through setting up Claude Code Git Workflow commands in your project.
 
 ## Prerequisites
 
@@ -9,52 +9,50 @@ This guide walks you through setting up Claude Code Commands in your project.
 - [GitHub CLI](https://cli.github.com/) (`gh`) for PR creation
 - (Optional) MCP servers for Linear/Jira integration
 
-## Quick Setup (Recommended)
+## Quick Setup
 
-After copying the commands to your project, run the interactive setup:
+### Option 1: Install from Marketplace (Recommended)
+
+The easiest way to install is via the Claude marketplace:
 
 ```bash
-/setup
+# Add the marketplace
+/plugin marketplace add rlajous/claude-code-commands
+
+# Install the plugin
+/plugin install git-workflow@git-workflow-marketplace
 ```
 
-This guides you through configuring:
-- **Issue tracker integration** - Linear, Jira, or GitHub Issues
-- **MCP server setup** - Automatic configuration for your chosen tracker
-- **Workflow settings** - Branch naming, commit formats, and more
+After installation, skills are available with the `git-workflow:` prefix:
 
-The setup command will:
-1. Ask which issue tracker(s) you use
-2. Configure MCP servers in your settings.json
-3. Optionally set up `.claude/config.yaml` for workflow customization
+```bash
+/git-workflow:setup   # Run interactive setup
+/git-workflow:start PROJ-123
+/git-workflow:commit
+/git-workflow:finish
+```
 
-You can run `/setup` at any time to reconfigure.
+### Option 2: Manual Installation (Shorter Command Names)
 
----
-
-## Quick Installation
-
-### Option 1: Copy Commands Directly (Recommended)
+For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
 
 ```bash
 # Clone the repository
 git clone https://github.com/rlajous/claude-code-commands.git
 
-# Copy commands to your project
-cp -r claude-code-commands/.claude/commands your-project/.claude/
+# Copy skills to your project
+cp -r claude-code-commands/skills your-project/.claude/
 
 # (Optional) Copy agents
-cp -r claude-code-commands/.claude/agents your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
 
 # (Optional) Copy config template
 cp claude-code-commands/templates/config.yaml.template your-project/.claude/config.yaml
-
-# (Optional) Copy CLAUDE.md template
-cp claude-code-commands/templates/CLAUDE.md.template your-project/CLAUDE.md
 ```
 
-### Option 2: Install as Plugin
+### Option 3: Plugin Directory
 
-Install the entire repository as a Claude Code plugin:
+Load as a plugin directory for temporary use:
 
 ```bash
 # Clone the repository
@@ -64,58 +62,67 @@ git clone https://github.com/rlajous/claude-code-commands.git ~/claude-plugins/g
 claude --plugin-dir ~/claude-plugins/git-workflow
 ```
 
-Or add to your Claude Code configuration to load automatically.
+---
 
-### Option 3: Manual Setup
+## Post-Installation Setup
 
-1. Create the commands directory:
-
-```bash
-mkdir -p .claude/commands
-```
-
-2. Download individual command files:
+After installing via any method, run the interactive setup:
 
 ```bash
-# Download commands
-curl -o .claude/commands/setup.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/setup.md
-curl -o .claude/commands/start.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/start.md
-curl -o .claude/commands/tdd.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/tdd.md
-curl -o .claude/commands/commit.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/commit.md
-curl -o .claude/commands/finish.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/finish.md
-curl -o .claude/commands/release.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/release.md
-curl -o .claude/commands/release-notes.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/release-notes.md
-curl -o .claude/commands/sync.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/sync.md
-curl -o .claude/commands/plan-qa.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/plan-qa.md
-curl -o .claude/commands/start-qa.md https://raw.githubusercontent.com/rlajous/claude-code-commands/main/.claude/commands/start-qa.md
+/setup  # or /git-workflow:setup if using marketplace
 ```
+
+This guides you through configuring:
+- **Issue tracker integration** - Linear, Jira, or GitHub Issues
+- **MCP server setup** - Automatic configuration for your chosen tracker
+- **Workflow settings** - Branch naming, commit formats, and more
+
+---
 
 ## Directory Structure
 
-After installation, your project should have:
+### Marketplace Installation
+
+Skills are installed to Claude's plugin cache. No files in your project.
+
+### Manual Installation
+
+After manual installation, your project should have:
 
 ```
 your-project/
 ├── .claude/
-│   ├── commands/             # Slash commands
-│   │   ├── setup.md          # Interactive setup wizard
-│   │   ├── start.md
-│   │   ├── tdd.md
-│   │   ├── commit.md
-│   │   ├── finish.md
-│   │   ├── release.md
-│   │   ├── release-notes.md
-│   │   ├── sync.md
-│   │   ├── plan-qa.md
-│   │   └── start-qa.md
+│   ├── skills/               # Slash commands (new format)
+│   │   ├── setup/
+│   │   │   └── SKILL.md
+│   │   ├── start/
+│   │   │   └── SKILL.md
+│   │   ├── tdd/
+│   │   │   └── SKILL.md
+│   │   ├── commit/
+│   │   │   └── SKILL.md
+│   │   ├── finish/
+│   │   │   └── SKILL.md
+│   │   ├── release/
+│   │   │   └── SKILL.md
+│   │   ├── release-notes/
+│   │   │   └── SKILL.md
+│   │   ├── sync/
+│   │   │   └── SKILL.md
+│   │   ├── plan-qa/
+│   │   │   └── SKILL.md
+│   │   └── start-qa/
+│   │       └── SKILL.md
 │   ├── agents/               # Subagents (optional)
 │   │   ├── pr-reviewer.md
 │   │   ├── release-validator.md
 │   │   └── qa-executor.md
-│   └── config.yaml           # Optional
+│   └── config.yaml           # Optional configuration
 ├── CLAUDE.md                 # Optional but recommended
 └── ... your project files
 ```
+
+---
 
 ## Configuration
 
@@ -147,6 +154,8 @@ pullRequests:
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
+---
+
 ## GitHub CLI Setup
 
 The `/finish`, `/release`, and `/release-notes` commands require GitHub CLI:
@@ -166,9 +175,11 @@ winget install --id GitHub.cli
 gh auth login
 ```
 
+---
+
 ## Issue Tracker Setup
 
-Commands integrate with issue trackers via **MCP (Model Context Protocol) servers**. MCP servers handle authentication automatically through OAuth or system credentials.
+Commands integrate with issue trackers via **MCP (Model Context Protocol) servers**. MCP servers handle authentication automatically through OAuth.
 
 ### Linear (via MCP)
 
@@ -236,6 +247,30 @@ issueTracker:
   type: github
 ```
 
+---
+
+## Adding This Marketplace to Team Projects
+
+You can configure your repository so team members are automatically prompted to install this marketplace when they trust the project folder. Add to `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "git-workflow-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "rlajous/claude-code-commands"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "git-workflow@git-workflow-marketplace": true
+  }
+}
+```
+
+---
+
 ## Hooks Setup (Optional)
 
 Hooks automate actions during Claude Code execution.
@@ -253,6 +288,8 @@ cp templates/settings.json.template .claude/settings.json
 ```
 
 3. Customize hooks as needed. See [HOOKS.md](./HOOKS.md) for documentation.
+
+---
 
 ## CLAUDE.md Setup
 
@@ -279,36 +316,60 @@ Uses staging-based workflow with Claude Code commands.
 
 Use `templates/CLAUDE.md.template` as a starting point.
 
+---
+
 ## Verification
 
 Test your installation:
 
 ```bash
-# Open Claude Code in your project
-cd your-project
+# For marketplace installation
+/git-workflow:start
 
-# Try the /start command
+# For manual installation
+/start
+
 # Claude should recognize the command and ask for ticket info
 ```
 
-## Updating Commands
+---
 
-To update to the latest version:
+## Updating
+
+### Marketplace Installation
 
 ```bash
-# Pull latest changes
+/plugin marketplace update git-workflow-marketplace
+```
+
+### Manual Installation
+
+```bash
 cd claude-code-commands
 git pull
-
-# Copy updated commands
-cp -r .claude/commands ../your-project/.claude/
+cp -r skills ../your-project/.claude/
 ```
+
+---
 
 ## Troubleshooting
 
-### Commands Not Recognized
+### Commands Not Recognized (Marketplace)
 
-Ensure commands are in `.claude/commands/` with `.md` extension.
+Ensure you're using the prefixed command name:
+
+```bash
+/git-workflow:start  # Correct
+/start               # Won't work with marketplace install
+```
+
+### Commands Not Recognized (Manual)
+
+Ensure skills are in `.claude/skills/*/SKILL.md` format:
+
+```bash
+ls -la .claude/skills/start/SKILL.md
+```
 
 ### GitHub CLI Not Authenticated
 
@@ -319,26 +380,40 @@ gh auth login   # Re-authenticate
 
 ### Issue Tracker Not Connected
 
-Ensure MCP servers are configured in your Claude Code settings:
+Check if MCP servers are configured:
 
 ```bash
-# Check if MCP servers are configured
 cat ~/.claude/settings.json | grep mcpServers
-```
-
-If using environment variables for other integrations, add to your shell profile (`.bashrc`, `.zshrc`):
-
-```bash
-export API_BASE_URL=https://api.example.com
 ```
 
 ### Permission Denied
 
-Ensure files are readable:
+```bash
+chmod -R 644 .claude/skills/*/*.md
+```
+
+---
+
+## Migration from Old Format
+
+If you have commands in `.claude/commands/*.md` format:
 
 ```bash
-chmod -R 644 .claude/commands/*.md
+# Create new structure
+mkdir -p .claude/skills
+
+# Move each command
+for cmd in .claude/commands/*.md; do
+  name=$(basename "$cmd" .md)
+  mkdir -p ".claude/skills/$name"
+  mv "$cmd" ".claude/skills/$name/SKILL.md"
+done
+
+# Remove old directory
+rmdir .claude/commands
 ```
+
+---
 
 ## Next Steps
 

@@ -12,7 +12,7 @@ Discover more skills: [skills.sh](https://skills.sh/)
 
 ## Frontmatter Fields
 
-Each command file in `.claude/commands/` can include the following frontmatter fields:
+Each skill file (`SKILL.md`) can include the following frontmatter fields:
 
 ```yaml
 ---
@@ -219,49 +219,94 @@ Commands are designed to work together in workflows:
 2. Review and customize the generated YAML
 3. `/start-qa` - Execute the test plan
 
-## Creating Custom Commands
+## Creating Custom Skills
 
-To add a custom command:
+To add a custom skill:
 
-1. Create a markdown file in `.claude/commands/`:
+1. Create a directory with a `SKILL.md` file:
+
+```bash
+mkdir -p .claude/skills/my-skill
+```
+
+2. Create the skill file:
 
 ```markdown
 ---
-description: Your command description
+description: Your skill description
 argument-hint: "[optional-arg]"
 disable-model-invocation: true
 ---
 
-Your command instructions here...
+Your skill instructions here...
 ```
 
-2. Use it with `/your-command-name`
+3. Use it with `/my-skill`
 
-The filename (without `.md`) becomes the command name.
+The directory name becomes the skill name.
 
-## Command File Structure
+## Directory Structure
+
+### Plugin Format (This Repo)
+
+```
+skills/                 # Skill directories
+├── setup/
+│   └── SKILL.md
+├── start/
+│   └── SKILL.md
+├── tdd/
+│   └── SKILL.md
+├── commit/
+│   └── SKILL.md
+├── finish/
+│   └── SKILL.md
+├── release/
+│   └── SKILL.md
+├── release-notes/
+│   └── SKILL.md
+├── sync/
+│   └── SKILL.md
+├── plan-qa/
+│   └── SKILL.md
+└── start-qa/
+    └── SKILL.md
+
+agents/                 # Subagents
+├── pr-reviewer.md
+├── release-validator.md
+└── qa-executor.md
+```
+
+### Project Installation (Manual Copy)
 
 ```
 .claude/
-├── commands/           # Slash commands
-│   ├── start.md
-│   ├── tdd.md
-│   ├── commit.md
-│   ├── finish.md
-│   ├── release.md
-│   ├── release-notes.md
-│   ├── sync.md
-│   ├── plan-qa.md
-│   └── start-qa.md
+├── skills/             # Skill directories
+│   ├── start/
+│   │   └── SKILL.md
+│   ├── commit/
+│   │   └── SKILL.md
+│   └── ...
 └── agents/             # Subagents
     ├── pr-reviewer.md
-    ├── release-validator.md
-    └── qa-executor.md
+    └── ...
+```
+
+### Legacy Format (Still Supported)
+
+```
+.claude/
+├── commands/           # Single-file commands
+│   ├── start.md
+│   └── ...
+└── agents/
+    └── ...
 ```
 
 ## Subagents
 
-Subagents are specialized AI assistants defined in `.claude/agents/`. They have their own instructions and tool access.
+Subagents are specialized AI assistants defined in the `agents/` directory. They have their own instructions and tool access.
 
 ### Agent Frontmatter
 
@@ -311,7 +356,12 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
 ### Command Not Recognized
 
-Ensure the command file exists in `.claude/commands/` with `.md` extension.
+**For marketplace installation:**
+- Use the prefixed command: `/git-workflow:start` instead of `/start`
+
+**For manual installation:**
+- Ensure the skill exists as `.claude/skills/{name}/SKILL.md`
+- Or use legacy format: `.claude/commands/{name}.md`
 
 ### Arguments Not Passed
 
