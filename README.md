@@ -72,6 +72,19 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
 This guides you through configuring issue trackers and MCP servers.
 
+### 5. Use the Commands
+
+```bash
+# Start a new feature
+/start
+
+# Commit changes
+/commit
+
+# Create a PR
+/finish
+```
+
 ## Commands
 
 | Command | Description |
@@ -139,6 +152,43 @@ Automate actions at key points in your workflow:
 ```
 
 See [HOOKS.md](./HOOKS.md) for complete documentation.
+
+## Skills
+
+Commands are defined using **YAML frontmatter** in markdown files, following the official Claude Code skills format.
+
+### Using Commands
+
+Commands can be invoked in multiple ways:
+
+```bash
+# As slash commands
+/start PROJ-123
+/commit
+/finish
+
+# With arguments
+/plan-qa PROJ-123 --url https://api.staging.example.com
+
+# In conversation
+"Run /commit and then /finish for me"
+```
+
+### Command Format
+
+Each command file uses YAML frontmatter for configuration:
+
+```yaml
+---
+description: What this command does
+argument-hint: "[optional-arg]"
+disable-model-invocation: true
+---
+```
+
+See [SKILLS.md](./SKILLS.md) for complete documentation.
+
+Discover more skills at [skills.sh](https://skills.sh/).
 
 ## Workflow
 
