@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repository contains production-ready Claude Code slash commands that automate Git workflows, PR creation, release management, and QA testing. The commands are framework-agnostic and configurable via `.claude/config.yaml`.
 
+## Behavioral Guidelines
+
+- **Strictly Reactive**: Only perform the specific task requested. Do not perform follow-up research, planning for future phases, or speculative actions unless explicitly asked.
+- **Seek Confirmation**: Always wait for user confirmation after completing a discrete task before moving to anything else.
+- **No Unapproved Side Effects**: Do not apply database migrations, execute scripts, or modify the system state without explicit approval for that specific action.
+
 ## Repository Structure
 
 ```
