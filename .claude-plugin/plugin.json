@@ -4,5 +4,7 @@
   "version": "1.0.0",
   "repository": "https://github.com/rlajous/claude-code-commands",
   "license": "MIT",
-  "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"]
+  "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"],
+  "skills": "./skills/",
+  "agents": "./agents/"
 }
