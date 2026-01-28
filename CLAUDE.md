@@ -133,6 +133,16 @@ Users can install via:
 /release → review → merge → /release-notes → /sync
 ```
 
+## Hooks
+
+Hooks automate actions during Claude Code execution. Configure in `settings.json`:
+
+- `PostToolUse`: Run after file edits (auto-format, lint)
+- `PreToolUse`: Validate before execution (block dangerous commands)
+- `SessionStart/End`: Setup and logging
+
+See [HOOKS.md](./HOOKS.md) for complete documentation.
+
 ## Design Decisions
 
 ### Marketplace Structure
@@ -149,6 +159,12 @@ Users can install via:
 - Auto-detection from ticket format
 - Linear, Jira, and GitHub Issues integration
 - MCP servers for automatic authentication
+
+### Multi-Stack Support
+
+- Auto-detects package manager from lock files
+- Supports multiple version file formats
+- Examples for common tech stacks
 
 ## Testing Changes
 
