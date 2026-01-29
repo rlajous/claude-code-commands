@@ -51,7 +51,7 @@ examples/                  # Stack-specific examples
 README.md                  # Main documentation
 INSTALLATION.md            # Setup guide
 CONFIGURATION.md           # Configuration reference
-SKILLS.md                  # Commands reference documentation
+COMMANDS.md                # Commands reference documentation
 AGENTS.md                  # Subagents documentation
 HOOKS.md                   # Hooks documentation
 LICENSE                    # MIT license

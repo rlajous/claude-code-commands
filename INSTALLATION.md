@@ -393,7 +393,7 @@ No migration needed. This plugin uses `.claude/commands/*.md` for reliable autoc
 ## Next Steps
 
 1. Read [CONFIGURATION.md](./CONFIGURATION.md) for customization options
-2. Read [SKILLS.md](./SKILLS.md) for command and workflow documentation
+2. Read [COMMANDS.md](./COMMANDS.md) for command and workflow documentation
 3. Read [AGENTS.md](./AGENTS.md) for subagent documentation
 4. Read [HOOKS.md](./HOOKS.md) for hooks documentation
 5. Check [examples/](./examples/) for stack-specific configurations

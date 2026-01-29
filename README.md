@@ -153,7 +153,7 @@ Automate actions at key points in your workflow:
 
 See [HOOKS.md](./HOOKS.md) for complete documentation.
 
-## Skills
+## Commands
 
 Commands are defined using **YAML frontmatter** in markdown files, using the legacy Claude Code command format for reliable autocomplete.
 
@@ -186,7 +186,7 @@ disable-model-invocation: true
 ---
 ```
 
-See [SKILLS.md](./SKILLS.md) for complete documentation.
+See [COMMANDS.md](./COMMANDS.md) for complete documentation.
 
 Discover more command ideas at [skills.sh](https://skills.sh/).
 
