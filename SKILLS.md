@@ -249,7 +249,7 @@ The directory name becomes the skill name.
 
 ### Plugin Format (This Repo)
 
-```
+```text
 skills/                 # Skill directories
 ├── setup/
 │   └── SKILL.md
@@ -280,7 +280,7 @@ agents/                 # Subagents
 
 ### Project Installation (Manual Copy)
 
-```
+```text
 .claude/
 ├── skills/             # Skill directories
 │   ├── start/
@@ -295,7 +295,7 @@ agents/                 # Subagents
 
 ### Legacy Format (Still Supported)
 
-```
+```text
 .claude/
 ├── commands/           # Single-file commands
 │   ├── start.md
