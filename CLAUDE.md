@@ -19,27 +19,17 @@ This repository is a **Claude Code plugin marketplace** containing production-re
 ├── marketplace.json       # Marketplace catalog for distribution
 └── plugin.json            # Plugin manifest
 
-skills/                    # Slash commands (SKILL.md format)
-├── setup/
-│   └── SKILL.md           # Interactive setup wizard
-├── start/
-│   └── SKILL.md           # Create feature branch from ticket
-├── tdd/
-│   └── SKILL.md           # Test-Driven Development workflow
-├── commit/
-│   └── SKILL.md           # Stage and commit with conventions
-├── finish/
-│   └── SKILL.md           # Create PR with full description
-├── release/
-│   └── SKILL.md           # Create release branch and PR
-├── release-notes/
-│   └── SKILL.md           # Generate GitHub release notes
-├── sync/
-│   └── SKILL.md           # Back-merge main to development
-├── plan-qa/
-│   └── SKILL.md           # Generate QA test plan
-└── start-qa/
-    └── SKILL.md           # Execute QA tests
+commands/                  # Slash commands (legacy .md format)
+├── setup.md               # Interactive setup wizard
+├── start.md               # Create feature branch from ticket
+├── tdd.md                 # Test-Driven Development workflow
+├── commit.md              # Stage and commit with conventions
+├── finish.md              # Create PR with full description
+├── release.md             # Create release branch and PR
+├── release-notes.md       # Generate GitHub release notes
+├── sync.md                # Back-merge main to development
+├── plan-qa.md             # Generate QA test plan
+└── start-qa.md             # Execute QA tests
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -61,15 +51,15 @@ examples/                  # Stack-specific examples
 README.md                  # Main documentation
 INSTALLATION.md            # Setup guide
 CONFIGURATION.md           # Configuration reference
-SKILLS.md                  # Skills reference documentation
+SKILLS.md                  # Commands reference documentation
 AGENTS.md                  # Subagents documentation
 HOOKS.md                   # Hooks documentation
 LICENSE                    # MIT license
 ```
 
-## Skills Format
+## Commands Format
 
-Skills use YAML frontmatter in `SKILL.md` files:
+Commands use YAML frontmatter in `.md` files:
 
 ```yaml
 ---
@@ -152,8 +142,8 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 ## Design Decisions
 
 ### Marketplace Structure
-- Single plugin containing all skills (cohesive workflow)
-- Skills in `skills/*/SKILL.md` format (official Claude Code format)
+- Single plugin containing all commands (cohesive workflow)
+- Commands in `commands/*.md` format (legacy, but reliable autocomplete)
 - Agents in `agents/` at root level
 
 ### Configuration System
@@ -174,7 +164,7 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ## Testing Changes
 
-When modifying skills:
+When modifying commands:
 
 1. Verify YAML frontmatter is valid
 2. Check command steps are numbered correctly

@@ -1,22 +1,22 @@
-# Skills Reference
+# Commands Reference
 
-This library provides slash commands (also known as skills) for Claude Code. Skills are markdown files with YAML frontmatter that define custom commands Claude can execute.
+This library provides slash commands for Claude Code. Commands are markdown files with YAML frontmatter that define custom commands Claude can execute.
 
-## Official Skills Format
+## Command Format
 
-Skills in Claude Code use **YAML frontmatter** in markdown files. There is no JSON manifest file - skills are discovered directly from the command files.
+Commands in Claude Code use **YAML frontmatter** in markdown files. There is no JSON manifest file - commands are discovered directly from the command files.
 
 Reference: https://code.claude.com/docs/en/skills
 
-Discover more skills: [skills.sh](https://skills.sh/)
+Discover more command ideas: [skills.sh](https://skills.sh/)
 
 ## Frontmatter Fields
 
-Each skill file (`SKILL.md`) can include the following frontmatter fields:
+Each command file (`.md`) can include the following frontmatter fields:
 
 ```yaml
 ---
-description: What this skill does and when to use it
+description: What this command does and when to use it
 argument-hint: "[optional-arg]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash
@@ -29,18 +29,18 @@ model: sonnet
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `description` | string | What the skill does and when to use it. Shown in autocomplete. |
+| `description` | string | What the command does and when to use it. Shown in autocomplete. |
 | `argument-hint` | string | Hint shown during autocomplete (e.g., `[ticket-id]`, `<required-arg>`). |
-| `disable-model-invocation` | boolean | When `true`, prevents Claude from auto-invoking this skill. User must explicitly call it. |
+| `disable-model-invocation` | boolean | When `true`, prevents Claude from auto-invoking this command. User must explicitly call it. |
 | `allowed-tools` | string | Comma-separated list of tools Claude can use without asking permission. |
-| `user-invocable` | boolean | When `true` (default), skill appears in slash command menu. Set to `false` for internal-only skills. |
-| `model` | string | Override the model for this skill: `sonnet`, `opus`, or `haiku`. |
+| `user-invocable` | boolean | When `true` (default), command appears in slash command menu. Set to `false` for internal-only commands. |
+| `model` | string | Override the model for this command: `sonnet`, `opus`, or `haiku`. |
 
 ### Field Details
 
 #### `description`
 
-A brief description of what the skill does. This appears in the slash command menu and helps Claude understand when to suggest the skill.
+A brief description of what the command does. This appears in the slash command menu and helps Claude understand when to suggest the command.
 
 ```yaml
 description: Create a feature branch from a ticket ID
@@ -48,7 +48,7 @@ description: Create a feature branch from a ticket ID
 
 #### `argument-hint`
 
-Shows users what arguments the skill accepts:
+Shows users what arguments the command accepts:
 
 - `[brackets]` indicate optional arguments
 - `<angle-brackets>` indicate required arguments
@@ -60,7 +60,7 @@ argument-hint: "[ticket-id]"
 
 #### `disable-model-invocation`
 
-When set to `true`, Claude will not automatically invoke this skill - the user must explicitly type the slash command. This is recommended for workflow actions that have side effects (creating branches, committing, etc.).
+When set to `true`, Claude will not automatically invoke this command - the user must explicitly type the slash command. This is recommended for workflow actions that have side effects (creating branches, committing, etc.).
 
 ```yaml
 disable-model-invocation: true
@@ -68,7 +68,7 @@ disable-model-invocation: true
 
 #### `allowed-tools`
 
-Specifies which tools Claude can use without asking for permission when executing this skill. Useful for skills that need to read files or search code.
+Specifies which tools Claude can use without asking for permission when executing this command. Useful for commands that need to read files or search code.
 
 ```yaml
 allowed-tools: Read, Grep, Glob
@@ -84,11 +84,11 @@ Available tools:
 - `WebFetch` - Fetch web content
 - `AskUserQuestion` - Ask user for input
 
-**Security Note**: Only grant the tools necessary for the skill to function. Read-only skills should not have `Write`, `Edit`, or `Bash` access.
+**Security Note**: Only grant the tools necessary for the command to function. Read-only commands should not have `Write`, `Edit`, or `Bash` access.
 
 #### `user-invocable`
 
-Controls whether the skill appears in the slash command menu. Defaults to `true`.
+Controls whether the command appears in the slash command menu. Defaults to `true`.
 
 ```yaml
 user-invocable: true   # Appears in menu (default)
@@ -97,7 +97,7 @@ user-invocable: false  # Hidden from menu, for internal use
 
 #### `model`
 
-Override the default model for this skill. Useful for complex tasks that benefit from more capable models, or simple tasks that can use faster models.
+Override the default model for this command. Useful for complex tasks that benefit from more capable models, or simple tasks that can use faster models.
 
 ```yaml
 model: sonnet  # Default, balanced performance
@@ -219,58 +219,47 @@ Commands are designed to work together in workflows:
 2. Review and customize the generated YAML
 3. `/start-qa` - Execute the test plan
 
-## Creating Custom Skills
+## Creating Custom Commands
 
-To add a custom skill:
+To add a custom command:
 
-1. Create a directory with a `SKILL.md` file:
+1. Create a command file:
 
 ```bash
-mkdir -p .claude/skills/my-skill
+mkdir -p .claude/commands
+touch .claude/commands/my-command.md
 ```
 
-2. Create the skill file:
+2. Add command frontmatter and instructions:
 
 ```markdown
 ---
-description: Your skill description
+description: Your command description
 argument-hint: "[optional-arg]"
 disable-model-invocation: true
 ---
 
-Your skill instructions here...
+Your command instructions here...
 ```
 
-3. Use it with `/my-skill`
-
-The directory name becomes the skill name.
+3. Use it with `/my-command`
 
 ## Directory Structure
 
 ### Plugin Format (This Repo)
 
 ```text
-skills/                 # Skill directories
-├── setup/
-│   └── SKILL.md
-├── start/
-│   └── SKILL.md
-├── tdd/
-│   └── SKILL.md
-├── commit/
-│   └── SKILL.md
-├── finish/
-│   └── SKILL.md
-├── release/
-│   └── SKILL.md
-├── release-notes/
-│   └── SKILL.md
-├── sync/
-│   └── SKILL.md
-├── plan-qa/
-│   └── SKILL.md
-└── start-qa/
-    └── SKILL.md
+commands/               # Slash commands
+├── setup.md
+├── start.md
+├── tdd.md
+├── commit.md
+├── finish.md
+├── release.md
+├── release-notes.md
+├── sync.md
+├── plan-qa.md
+└── start-qa.md
 
 agents/                 # Subagents
 ├── pr-reviewer.md
@@ -282,25 +271,12 @@ agents/                 # Subagents
 
 ```text
 .claude/
-├── skills/             # Skill directories
-│   ├── start/
-│   │   └── SKILL.md
-│   ├── commit/
-│   │   └── SKILL.md
+├── commands/           # Slash commands
+│   ├── start.md
+│   ├── commit.md
 │   └── ...
 └── agents/             # Subagents
     ├── pr-reviewer.md
-    └── ...
-```
-
-### Legacy Format (Still Supported)
-
-```text
-.claude/
-├── commands/           # Single-file commands
-│   ├── start.md
-│   └── ...
-└── agents/
     └── ...
 ```
 
@@ -360,8 +336,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 - Use the prefixed command: `/git-workflow:start` instead of `/start`
 
 **For manual installation:**
-- Ensure the skill exists as `.claude/skills/{name}/SKILL.md`
-- Or use legacy format: `.claude/commands/{name}.md`
+- Ensure the command exists as `.claude/commands/{name}.md`
 
 ### Arguments Not Passed
 

@@ -25,7 +25,7 @@ Production-ready slash commands for Claude Code that automate your Git workflow,
 /plugin install git-workflow@git-workflow-marketplace
 ```
 
-After installation, skills are available with the `git-workflow:` prefix:
+After installation, commands are available with the `git-workflow:` prefix:
 
 ```bash
 /git-workflow:start PROJ-123
@@ -40,7 +40,7 @@ For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
 ```bash
 # Clone and copy to your project
 git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/commands your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
@@ -155,7 +155,7 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ## Skills
 
-Commands are defined using **YAML frontmatter** in markdown files, following the official Claude Code skills format.
+Commands are defined using **YAML frontmatter** in markdown files, using the legacy Claude Code command format for reliable autocomplete.
 
 ### Using Commands
 
@@ -188,7 +188,7 @@ disable-model-invocation: true
 
 See [SKILLS.md](./SKILLS.md) for complete documentation.
 
-Discover more skills at [skills.sh](https://skills.sh/).
+Discover more command ideas at [skills.sh](https://skills.sh/).
 
 ## Workflow
 
@@ -349,7 +349,7 @@ Auto-detected from project:
 
 ```bash
 git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/commands your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
@@ -428,7 +428,7 @@ For marketplace installation, ensure you prefix with `git-workflow:`:
 /git-workflow:start  # Not /start
 ```
 
-For manual installation, ensure `.claude/skills/` directory exists with `*/SKILL.md` files.
+For manual installation, ensure `.claude/commands/` directory exists with `*.md` files.
 
 ### GitHub CLI Issues
 

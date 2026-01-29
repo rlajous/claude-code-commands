@@ -23,7 +23,7 @@ The easiest way to install is via the Claude marketplace:
 /plugin install git-workflow@git-workflow-marketplace
 ```
 
-After installation, skills are available with the `git-workflow:` prefix:
+After installation, commands are available with the `git-workflow:` prefix:
 
 ```bash
 /git-workflow:setup   # Run interactive setup
@@ -40,8 +40,8 @@ For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
 # Clone the repository
 git clone https://github.com/rlajous/claude-code-commands.git
 
-# Copy skills to your project
-cp -r claude-code-commands/skills your-project/.claude/
+# Copy commands to your project
+cp -r claude-code-commands/commands your-project/.claude/
 
 # (Optional) Copy agents
 cp -r claude-code-commands/agents your-project/.claude/
@@ -83,7 +83,7 @@ This guides you through configuring:
 
 ### Marketplace Installation
 
-Skills are installed to Claude's plugin cache. No files in your project.
+Commands are installed to Claude's plugin cache. No files in your project.
 
 ### Manual Installation
 
@@ -92,27 +92,17 @@ After manual installation, your project should have:
 ```
 your-project/
 ├── .claude/
-│   ├── skills/               # Slash commands (new format)
-│   │   ├── setup/
-│   │   │   └── SKILL.md
-│   │   ├── start/
-│   │   │   └── SKILL.md
-│   │   ├── tdd/
-│   │   │   └── SKILL.md
-│   │   ├── commit/
-│   │   │   └── SKILL.md
-│   │   ├── finish/
-│   │   │   └── SKILL.md
-│   │   ├── release/
-│   │   │   └── SKILL.md
-│   │   ├── release-notes/
-│   │   │   └── SKILL.md
-│   │   ├── sync/
-│   │   │   └── SKILL.md
-│   │   ├── plan-qa/
-│   │   │   └── SKILL.md
-│   │   └── start-qa/
-│   │       └── SKILL.md
+│   ├── commands/             # Slash commands (legacy format)
+│   │   ├── setup.md
+│   │   ├── start.md
+│   │   ├── tdd.md
+│   │   ├── commit.md
+│   │   ├── finish.md
+│   │   ├── release.md
+│   │   ├── release-notes.md
+│   │   ├── sync.md
+│   │   ├── plan-qa.md
+│   │   └── start-qa.md
 │   ├── agents/               # Subagents (optional)
 │   │   ├── pr-reviewer.md
 │   │   ├── release-validator.md
@@ -347,7 +337,7 @@ Test your installation:
 ```bash
 cd claude-code-commands
 git pull
-cp -r skills ../your-project/.claude/
+cp -r commands ../your-project/.claude/
 ```
 
 ---
@@ -365,10 +355,10 @@ Ensure you're using the prefixed command name:
 
 ### Commands Not Recognized (Manual)
 
-Ensure skills are in `.claude/skills/*/SKILL.md` format:
+Ensure commands are in `.claude/commands/*.md` format:
 
 ```bash
-ls -la .claude/skills/start/SKILL.md
+ls -la .claude/commands/start.md
 ```
 
 ### GitHub CLI Not Authenticated
@@ -389,36 +379,21 @@ cat ~/.claude/settings.json | grep mcpServers
 ### Permission Denied
 
 ```bash
-chmod -R 644 .claude/skills/*/*.md
+chmod -R 644 .claude/commands/*.md
 ```
 
 ---
 
-## Migration from Old Format
+## Migration
 
-If you have commands in `.claude/commands/*.md` format:
-
-```bash
-# Create new structure
-mkdir -p .claude/skills
-
-# Move each command
-for cmd in .claude/commands/*.md; do
-  name=$(basename "$cmd" .md)
-  mkdir -p ".claude/skills/$name"
-  mv "$cmd" ".claude/skills/$name/SKILL.md"
-done
-
-# Remove old directory
-rmdir .claude/commands
-```
+No migration needed. This plugin uses `.claude/commands/*.md` for reliable autocomplete.
 
 ---
 
 ## Next Steps
 
 1. Read [CONFIGURATION.md](./CONFIGURATION.md) for customization options
-2. Read [SKILLS.md](./SKILLS.md) for skills and workflow documentation
+2. Read [SKILLS.md](./SKILLS.md) for command and workflow documentation
 3. Read [AGENTS.md](./AGENTS.md) for subagent documentation
 4. Read [HOOKS.md](./HOOKS.md) for hooks documentation
 5. Check [examples/](./examples/) for stack-specific configurations
