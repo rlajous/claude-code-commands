@@ -155,7 +155,7 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ## Commands
 
-Commands are defined using **YAML frontmatter** in markdown files, using the legacy Claude Code command format for reliable autocomplete.
+Commands are defined using **YAML frontmatter** in markdown files.
 
 ### Using Commands
 

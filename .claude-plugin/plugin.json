@@ -1,7 +1,7 @@
 {
   "name": "git-workflow",
   "description": "Production-ready slash commands for Git workflow automation including PR creation, release management, and QA testing",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "repository": "https://github.com/rlajous/claude-code-commands",
   "license": "MIT",
   "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"]

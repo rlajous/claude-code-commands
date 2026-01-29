@@ -92,7 +92,7 @@ After manual installation, your project should have:
 ```
 your-project/
 ├── .claude/
-│   ├── commands/             # Slash commands (legacy format)
+│   ├── commands/             # Slash commands
 │   │   ├── setup.md
 │   │   ├── start.md
 │   │   ├── tdd.md
@@ -386,7 +386,7 @@ chmod -R 644 .claude/commands/*.md
 
 ## Migration
 
-No migration needed. This plugin uses `.claude/commands/*.md` for reliable autocomplete.
+No migration needed. This plugin uses `.claude/commands/*.md`.
 
 ---
 

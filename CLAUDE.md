@@ -19,7 +19,7 @@ This repository is a **Claude Code plugin marketplace** containing production-re
 ├── marketplace.json       # Marketplace catalog for distribution
 └── plugin.json            # Plugin manifest
 
-commands/                  # Slash commands (legacy .md format)
+commands/                  # Slash commands
 ├── setup.md               # Interactive setup wizard
 ├── start.md               # Create feature branch from ticket
 ├── tdd.md                 # Test-Driven Development workflow
@@ -143,7 +143,7 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ### Marketplace Structure
 - Single plugin containing all commands (cohesive workflow)
-- Commands in `commands/*.md` format (legacy, but reliable autocomplete)
+- Commands in `commands/*.md` format
 - Agents in `agents/` at root level
 
 ### Configuration System
