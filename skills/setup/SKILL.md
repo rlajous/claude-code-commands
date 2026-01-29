@@ -3,6 +3,7 @@ description: Interactive setup for MCP servers and project configuration
 argument-hint: ""
 disable-model-invocation: true
 allowed-tools: Read, Write, Bash, AskUserQuestion, Glob
+user-invocable: true
 ---
 
 You are helping set up Claude Code commands for this project. Your task is to interactively configure MCP servers for issue tracker integration and optionally set up the workflow configuration.

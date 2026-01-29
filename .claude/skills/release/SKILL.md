@@ -2,6 +2,7 @@
 description: Create a release branch and PR to main with auto-extracted changes from staging
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit
+user-invocable: true
 ---
 
 You are helping create a production release. Your task is to create a release branch from the development branch, bump the version, extract changes, and create a comprehensive release PR to the production branch.

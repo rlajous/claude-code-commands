@@ -3,6 +3,7 @@ description: Generate QA test plan YAML from ticket
 argument-hint: "<ticket-id> [--url <url>]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, WebFetch, Write, Bash
+user-invocable: true
 ---
 
 You are helping generate a QA test plan from a ticket description, issue tracker ticket, or requirements. This command creates a structured YAML test plan that can be executed with `/start-qa`.

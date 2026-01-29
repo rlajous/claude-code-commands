@@ -2,6 +2,7 @@
 description: Stage and commit changes with proper formatting following repo conventions
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit
+user-invocable: true
 ---
 
 You are helping commit changes for a pull request. Your task is to stage changes, generate a properly formatted commit message following project conventions, and handle pre-commit hooks.

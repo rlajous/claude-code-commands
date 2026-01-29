@@ -3,6 +3,7 @@ description: Start a new PR by creating a feature branch following repo conventi
 argument-hint: "[ticket-id]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Write
+user-invocable: true
 ---
 
 You are helping create a new pull request. Your task is to create a properly named feature branch, optionally fetch ticket details, and store context for subsequent commands.

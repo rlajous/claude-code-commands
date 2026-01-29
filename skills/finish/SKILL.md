@@ -2,6 +2,7 @@
 description: Create a pull request with comprehensive description following repo best practices
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion
+user-invocable: true
 ---
 
 You are helping create a pull request with a comprehensive description. Your task is to gather information, generate the PR description, push the branch, and create the PR using project conventions.

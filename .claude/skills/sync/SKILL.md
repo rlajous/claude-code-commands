@@ -2,6 +2,7 @@
 description: Back-merge main to staging after a release to keep branches synchronized
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash
+user-invocable: true
 ---
 
 You are helping sync the production branch changes back to the development branch. This command should be run AFTER a release has been merged to production and deployed to keep branches aligned.

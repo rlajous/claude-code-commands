@@ -3,6 +3,7 @@ description: Implement a ticket using Test-Driven Development (RED-GREEN-REFACTO
 argument-hint: "<ticket-id>"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit, Write
+user-invocable: true
 ---
 
 You are helping implement a ticket using Test-Driven Development (TDD). Your task is to guide the user through the RED-GREEN-REFACTOR cycle: write failing tests first, implement code to pass tests, then refactor while keeping tests green.
