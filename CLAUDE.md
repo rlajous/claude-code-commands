@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository contains production-ready Claude Code slash commands that automate Git workflows, PR creation, release management, and QA testing. The commands are framework-agnostic and configurable via `.claude/config.yaml`.
+This repository is a **Claude Code plugin marketplace** containing production-ready slash commands that automate Git workflows, PR creation, release management, and QA testing. The commands are framework-agnostic and configurable via `.claude/config.yaml`.
 
 ## Behavioral Guidelines
 
@@ -15,25 +15,36 @@ This repository contains production-ready Claude Code slash commands that automa
 ## Repository Structure
 
 ```
-.claude/
-├── commands/              # Slash commands with YAML frontmatter
-│   ├── setup.md           # Interactive setup wizard
-│   ├── start.md           # Create feature branch from ticket
-│   ├── tdd.md             # Test-Driven Development workflow
-│   ├── commit.md          # Stage and commit with conventions
-│   ├── finish.md          # Create PR with full description
-│   ├── release.md         # Create release branch and PR
-│   ├── release-notes.md   # Generate GitHub release notes
-│   ├── sync.md            # Back-merge main to development
-│   ├── plan-qa.md         # Generate QA test plan
-│   └── start-qa.md        # Execute QA tests
-└── agents/                # Subagents for specialized tasks
-    ├── pr-reviewer.md     # Code review agent
-    ├── release-validator.md # Release validation agent
-    └── qa-executor.md     # QA test execution agent
-
 .claude-plugin/
-└── plugin.json            # Plugin manifest for distribution
+├── marketplace.json       # Marketplace catalog for distribution
+└── plugin.json            # Plugin manifest
+
+skills/                    # Slash commands (SKILL.md format)
+├── setup/
+│   └── SKILL.md           # Interactive setup wizard
+├── start/
+│   └── SKILL.md           # Create feature branch from ticket
+├── tdd/
+│   └── SKILL.md           # Test-Driven Development workflow
+├── commit/
+│   └── SKILL.md           # Stage and commit with conventions
+├── finish/
+│   └── SKILL.md           # Create PR with full description
+├── release/
+│   └── SKILL.md           # Create release branch and PR
+├── release-notes/
+│   └── SKILL.md           # Generate GitHub release notes
+├── sync/
+│   └── SKILL.md           # Back-merge main to development
+├── plan-qa/
+│   └── SKILL.md           # Generate QA test plan
+└── start-qa/
+    └── SKILL.md           # Execute QA tests
+
+agents/                    # Subagents for specialized tasks
+├── pr-reviewer.md         # Code review agent
+├── release-validator.md   # Release validation agent
+└── qa-executor.md         # QA test execution agent
 
 templates/
 ├── config.yaml.template   # Configuration template
@@ -56,75 +67,9 @@ HOOKS.md                   # Hooks documentation
 LICENSE                    # MIT license
 ```
 
-## Command Files
-
-Each command file in `.claude/commands/` defines a slash command:
-
-| Command          | Purpose                                        |
-| ---------------- | ---------------------------------------------- |
-| `/setup`         | Interactive setup for MCP servers and config   |
-| `/start`         | Create feature branch from ticket ID           |
-| `/tdd`           | Implement ticket using TDD (RED-GREEN-REFACTOR)|
-| `/commit`        | Stage and commit with formatted message        |
-| `/finish`        | Push branch and create PR                      |
-| `/release`       | Create release branch, bump version, PR to main |
-| `/release-notes` | Generate GitHub release with detailed notes    |
-| `/sync`          | Back-merge main to development branch          |
-| `/plan-qa`       | Generate QA test plan YAML from ticket         |
-| `/start-qa`      | Execute QA tests from plan file                |
-
-## Subagents
-
-Each agent file in `.claude/agents/` defines a specialized AI assistant:
-
-| Agent              | Purpose                                        |
-| ------------------ | ---------------------------------------------- |
-| `pr-reviewer`      | Expert code reviewer for quality and security  |
-| `release-validator`| Pre-release validation (tests, build, deps)    |
-| `qa-executor`      | Execute QA tests with detailed reporting       |
-
-## Workflow
-
-### Standard PR Flow
-
-```
-/start → make changes → /commit → /finish
-```
-
-### TDD Flow
-
-```text
-/start → /tdd → /commit → /finish
-```
-
-### Release Flow
-
-```
-/release → review → merge → /release-notes → /sync
-```
-
-## Configuration System
-
-Commands read from `.claude/config.yaml` with this priority:
-
-1. Explicit config in `.claude/config.yaml`
-2. Auto-detection (package.json, pyproject.toml, etc.)
-3. Sensible defaults
-
-### Key Configuration Sections
-
-- `workflow`: Branch strategy (staging, tag-based, direct)
-- `branches`: Naming patterns for feature/release/sync branches
-- `commits`: Message format and allowed types
-- `pullRequests`: Target branch, reviewers, labels
-- `issueTracker`: Linear, Jira, or GitHub integration
-- `versioning`: Version file location
-- `release`: Watch files, changelog categories
-- `qa.tdd`: Test-Driven Development settings (confirmations, max attempts)
-
 ## Skills Format
 
-Commands use the official Claude Code skills format with YAML frontmatter:
+Skills use YAML frontmatter in `SKILL.md` files:
 
 ```yaml
 ---
@@ -141,7 +86,58 @@ Key frontmatter fields:
 - `disable-model-invocation`: Prevents auto-invocation (recommended for workflow actions)
 - `allowed-tools`: Tools Claude can use without asking permission
 
-See [SKILLS.md](./SKILLS.md) for complete documentation.
+## Marketplace Format
+
+This repo serves as both a plugin and a marketplace:
+
+- **marketplace.json**: Catalog of plugins in this marketplace
+- **plugin.json**: Metadata for the git-workflow plugin
+
+Users can install via:
+```bash
+/plugin marketplace add rlajous/claude-code-commands
+/plugin install git-workflow@git-workflow-marketplace
+```
+
+## Workflow Commands
+
+| Command          | Purpose                                        |
+| ---------------- | ---------------------------------------------- |
+| `/setup`         | Interactive setup for MCP servers and config   |
+| `/start`         | Create feature branch from ticket ID           |
+| `/tdd`           | Implement ticket using TDD (RED-GREEN-REFACTOR)|
+| `/commit`        | Stage and commit with formatted message        |
+| `/finish`        | Push branch and create PR                      |
+| `/release`       | Create release branch, bump version, PR to main|
+| `/release-notes` | Generate GitHub release with detailed notes    |
+| `/sync`          | Back-merge main to development branch          |
+| `/plan-qa`       | Generate QA test plan YAML from ticket         |
+| `/start-qa`      | Execute QA tests from plan file                |
+
+## Subagents
+
+| Agent              | Purpose                                        |
+| ------------------ | ---------------------------------------------- |
+| `pr-reviewer`      | Expert code reviewer for quality and security  |
+| `release-validator`| Pre-release validation (tests, build, deps)    |
+| `qa-executor`      | Execute QA tests with detailed reporting       |
+
+## Standard Workflows
+
+### PR Flow
+```
+/start → make changes → /commit → /finish
+```
+
+### TDD Flow
+```
+/start → /tdd → /commit → /finish
+```
+
+### Release Flow
+```
+/release → review → merge → /release-notes → /sync
+```
 
 ## Hooks
 
@@ -155,17 +151,20 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ## Design Decisions
 
-### Backward Compatibility
+### Marketplace Structure
+- Single plugin containing all skills (cohesive workflow)
+- Skills in `skills/*/SKILL.md` format (official Claude Code format)
+- Agents in `agents/` at root level
 
-- Commands work without any configuration
-- `.pr-context.json` format preserved
-- Sensible defaults match common workflows
+### Configuration System
+- Zero-config design with sensible defaults
+- Cascading config: explicit config > auto-detection > defaults
+- Context persistence via `.pr-context.json`
 
 ### Issue Tracker Support
-
 - Auto-detection from ticket format
 - Linear, Jira, and GitHub Issues integration
-- Falls back gracefully when not available
+- MCP servers for automatic authentication
 
 ### Multi-Stack Support
 
@@ -175,9 +174,9 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ## Testing Changes
 
-When modifying commands:
+When modifying skills:
 
-1. Verify markdown syntax is valid
+1. Verify YAML frontmatter is valid
 2. Check command steps are numbered correctly
 3. Ensure config references match schema
 4. Test with and without config file

@@ -1,0 +1,24 @@
+{
+  "name": "git-workflow-marketplace",
+  "owner": {
+    "name": "rlajous"
+  },
+  "metadata": {
+    "description": "Git workflow automation skills for Claude Code",
+    "version": "1.0.2"
+  },
+  "plugins": [
+    {
+      "name": "git-workflow",
+      "source": "./",
+      "description": "Production-ready slash commands for Git workflow automation including PR creation, release management, and QA testing",
+      "version": "1.0.2",
+      "author": {
+        "name": "Community"
+      },
+      "license": "MIT",
+      "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"],
+      "category": "productivity"
+    }
+  ]
+}

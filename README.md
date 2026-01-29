@@ -1,4 +1,4 @@
-# Claude Code Commands
+# Claude Code Git Workflow
 
 Production-ready slash commands for Claude Code that automate your Git workflow, PR creation, release management, and QA testing.
 
@@ -11,21 +11,40 @@ Production-ready slash commands for Claude Code that automate your Git workflow,
 - **Zero configuration** - Sensible defaults work out of the box
 - **Subagents** - Specialized AI assistants for code review, release validation, and QA
 - **Hooks** - Automate actions before/after tool use
-- **Plugin format** - Installable as a Claude Code plugin
+- **Marketplace plugin** - Installable from Claude marketplace
 
 ## Quick Start
 
-### 1. Copy Commands to Your Project
+### Option 1: Install from Marketplace (Recommended)
 
 ```bash
-# Clone this repository
-git clone https://github.com/rlajous/claude-code-commands.git
+# Add the marketplace
+/plugin marketplace add rlajous/claude-code-commands
 
-# Copy commands to your project
-cp -r claude-code-commands/.claude/commands your-project/.claude/
+# Install the plugin
+/plugin install git-workflow@git-workflow-marketplace
 ```
 
-### 2. (Optional) Add Configuration
+After installation, skills are available with the `git-workflow:` prefix:
+
+```bash
+/git-workflow:start PROJ-123
+/git-workflow:commit
+/git-workflow:finish
+```
+
+### Option 2: Manual Installation (Shorter Command Names)
+
+For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
+
+```bash
+# Clone and copy to your project
+git clone https://github.com/rlajous/claude-code-commands.git
+cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
+```
+
+### 3. (Optional) Add Configuration
 
 Create `.claude/config.yaml` for project-specific settings:
 
@@ -45,15 +64,15 @@ pullRequests:
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 
-### 3. Run Setup (Recommended)
+### 4. Run Setup (Recommended)
 
 ```bash
-/setup
+/setup  # or /git-workflow:setup if installed via marketplace
 ```
 
 This guides you through configuring issue trackers and MCP servers.
 
-### 4. Use the Commands
+### 5. Use the Commands
 
 ```bash
 # Start a new feature
@@ -80,6 +99,8 @@ This guides you through configuring issue trackers and MCP servers.
 | `/sync` | Back-merge production to development branch |
 | `/plan-qa` | Generate QA test plan from ticket |
 | `/start-qa` | Execute QA tests from plan file |
+
+> **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
 
 ## Subagents
 
@@ -317,18 +338,24 @@ Auto-detected from project:
 
 ## Installation
 
-### Option 1: Copy Commands (Recommended)
+### Option 1: Marketplace (Recommended)
 
 ```bash
-# Clone and copy to your project
-git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/.claude your-project/
+/plugin marketplace add rlajous/claude-code-commands
+/plugin install git-workflow@git-workflow-marketplace
 ```
 
-### Option 2: Install as Plugin
+### Option 2: Manual Copy
 
 ```bash
-# Install as a Claude Code plugin
+git clone https://github.com/rlajous/claude-code-commands.git
+cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
+```
+
+### Option 3: Plugin Directory
+
+```bash
 claude --plugin-dir /path/to/claude-code-commands
 ```
 
@@ -396,7 +423,12 @@ pullRequests:
 
 ### Command Not Found
 
-Ensure `.claude/commands/` directory exists with `.md` files.
+For marketplace installation, ensure you prefix with `git-workflow:`:
+```bash
+/git-workflow:start  # Not /start
+```
+
+For manual installation, ensure `.claude/skills/` directory exists with `*/SKILL.md` files.
 
 ### GitHub CLI Issues
 
