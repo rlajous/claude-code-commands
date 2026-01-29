@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Git workflow automation skills for Claude Code",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -15,7 +15,7 @@
         "repo": "rlajous/claude-code-commands"
       },
       "description": "Production-ready slash commands for Git workflow automation including PR creation, release management, and QA testing",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Community"
       },
