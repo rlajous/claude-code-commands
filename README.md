@@ -44,6 +44,8 @@ cp -r claude-code-commands/commands your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
+> **Cursor users**: Cursor also detects commands from `.claude/`. Manual installation works as-is. See [INSTALLATION.md](./INSTALLATION.md#cursor-compatibility) for details.
+
 ### 3. (Optional) Add Configuration
 
 Create `.claude/config.yaml` for project-specific settings:
