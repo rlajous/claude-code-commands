@@ -62,6 +62,26 @@ git clone https://github.com/rlajous/claude-code-commands.git ~/claude-plugins/g
 claude --plugin-dir ~/claude-plugins/git-workflow
 ```
 
+### Cursor Compatibility
+
+Cursor detects commands, agents, and hooks from the `.claude/` directory, so manual installation works for both Claude Code and Cursor with no extra steps.
+
+```bash
+# Same manual installation works for both tools
+git clone https://github.com/rlajous/claude-code-commands.git
+cp -r claude-code-commands/commands your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
+```
+
+If you prefer not to have a `.claude/` folder in your repo, you can install directly to `.cursor/` instead:
+
+```bash
+cp -r claude-code-commands/commands your-project/.cursor/
+cp -r claude-code-commands/agents your-project/.cursor/
+```
+
+> **Note**: Marketplace installation is Claude Code-specific. Cursor users should use manual installation.
+
 ---
 
 ## Post-Installation Setup
