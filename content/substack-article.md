@@ -1,0 +1,185 @@
+# I Automated My Entire Git Workflow with AI - Here's How
+
+## The Problem Nobody Talks About
+
+AI coding assistants have gotten remarkably good at writing code. Claude can implement features, fix bugs, and even write tests.
+
+But here's what I noticed: the code is only half the job.
+
+Every feature still requires:
+- Creating a branch with the right naming convention
+- Fetching context from the ticket
+- Writing meaningful commit messages
+- Creating PRs with proper descriptions
+- Managing releases with changelogs
+- Keeping branches in sync
+
+These tasks eat hours every week. They're repetitive, error-prone, and frankly... boring.
+
+So I built a solution.
+
+## Introducing Claude Code Commands
+
+Over the past few months, I've developed a set of 10 slash commands that automate the entire development workflow. Today I'm open-sourcing them.
+
+**The Core Workflow:**
+```
+/start TICKET-123    → Create feature branch, fetch ticket context
+[write your code]
+/commit              → Stage changes, conventional commit message
+/finish              → Push and create PR with full description
+```
+
+That's it. From ticket to pull request in minutes, not hours.
+
+## The Commands
+
+### `/start` - Begin with Context
+
+Instead of manually creating branches and looking up ticket details, `/start TICKET-123` does it all:
+
+- Creates a branch following your naming conventions
+- Fetches the ticket title, description, and acceptance criteria
+- Saves context for later use in commits and PRs
+
+Works with Linear, Jira, and GitHub Issues.
+
+### `/tdd` - AI-Enforced Test-Driven Development
+
+This is my favorite command. `/tdd` implements the RED-GREEN-REFACTOR cycle automatically:
+
+1. **RED**: Writes failing tests based on acceptance criteria
+2. **GREEN**: Implements code until all tests pass
+3. **REFACTOR**: Cleans up without breaking tests
+
+No more "I'll add tests later." The AI enforces discipline.
+
+### `/commit` - Conventional Commits, Every Time
+
+Tired of inconsistent commit messages? `/commit` analyzes your changes and generates proper conventional commits:
+
+```
+feat(auth): add OAuth2 provider support
+
+- Implement Google and GitHub OAuth flows
+- Add token refresh logic
+- Update user model with provider fields
+```
+
+Follows whatever format your team prefers.
+
+### `/finish` - PRs That Actually Describe the Changes
+
+`/finish` creates pull requests with:
+- Summary of all changes
+- Screenshots (if applicable)
+- Test plan based on what you modified
+- Links to the original ticket
+
+No more "Updated stuff" PR descriptions.
+
+### `/release` - One-Command Releases
+
+When it's time to ship:
+
+```
+/release
+```
+
+This single command:
+- Creates a release branch
+- Bumps the version (following semver)
+- Generates a changelog from commits
+- Creates a PR to main
+- Validates all tests pass
+
+Then `/release-notes` generates the GitHub release with categorized changes.
+
+## Framework Agnostic
+
+The commands work with any tech stack:
+
+- **Node.js**: npm, pnpm, yarn, bun
+- **Python**: pip, poetry, uv
+- **Rust**: cargo
+- **Go**: go mod
+
+They auto-detect your package manager, version files, and testing commands. One command set for polyglot teams.
+
+## Zero Config, Deep Customization
+
+Here's what I'm most proud of: **you don't need any configuration to start**.
+
+Just install the commands and go. They use sensible defaults that work for most projects.
+
+But when you need customization, everything is configurable via `.claude/config.yaml`:
+
+- Branch naming patterns
+- Commit message formats
+- PR templates
+- Release workflows
+- Issue tracker integration
+
+Start simple, customize as needed.
+
+## The Workflow in Practice
+
+Here's my typical day now:
+
+**Morning**: Product assigns me TICKET-123
+```
+/start TICKET-123
+```
+Branch created, ticket context loaded.
+
+**Development**: I write code with Claude's help
+
+**Ready to commit**:
+```
+/commit
+```
+Conventional commit created automatically.
+
+**Ready for review**:
+```
+/finish
+```
+PR created with full description, linked to ticket.
+
+**Release day**:
+```
+/release
+/release-notes
+/sync
+```
+Version bumped, changelog generated, release published, branches synced.
+
+Total time spent on Git workflow: maybe 5 minutes across the entire feature lifecycle.
+
+## Getting Started
+
+Copy the commands to your project:
+```bash
+git clone https://github.com/rlajous/claude-code-commands
+cp -r claude-code-commands/.claude/* .claude/
+```
+
+Then run `/setup` to configure MCP servers (Linear, Jira, GitHub), branch naming conventions, and other options.
+
+No dependencies. No accounts to create. Just better workflows.
+
+## What's Next
+
+This is v1.0, but there's more coming:
+- More issue tracker integrations
+- Customizable PR templates
+- Team workflow presets
+- CI/CD integration commands
+
+The code is MIT licensed. Contributions welcome.
+
+**Repository**: [github.com/rlajous/claude-code-commands](https://github.com/rlajous/claude-code-commands)
+
+---
+
+*If you found this useful, share it with a developer friend who's still writing commit messages manually.*

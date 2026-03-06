@@ -101,6 +101,7 @@ This guides you through configuring issue trackers and MCP servers.
 | `/sync` | Back-merge production to development branch |
 | `/plan-qa` | Generate QA test plan from ticket |
 | `/start-qa` | Execute QA tests from plan file |
+| `/update` | Update commands and agents from source repo |
 
 > **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
 
@@ -362,6 +363,19 @@ claude --plugin-dir /path/to/claude-code-commands
 ```
 
 See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions.
+
+### Updating (Manual Installation)
+
+Use the `/update` command to update tooling files while preserving your configuration:
+
+```bash
+/update                    # Update from default remote
+/update --dry-run          # Preview changes
+/update --prune            # Remove old commands no longer in source
+/update --force            # Force re-copy even if up to date
+```
+
+See [INSTALLATION.md](./INSTALLATION.md#updating) for details.
 
 ## CLAUDE.md Template
 

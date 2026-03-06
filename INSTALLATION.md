@@ -354,11 +354,17 @@ Test your installation:
 
 ### Manual Installation
 
+Use the `/update` command to update tooling files while preserving your configuration:
+
 ```bash
-cd claude-code-commands
-git pull
-cp -r commands ../your-project/.claude/
+/update                        # Update from default remote
+/update --dry-run              # Preview changes without modifying files
+/update --source ./local-repo  # Update from a local clone
+/update --prune                # Remove commands no longer in source
+/update --force                # Force re-copy even if up to date
 ```
+
+The command updates `.claude/commands/`, `.claude/agents/`, and RFC template files. It never touches your `.claude/config.yaml`, `.claude/settings.json`, `CLAUDE.md`, or user-created RFCs.
 
 ---
 
