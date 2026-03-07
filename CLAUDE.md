@@ -29,7 +29,8 @@ commands/                  # Slash commands
 ├── release-notes.md       # Generate GitHub release notes
 ├── sync.md                # Back-merge main to development
 ├── plan-qa.md             # Generate QA test plan
-└── start-qa.md             # Execute QA tests
+├── start-qa.md            # Execute QA tests
+└── update.md              # Update commands/agents from source
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -103,6 +104,7 @@ Users can install via:
 | `/sync`          | Back-merge main to development branch          |
 | `/plan-qa`       | Generate QA test plan YAML from ticket         |
 | `/start-qa`      | Execute QA tests from plan file                |
+| `/update`        | Update commands/agents from source repo        |
 
 ## Subagents
 
