@@ -47,7 +47,15 @@ Convert the title to a kebab-case filename:
 - Collapse multiple hyphens into one
 - Trim leading/trailing hyphens
 
-**Result:** `rfc-{NNN}-{kebab-title}.md`
+```bash
+kebab_title=$(echo "$title" \
+  | tr '[:upper:]' '[:lower:]' \
+  | sed 's/[^a-z0-9 -]//g' \
+  | tr ' ' '-' \
+  | sed 's/-\{2,\}/-/g; s/^-//; s/-$//')
+```
+
+**Result:** `rfc-${rfc_num}-${kebab_title}.md`
 
 **Examples:**
 
@@ -69,7 +77,16 @@ Read the template from `docs/rfcs/RFC_TEMPLATE.md` and replace placeholders:
 | `RFC-NNN` | `RFC-{number}` (e.g., `RFC-001`) |
 | `[Title]` | The user-provided title |
 | `[Month Year]` | Current month and year (e.g., `March 2026`) |
-| `[Your name or team name]` | Result of `git config user.name` |
+| `[Your name or team name]` | Result of `$AUTHOR` (see below) |
+
+Resolve the author name with a fallback:
+
+```bash
+AUTHOR="$(git config user.name 2>/dev/null)"
+if [ -z "$AUTHOR" ]; then
+  # Use AskUserQuestion to prompt: "Could not detect git user name. What name should be used as the RFC author?"
+fi
+```
 
 Write the customized content to `docs/rfcs/rfc-{NNN}-{kebab-title}.md`.
 
@@ -77,7 +94,7 @@ Write the customized content to `docs/rfcs/rfc-{NNN}-{kebab-title}.md`.
 
 Output a confirmation message:
 
-```
+```text
 Created RFC: docs/rfcs/rfc-{NNN}-{kebab-title}.md
 Author: {git user name}
 Date: {month year}
