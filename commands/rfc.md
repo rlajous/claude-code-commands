@@ -21,7 +21,14 @@ Scan for existing RFC files to determine the next number:
 
 ```bash
 # Find existing RFCs and determine next number
-ls docs/rfcs/rfc-*.md 2>/dev/null | sort -V | tail -1
+latest=$(ls docs/rfcs/rfc-*.md 2>/dev/null | sort -V | tail -1)
+if [ -n "$latest" ]; then
+  current=$(basename "$latest" | sed 's/rfc-\([0-9]*\)-.*/\1/')
+  next=$((10#$current + 1))
+else
+  next=1
+fi
+printf -v rfc_num "%03d" $next
 ```
 
 **Logic:**

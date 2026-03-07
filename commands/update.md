@@ -19,7 +19,7 @@ Extract flags from `$ARGUMENTS`:
 
 **Defaults:**
 
-```
+```bash
 DRY_RUN=false
 PRUNE=false
 FORCE=false
@@ -33,7 +33,7 @@ Find the project root by locating the `.claude/` directory:
 ```bash
 # Walk up from current directory to find .claude/
 DIR="$(pwd)"
-for i in 1 2 3 4; do
+while [ "$DIR" != "/" ]; do
   if [ -d "$DIR/.claude" ]; then
     echo "PROJECT_ROOT=$DIR"
     break
@@ -44,7 +44,7 @@ done
 
 If `.claude/` is not found, stop and tell the user:
 
-```
+```text
 Could not find .claude/ directory. Run this command from within your project.
 ```
 
@@ -53,8 +53,11 @@ Could not find .claude/ directory. Run this command from within your project.
 **If `--source` is a local directory path:**
 
 ```bash
+if [ ! -d "$SOURCE" ]; then
+  # stop with error: "Source directory not found: $SOURCE"
+fi
 SOURCE_DIR="$(cd "$SOURCE" && pwd)"
-SOURCE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || echo "local")"
+SOURCE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || date +%s)"
 ```
 
 **Otherwise, clone from remote:**
@@ -108,7 +111,7 @@ Find `*.md` files in the target directories (`.claude/commands/` and `.claude/ag
 
 Display the comparison results with status indicators:
 
-```
+```text
 Summary
 
   + .claude/commands/new-command.md
