@@ -76,6 +76,8 @@ Review the code changes in this PR
 
 **Output**: Structured review with issues categorized by severity.
 
+> **Tip**: For a full step-by-step review workflow with GitHub integration, use the `/review` command instead. It provides a structured process that fetches PR metadata, reads full source files, produces a detailed review document, and optionally posts the review to GitHub.
+
 ### Release Validator
 
 **File**: `.claude/agents/release-validator.md`

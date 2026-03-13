@@ -115,6 +115,7 @@ model: haiku   # Fastest, for simple tasks
 | `/tdd` | Implement ticket using TDD (RED-GREEN-REFACTOR) | `<ticket-id>` |
 | `/commit` | Stage and commit with formatting | - |
 | `/finish` | Create PR with description | - |
+| `/review` | Comprehensive code review on a PR | `[pr-number-or-url]` |
 
 ### Release Management
 
@@ -176,13 +177,14 @@ Commands are designed to work together in workflows:
 ### Standard PR Flow
 
 ```
-/start → make changes → /commit → /finish
+/start → make changes → /commit → /finish → /review
 ```
 
 1. `/start PROJ-123` - Create branch from ticket
 2. Implement your changes
 3. `/commit` - Stage and commit
 4. `/finish` - Push and create PR
+5. `/review` - Comprehensive code review on the PR
 
 ### TDD Flow
 
@@ -255,6 +257,7 @@ commands/               # Slash commands
 ├── tdd.md
 ├── commit.md
 ├── finish.md
+├── review.md
 ├── release.md
 ├── release-notes.md
 ├── sync.md

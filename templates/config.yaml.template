@@ -243,6 +243,23 @@ qa:
     autoStartServer: false
 
 # ==============================================================================
+# CODE REVIEW SETTINGS
+# ==============================================================================
+review:
+  # Save review document locally
+  saveLocally: true
+
+  # Directory for review documents
+  reviewsDir: docs
+
+  # Auto-post review to GitHub PR
+  # Options: ask | always | never
+  postToGitHub: ask
+
+  # Maximum diff lines before switching to file-by-file reading
+  maxDiffLines: 3000
+
+# ==============================================================================
 # RELEASE SETTINGS
 # ==============================================================================
 release:
