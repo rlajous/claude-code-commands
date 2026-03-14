@@ -92,13 +92,17 @@ Categorize changed files for prioritized review:
 3. **API layer** — Controllers, routes, handlers, resolvers
 4. **Infrastructure** — Config, deployment, CI/CD, environment
 5. **Tests** — Test files and fixtures
-6. **Auto-generated** — Lock files, migrations SQL, compiled output, `dist/`
+6. **Auto-generated** — Lock files, compiled output, `dist/`
 
 **Skip auto-generated files:**
 
 - `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Cargo.lock`, `poetry.lock`
 - `dist/`, `build/`, `.next/`, `__pycache__/`
 - Files with `// @generated` or `# auto-generated` headers
+
+**Never skip migration files:**
+
+Migration SQL files (`migrations/`, `*migration*.sql`, or SQL files altering schema/data) must always be reviewed regardless of size. Migrations can contain destructive schema changes (DROP TABLE, ALTER COLUMN, etc.) that are critical to catch during review.
 
 **For large PRs (30+ changed files):**
 
@@ -110,7 +114,7 @@ For each categorized file (in priority order):
 
 ```bash
 # Read the full source file for architectural context
-cat {file_path}
+cat "{file_path}"
 ```
 
 **Important:** Read full files, not just diffs. Diffs show what changed but full files reveal:
@@ -222,7 +226,7 @@ Each finding should include:
 
 Create an ASCII diagram tracing execution from entry point through the call chain:
 
-```
+```text
 Request → Controller → Service → Repository → Database
                     ↓
               Validation
@@ -330,13 +334,15 @@ If `saveLocally` is true:
 FEATURE_NAME=$(echo "{head_branch}" | sed 's|.*/||' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 
 # Ensure directory exists
-mkdir -p {reviewsDir}
+mkdir -p "{reviewsDir}"
 
 # Save review document
-# Write to: {reviewsDir}/code-review-{feature-name}.md
+# Write to: "{reviewsDir}/code-review-{feature-name}.md"
 ```
 
 Write the review document to the file. Do NOT commit it.
+
+If `saveLocally` is false: the review content is held in memory for posting or display. No file is written.
 
 ## Step 13: Confirm Before Posting
 
@@ -358,7 +364,7 @@ If `postToGitHub` is `ask`: use AskUserQuestion:
 **Options:**
 
 1. Post review as a comment on the PR
-2. Save locally only (already saved to `{file_path}`)
+2. Save locally only — if `saveLocally` was false, write the file at this point so the user has a copy
 3. Let me edit the review first, then I'll tell you when to post
 
 ## Step 14: Post to GitHub
@@ -369,7 +375,10 @@ If the user chose to post:
 # Post review as a PR review comment
 gh api repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews \
   --method POST \
-  -f body="$(cat {review_file_path})" \
+  -f body="$(cat <<'REVIEW_EOF'
+{REVIEW_CONTENT}
+REVIEW_EOF
+)" \
   -f event="COMMENT"
 ```
 
@@ -378,7 +387,7 @@ gh api repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews \
 GitHub has a ~65,000 character limit for review bodies. If the review exceeds this:
 
 1. Truncate the review at the Summary section
-2. Add a note: "Full review saved locally at `{file_path}`"
+2. If the review was saved locally, add a note: "Full review available locally at `{file_path}`". Otherwise, add: "Review was truncated due to GitHub size limits."
 3. Post the truncated version
 
 **Error Handling:**
@@ -393,7 +402,7 @@ GitHub has a ~65,000 character limit for review bodies. If the review exceeds th
 
 Output final summary:
 
-```
+```text
 Review complete for PR #{number}: {title}
 
 Findings:
@@ -441,7 +450,7 @@ Review posted: {pr_url}
 
 ### Standard Review
 
-```
+```text
 User: /review 123
 Agent: [Fetches PR #123 metadata]
 Agent: Any focus areas? -> "skip"
@@ -454,7 +463,7 @@ Result: Review posted to PR #123
 
 ### Review with Context
 
-```
+```text
 User: /review https://github.com/org/repo/pull/456
 Agent: [Fetches PR #456]
 Agent: Focus areas? -> "This changes the billing flow, watch for data integrity"
@@ -465,7 +474,7 @@ Result: Review posted with REQUEST CHANGES verdict
 
 ### Large PR Review
 
-```
+```text
 User: /review 789
 Agent: [Fetches PR #789 — 45 files changed, 4200 line diff]
 Agent: [Switches to file-by-file reading, prioritizes business logic]
