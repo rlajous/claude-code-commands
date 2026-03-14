@@ -338,7 +338,7 @@ If `saveLocally` is true:
 FEATURE_NAME=$(echo "{head_branch}" | sed 's|.*/||' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 
 # Ensure directory exists
-mkdir -p "{reviewsDir}"
+mkdir -p -- "{reviewsDir}"
 
 # Save review document
 # Write to: "{reviewsDir}/code-review-{feature-name}.md"
@@ -377,7 +377,7 @@ If the user chose to post:
 
 ```bash
 # Post review as a PR review comment
-gh api repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews \
+gh api "repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews" \
   --method POST \
   -f body="$(cat <<'REVIEW_EOF'
 {REVIEW_CONTENT}
