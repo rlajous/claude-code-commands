@@ -13,7 +13,8 @@ You are performing a comprehensive code review on a GitHub pull request. Your ta
 Determine the PR to review:
 
 - If a **PR number** was provided as argument: use it directly
-- If a **GitHub URL** was provided: extract owner, repo, and PR number from the URL
+- If a **GitHub URL** was provided: extract owner, repo, and PR number from the URL. Set `REPO_FLAG='--repo "{owner}/{repo}"'`
+- If a **PR number** was provided or inferred from the current branch: set `REPO_FLAG=""`
 - If **no argument**: check for an open PR on the current branch
 
 ```bash
@@ -28,7 +29,7 @@ If no PR is found, use AskUserQuestion to ask:
 ## Step 2: Fetch PR Metadata
 
 ```bash
-gh pr view {PR_NUMBER} --json number,title,body,author,state,baseRefName,headRefName,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
+gh pr view {PR_NUMBER} {REPO_FLAG} --json number,title,body,author,state,baseRefName,headRefName,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
 ```
 
 **Error Handling:**
@@ -60,7 +61,7 @@ Get the diff and assess its size:
 
 ```bash
 # Get diff line count
-gh pr diff {PR_NUMBER} | wc -l
+gh pr diff {PR_NUMBER} {REPO_FLAG} | wc -l
 ```
 
 **Load from `.claude/config.yaml` (if exists):**
@@ -72,13 +73,13 @@ review:
 
 **Default: 3000 lines**
 
-- If diff ≤ maxDiffLines: ingest the full diff with `gh pr diff {PR_NUMBER}`
+- If diff ≤ maxDiffLines: ingest the full diff with `gh pr diff {PR_NUMBER} {REPO_FLAG}`
 - If diff > maxDiffLines: read files individually in Step 6 (skip full diff)
 
 Also collect the file list:
 
 ```bash
-gh pr view {PR_NUMBER} --json files --jq '.files[].path'
+gh pr view {PR_NUMBER} {REPO_FLAG} --json files --jq '.files[].path'
 ```
 
 ## Step 5: Categorize Files
@@ -114,7 +115,7 @@ For each categorized file (in priority order):
 
 ```bash
 # Read the full source file for architectural context
-cat "{file_path}"
+cat -- "{file_path}"
 ```
 
 **Important:** Read full files, not just diffs. Diffs show what changed but full files reveal:
