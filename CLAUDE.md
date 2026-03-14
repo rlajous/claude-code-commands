@@ -25,6 +25,7 @@ commands/                  # Slash commands
 ├── tdd.md                 # Test-Driven Development workflow
 ├── commit.md              # Stage and commit with conventions
 ├── finish.md              # Create PR with full description
+├── review.md              # Comprehensive code review on a PR
 ├── release.md             # Create release branch and PR
 ├── release-notes.md       # Generate GitHub release notes
 ├── sync.md                # Back-merge main to development
@@ -99,6 +100,7 @@ Users can install via:
 | `/tdd`           | Implement ticket using TDD (RED-GREEN-REFACTOR)|
 | `/commit`        | Stage and commit with formatted message        |
 | `/finish`        | Push branch and create PR                      |
+| `/review`        | Comprehensive code review on a PR              |
 | `/release`       | Create release branch, bump version, PR to main|
 | `/release-notes` | Generate GitHub release with detailed notes    |
 | `/sync`          | Back-merge main to development branch          |
@@ -118,7 +120,7 @@ Users can install via:
 
 ### PR Flow
 ```
-/start → make changes → /commit → /finish
+/start → make changes → /commit → /finish → /review
 ```
 
 ### TDD Flow

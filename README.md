@@ -96,6 +96,7 @@ This guides you through configuring issue trackers and MCP servers.
 | `/tdd` | Implement ticket using Test-Driven Development |
 | `/commit` | Stage and commit with conventional format |
 | `/finish` | Push branch and create PR with full description |
+| `/review` | Comprehensive code review on a PR |
 | `/release` | Create release branch with version bump |
 | `/release-notes` | Generate GitHub release with detailed notes |
 | `/sync` | Back-merge production to development branch |
@@ -198,13 +199,14 @@ Discover more command ideas at [skills.sh](https://skills.sh/).
 ### Standard PR Flow
 
 ```
-/start → make changes → /commit → /finish
+/start → make changes → /commit → /finish → /review
 ```
 
 1. **`/start`** - Creates feature branch, fetches ticket details
 2. **Work** - Make your code changes
 3. **`/commit`** - Stages files, creates formatted commit
 4. **`/finish`** - Pushes branch, creates comprehensive PR
+5. **`/review`** - Comprehensive code review on the PR
 
 ### TDD Flow
 
