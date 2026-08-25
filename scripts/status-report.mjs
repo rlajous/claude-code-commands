@@ -6,7 +6,7 @@
 // HTML page to stdout.
 //
 // Usage:
-//   node scripts/status-report.mjs > .claude/status.html
+//   node scripts/status-report.mjs > .git-workflow/status.html
 //
 // Plain Node ESM, no dependencies (node:child_process, node:fs, node:path only).
 // Never throws: every external command is wrapped in try/catch and failures
@@ -33,8 +33,11 @@ function safe(fn, fallback = null) {
 }
 
 function getDevelopmentBranch() {
-  const configPath = path.join(process.cwd(), ".claude", "config.yaml");
-  if (!existsSync(configPath)) return "staging";
+  const configPath = firstExistingPath([
+    path.join(process.cwd(), ".git-workflow", "config.yaml"),
+    path.join(process.cwd(), ".claude", "config.yaml"),
+  ]);
+  if (!configPath) return "staging";
   try {
     const raw = readFileSync(configPath, "utf8");
     const match = raw.match(/developmentBranch:\s*["']?([\w./-]+)["']?/);
@@ -45,14 +48,21 @@ function getDevelopmentBranch() {
 }
 
 function getPrContext() {
-  const contextPath = path.join(process.cwd(), ".claude", ".pr-context.json");
-  if (!existsSync(contextPath)) return null;
+  const contextPath = firstExistingPath([
+    path.join(process.cwd(), ".git-workflow", "pr-context.json"),
+    path.join(process.cwd(), ".claude", ".pr-context.json"),
+  ]);
+  if (!contextPath) return null;
   try {
     const raw = readFileSync(contextPath, "utf8");
     return JSON.parse(raw);
   } catch {
     return null;
   }
+}
+
+function firstExistingPath(paths) {
+  return paths.find((candidate) => existsSync(candidate)) ?? null;
 }
 
 function getCommitsAhead(devBranch) {

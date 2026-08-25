@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This repository is a **Claude Code plugin marketplace** containing production-ready slash commands that automate Git workflows, PR creation, release management, and QA testing. The commands are framework-agnostic and configurable via `.claude/config.yaml`.
+This repository is the dual-runtime **Git Workflow** package. Claude Code consumes its marketplace/plugin packaging and Claude-specific frontmatter; Codex consumes `.codex-plugin/plugin.json` and generated `.codex/agents/*.toml`. Shared workflow configuration lives in `.git-workflow/config.yaml`, with legacy `.claude/config.yaml` reads retained for compatibility.
 
 ## Behavioral Guidelines
 
@@ -18,6 +18,11 @@ This repository is a **Claude Code plugin marketplace** containing production-re
 .claude-plugin/
 ├── marketplace.json       # Marketplace catalog for distribution
 └── plugin.json            # Plugin manifest
+
+.codex-plugin/
+└── plugin.json            # Codex plugin manifest
+
+.codex/agents/             # Generated Codex project agents (do not hand-edit)
 
 skills/                    # Skills (each an invocable slash command via SKILL.md)
 ├── setup/SKILL.md         # Interactive setup wizard
@@ -59,7 +64,8 @@ README.md                  # Main documentation
 INSTALLATION.md            # Setup guide
 CONFIGURATION.md           # Configuration reference
 COMMANDS.md                # Commands reference documentation
-AGENTS.md                  # Subagents documentation
+AGENTS.md                  # Concise Codex contributor guidance
+docs/SUBAGENTS.md          # User-facing agent catalog
 HOOKS.md                   # Hooks documentation
 LICENSE                    # MIT license
 ```
@@ -168,7 +174,7 @@ Hooks automate actions during Claude Code execution. Configure in `settings.json
 - `PreToolUse`: Validate before execution (block dangerous commands)
 - `SessionStart/End`: Setup and logging
 
-The repo also ships an **opt-in** background review hook (`hooks/hooks.json` + `hooks/review-commit.sh`) that reviews new commits/pushes; enable it by adding `review-on-commit: true` to `.claude/git-workflow.local.md`.
+The repo also ships an **opt-in** background review hook. Claude selects `hooks/claude-hooks.json`; Codex discovers `hooks/hooks.json`; both call `hooks/review-commit.sh`. Enable it with `review-on-commit: true` in `.git-workflow/git-workflow.local.md`. The old `.claude/git-workflow.local.md` path remains a read-only fallback.
 
 See [HOOKS.md](./HOOKS.md) for complete documentation.
 

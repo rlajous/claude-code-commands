@@ -1,5 +1,5 @@
-# Claude Code Commands Configuration
-# Copy this file to .claude/config.yaml in your project root
+# Git Workflow Configuration
+# Copy this file to .git-workflow/config.yaml in your project root
 # All settings have sensible defaults - configure only what you need
 
 # ==============================================================================
@@ -96,7 +96,8 @@ pullRequests:
 # ISSUE TRACKER INTEGRATION
 # ==============================================================================
 # Authentication is handled by MCP servers (recommended) which manage OAuth/tokens
-# automatically. Configure MCP servers in ~/.claude/settings.json:
+# automatically. Configure MCP servers in the active host (for example,
+# ~/.claude/settings.json for Claude Code or ~/.codex/config.toml for Codex):
 #
 # {
 #   "mcpServers": {
@@ -173,7 +174,9 @@ attribution:
   enabled: false
 
   # Attribution format in commit message
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  # Leave empty unless attribution is enabled. Example:
+  # format: "Co-Authored-By: AI Assistant <noreply@example.com>"
+  format: ""
 
 # ==============================================================================
 # TESTING COMMANDS

@@ -2,10 +2,12 @@
 name: clean-gone
 description: Delete local Git branches whose upstream was deleted on the remote ("[gone]"), and remove any worktrees attached to them. Use when the user asks to clean up merged/stale branches, prune gone branches, tidy local branches after merging PRs, or "delete branches that are gone on the remote".
 argument-hint: "[--dry-run]"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Bash(git fetch:*), Bash(git branch:*), Bash(git worktree:*), Bash(git for-each-ref:*), Bash(git status:*), Bash(git config:*), Bash(git log:*), AskUserQuestion
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are cleaning up local Git branches whose remote tracking branch has been deleted (shown as `[gone]` by Git), along with any worktrees checked out to them. This is destructive, so it is designed to be **safe by default**: it never discards uncommitted work or unmerged commits without explicit, informed confirmation. Follow each step in order.
 
@@ -35,7 +37,7 @@ git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads \
   | awk '$2 == "[gone]" { print $1 }'
 ```
 
-**Resolve the protected branches** (never delete these), from `.claude/config.yaml` if present, else defaults:
+**Resolve the protected branches** (never delete these), from `.git-workflow/config.yaml` if present, else defaults:
 
 - `workflow.developmentBranch` — default **`staging`**
 - `workflow.productionBranch` — default **`main`**
@@ -53,7 +55,7 @@ For each candidate branch, gather safety signals to show the user:
 Present a table: branch → merged/unmerged → worktree path (clean/dirty). Then:
 
 - On `--dry-run`: print the table and **stop** (no changes).
-- Otherwise: ask the user to confirm with `AskUserQuestion`. Call out any **unmerged** branches and any **dirty** worktrees explicitly — these lose data if removed. Default to NOT removing those unless the user explicitly opts in.
+- Otherwise, ask the user to confirm. Call out any **unmerged** branches and any **dirty** worktrees explicitly — these lose data if removed. Default to NOT removing those unless the user explicitly opts in.
 
 ## Step 5: Remove Associated Worktrees (safely)
 

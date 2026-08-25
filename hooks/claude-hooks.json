@@ -1,0 +1,28 @@
+{
+  "description": "Git Workflow — optional background review of new commits and pushes (opt in via .git-workflow/git-workflow.local.md)",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/review-commit.sh\" --host claude",
+            "if": "Bash(git commit:*)",
+            "asyncRewake": true,
+            "rewakeMessage": "Background review of the just-committed changes. Review the diff below, delegate non-trivial analysis to pr-reviewer, surface real issues, then continue the user's request:",
+            "rewakeSummary": "Reviewing new commit"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/review-commit.sh\" --host claude",
+            "if": "Bash(git push:*)",
+            "asyncRewake": true,
+            "rewakeMessage": "Background review of the commits about to be shared. Review the diff below, delegate non-trivial analysis to pr-reviewer, surface real issues, then continue the user's request:",
+            "rewakeSummary": "Reviewing pushed commits"
+          }
+        ]
+      }
+    ]
+  }
+}

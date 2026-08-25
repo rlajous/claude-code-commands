@@ -1,426 +1,143 @@
-# Installation Guide
+# Git Workflow installation
 
-This guide walks you through setting up Claude Code Git Workflow commands in your project.
+Git Workflow supports Claude Code and Codex from the same checkout. Git and the GitHub CLI are required for GitHub operations; issue trackers are optional and use the active host's MCP configuration.
 
-## Prerequisites
+## Claude Code
 
-- [Claude Code CLI](https://claude.ai/code) installed
-- [Git](https://git-scm.com/) installed
-- [GitHub CLI](https://cli.github.com/) (`gh`) for PR creation
-- (Optional) MCP servers for Linear/Jira integration
+### Marketplace
 
-## Quick Setup
-
-### Option 1: Install from Marketplace (Recommended)
-
-The easiest way to install is via the Claude marketplace:
-
-```bash
-# Add the marketplace
+```text
 /plugin marketplace add rlajous/claude-code-commands
-
-# Install the plugin
 /plugin install git-workflow@git-workflow-marketplace
 ```
 
-After installation, commands are available with the `git-workflow:` prefix:
+Marketplace skills use names such as `/git-workflow:start` and `/git-workflow:review`.
+
+### Project-local installation
+
+For unprefixed skills, copy the shared skills and canonical Claude agents:
 
 ```bash
-/git-workflow:setup   # Run interactive setup
-/git-workflow:start PROJ-123
-/git-workflow:commit
-/git-workflow:finish
-```
-
-### Option 2: Manual Installation (Shorter Command Names)
-
-For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
-
-```bash
-# Clone the repository
 git clone https://github.com/rlajous/claude-code-commands.git
-
-# Copy skills to your project
-cp -r claude-code-commands/skills your-project/.claude/
-
-# (Optional) Copy agents
-cp -r claude-code-commands/agents your-project/.claude/
-
-# (Optional) Copy config template
-cp claude-code-commands/templates/config.yaml.template your-project/.claude/config.yaml
+mkdir -p your-project/.claude
+cp -R claude-code-commands/skills your-project/.claude/skills
+cp -R claude-code-commands/agents your-project/.claude/agents
+cp -R claude-code-commands/references your-project/.claude/references
 ```
 
-### Option 3: Plugin Directory
+Claude-specific plugin and contributor behavior remains documented in [CLAUDE.md](CLAUDE.md).
 
-Load as a plugin directory for temporary use:
+## Codex
+
+Install or load this checkout using Codex's plugin workflow. The root `.codex-plugin/plugin.json` exposes the shared `skills/` directory, and `hooks/hooks.json` contains the Codex-native hook registration.
+
+After the plugin is available, run this inside the target repository:
+
+```text
+$setup
+```
+
+Setup creates or migrates `.git-workflow/config.yaml`, then installs the eight project-scoped named agents into `.codex/agents/`. Codex discovers those definitions on its next project instruction/agent refresh. Agent definitions inherit the parent model, reasoning effort, and concurrency settings.
+
+To install agents manually from a checkout:
 
 ```bash
-# Clone the repository
-git clone https://github.com/rlajous/claude-code-commands.git ~/claude-plugins/git-workflow
-
-# Use with --plugin-dir flag
-claude --plugin-dir ~/claude-plugins/git-workflow
+mkdir -p your-project/.codex/agents
+cp claude-code-commands/.codex/agents/*.toml your-project/.codex/agents/
 ```
 
-### Cursor Compatibility
+Do not copy over existing project agents without reviewing the diff. `$setup --force` and `$update --force` are the explicit replacement paths.
 
-Cursor detects commands, agents, and hooks from the `.claude/` directory, so manual installation works for both Claude Code and Cursor with no extra steps.
+## Project configuration
+
+Both hosts use the same canonical configuration:
 
 ```bash
-# Same manual installation works for both tools
-git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/skills your-project/.claude/
-cp -r claude-code-commands/agents your-project/.claude/
+mkdir -p .git-workflow
+cp /path/to/git-workflow/templates/config.yaml.template .git-workflow/config.yaml
 ```
 
-If you prefer not to have a `.claude/` folder in your repo, you can install directly to `.cursor/` instead:
+Or simply run `/setup` in Claude or `$setup` in Codex. Setup reads legacy `.claude/config.yaml` when no canonical file exists and offers to copy its values; it never deletes the legacy file.
 
-```bash
-cp -r claude-code-commands/skills your-project/.cursor/
-cp -r claude-code-commands/agents your-project/.cursor/
+The project layout after a typical dual-runtime setup is:
+
+```text
+project/
+├── .git-workflow/
+│   ├── config.yaml
+│   └── version.json
+├── .codex/
+│   └── agents/
+│       ├── pr-reviewer.toml
+│       └── ...
+├── AGENTS.md                 # optional project guidance for Codex
+└── CLAUDE.md                 # optional project guidance for Claude
 ```
 
-> **Note**: Marketplace installation is Claude Code-specific. Cursor users should use manual installation.
+Generated state such as `pr-context.json`, `status.html`, the hook opt-in file, and the reviewed-SHA ledger also uses `.git-workflow/`. Matching `.claude/` locations remain read-only fallbacks.
 
----
+## MCP integrations
 
-## Post-Installation Setup
+MCP authentication belongs to the host, not `.git-workflow/config.yaml`.
 
-After installing via any method, run the interactive setup:
-
-```bash
-/setup  # or /git-workflow:setup if using marketplace
-```
-
-This guides you through configuring:
-- **Issue tracker integration** - Linear, Jira, or GitHub Issues
-- **MCP server setup** - Automatic configuration for your chosen tracker
-- **Workflow settings** - Branch naming, commit formats, and more
-
----
-
-## Directory Structure
-
-### Marketplace Installation
-
-Commands are installed to Claude's plugin cache. No files in your project.
-
-### Manual Installation
-
-After manual installation, your project should have:
-
-```
-your-project/
-├── .claude/
-│   ├── skills/                # Skills
-│   │   ├── setup/SKILL.md
-│   │   ├── start/SKILL.md
-│   │   ├── tdd/SKILL.md
-│   │   ├── commit/SKILL.md
-│   │   ├── finish/SKILL.md
-│   │   ├── review/SKILL.md
-│   │   ├── release/SKILL.md
-│   │   ├── release-notes/SKILL.md
-│   │   ├── sync/SKILL.md
-│   │   ├── plan-qa/SKILL.md
-│   │   ├── start-qa/SKILL.md
-│   │   ├── rfc/SKILL.md
-│   │   └── update/SKILL.md
-│   ├── agents/               # Subagents (optional)
-│   │   ├── pr-reviewer.md
-│   │   ├── release-validator.md
-│   │   └── qa-executor.md
-│   └── config.yaml           # Optional configuration
-├── CLAUDE.md                 # Optional but recommended
-└── ... your project files
-```
-
----
-
-## Configuration
-
-### Without Configuration (Defaults)
-
-Commands work immediately with these defaults:
-
-- Development branch: `staging`
-- Production branch: `main`
-- Branch format: `{type}/{ticket}-{description}`
-- Commit format: `[{type}] {message} ({ticket})`
-- Issue tracker: Auto-detected
-- Package manager: Auto-detected
-
-### With Configuration
-
-Create `.claude/config.yaml`:
-
-```yaml
-# Minimal configuration
-workflow:
-  developmentBranch: develop
-  productionBranch: main
-
-pullRequests:
-  reviewers:
-    - your-team
-```
-
-See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
-
----
-
-## GitHub CLI Setup
-
-The `/finish`, `/release`, and `/release-notes` commands require GitHub CLI:
-
-```bash
-# Install GitHub CLI
-# macOS
-brew install gh
-
-# Ubuntu/Debian
-sudo apt install gh
-
-# Windows
-winget install --id GitHub.cli
-
-# Authenticate
-gh auth login
-```
-
----
-
-## Issue Tracker Setup
-
-Commands integrate with issue trackers via **MCP (Model Context Protocol) servers**. MCP servers handle authentication automatically through OAuth.
-
-### Linear (via MCP)
-
-1. Add the Linear MCP server to your Claude Code settings:
-
-```json
-// In ~/.claude/settings.json or .claude/settings.json
-{
-  "mcpServers": {
-    "linear": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
-    }
-  }
-}
-```
-
-2. On first use, the MCP server will prompt for OAuth authentication.
-
-3. Configure issue tracker type (optional):
-
-```yaml
-# .claude/config.yaml
-issueTracker:
-  type: linear
-```
-
-### Jira (via MCP)
-
-1. Add the Jira MCP server to your Claude Code settings:
-
-```json
-// In ~/.claude/settings.json or .claude/settings.json
-{
-  "mcpServers": {
-    "jira": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
-    }
-  }
-}
-```
-
-2. On first use, the MCP server will prompt for Atlassian authentication.
-
-3. Configure issue tracker type:
-
-```yaml
-# .claude/config.yaml
-issueTracker:
-  type: jira
-  jira:
-    baseUrl: https://your-company.atlassian.net
-```
-
-### GitHub Issues
-
-No additional setup required. Uses `gh` CLI (already authenticated).
+For Claude Code, add servers to user or project Claude settings, for example `~/.claude/settings.json`. For Codex, add servers through Codex configuration or its MCP management command. Then set only the tracker selection in the shared config:
 
 ```yaml
 issueTracker:
-  type: github
+  type: linear # linear, jira, github, auto, or none
 ```
 
----
+Example remote endpoints:
 
-## Adding This Marketplace to Team Projects
+- Linear: `https://mcp.linear.app/mcp`
+- Atlassian: `https://mcp.atlassian.com/v1/mcp/authv2`
 
-You can configure your repository so team members are automatically prompted to install this marketplace when they trust the project folder. Add to `.claude/settings.json`:
+Follow the host's authentication flow rather than placing access tokens in the repository.
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "git-workflow-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "rlajous/claude-code-commands"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "git-workflow@git-workflow-marketplace": true
-  }
-}
+## Commit-review hook
+
+The package registers an asynchronous Bash `PostToolUse` hook on each host. It is inert until the project opts in:
+
+```yaml
+# .git-workflow/git-workflow.local.md
+review-on-commit: true
 ```
 
----
-
-## Hooks Setup (Optional)
-
-Hooks automate actions during Claude Code execution.
-
-1. Copy the hooks template:
-
-```bash
-cp templates/settings.json.template ~/.claude/settings.json
-```
-
-2. Or copy to project for project-specific hooks:
-
-```bash
-cp templates/settings.json.template .claude/settings.json
-```
-
-3. Customize hooks as needed. See [HOOKS.md](./HOOKS.md) for documentation.
-
----
-
-## CLAUDE.md Setup
-
-Create a `CLAUDE.md` in your project root to help Claude understand your project:
-
-```markdown
-# CLAUDE.md
-
-## Project Overview
-Brief description of your project.
-
-## Development Commands
-npm install
-npm run dev
-npm test
-
-## Project Structure
-src/ - Source code
-tests/ - Test files
-
-## Git Workflow
-Uses staging-based workflow with Claude Code commands.
-```
-
-Use `templates/CLAUDE.md.template` as a starting point.
-
----
-
-## Verification
-
-Test your installation:
-
-```bash
-# For marketplace installation
-/git-workflow:start
-
-# For manual installation
-/start
-
-# Claude should recognize the command and ask for ticket info
-```
-
----
+Restart or reload the host after changing installed hook definitions. See [HOOKS.md](HOOKS.md) for behavior and troubleshooting.
 
 ## Updating
 
-### Marketplace Installation
+Run `/update` in Claude or `$update` in Codex:
 
-```bash
-/plugin marketplace update git-workflow-marketplace
+```text
+$update --dry-run
+$update --source /path/to/checkout
+$update --prune
+$update --force
 ```
 
-### Manual Installation
+The workflow compares source and target files. Unmodified managed files can be synchronized normally; customized files require confirmation unless `--force` is present. `--prune` is explicit and does not remove configuration, generated state, or unrelated project files.
 
-Use the `/update` command to update tooling files while preserving your configuration:
+## Verify
 
-```bash
-/update                        # Update from default remote
-/update --dry-run              # Preview changes without modifying files
-/update --source ./local-repo  # Update from a local clone
-/update --prune                # Remove commands no longer in source
-/update --force                # Force re-copy even if up to date
+Check the expected skills and agents in the host, then try the non-destructive status workflow:
+
+```text
+/status   # Claude
+$status   # Codex
 ```
 
-The command updates `.claude/skills/`, `.claude/agents/`, and RFC template files. It never touches your `.claude/config.yaml`, `.claude/settings.json`, `CLAUDE.md`, or user-created RFCs.
+For this package checkout, run:
 
----
+```bash
+bash scripts/validate.sh
+```
 
 ## Troubleshooting
 
-### Commands Not Recognized (Marketplace)
-
-Ensure you're using the prefixed command name:
-
-```bash
-/git-workflow:start  # Correct
-/start               # Won't work with marketplace install
-```
-
-### Commands Not Recognized (Manual)
-
-Ensure skills are in `.claude/skills/<name>/SKILL.md` format:
-
-```bash
-ls -la .claude/skills/start/SKILL.md
-```
-
-### GitHub CLI Not Authenticated
-
-```bash
-gh auth status  # Check status
-gh auth login   # Re-authenticate
-```
-
-### Issue Tracker Not Connected
-
-Check if MCP servers are configured:
-
-```bash
-cat ~/.claude/settings.json | grep mcpServers
-```
-
-### Permission Denied
-
-```bash
-chmod -R 644 .claude/skills/*/SKILL.md
-```
-
----
-
-## Migration
-
-No migration needed. This plugin uses `.claude/skills/<name>/SKILL.md`.
-
----
-
-## Next Steps
-
-1. Read [CONFIGURATION.md](./CONFIGURATION.md) for customization options
-2. Read [COMMANDS.md](./COMMANDS.md) for command and workflow documentation
-3. Read [AGENTS.md](./AGENTS.md) for subagent documentation
-4. Read [HOOKS.md](./HOOKS.md) for hooks documentation
-5. Check [examples/](./examples/) for stack-specific configurations
-6. Try the workflow: `/start` → make changes → `/commit` → `/finish`
+- If a Claude skill is missing, verify the plugin is enabled or `.claude/skills/<name>/SKILL.md` exists.
+- If a Codex skill is missing, verify the plugin is installed/enabled and restart the session after changing its manifest.
+- If a Codex agent is missing, rerun `$setup` and verify `.codex/agents/<name>.toml` exists and parses.
+- If GitHub actions fail, run `gh auth status` and authenticate with `gh auth login`.
+- If issue lookup fails, inspect the active host's MCP connection and OAuth state.
+- If the hook does nothing, confirm `review-on-commit: true`, start a new host session, and verify the invoked command is `git commit` or `git push`.

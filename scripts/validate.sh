@@ -1,95 +1,134 @@
 #!/usr/bin/env bash
-# git-workflow — plugin self-validation.
-#
-# Checks that the plugin is internally consistent. Run locally or in CI:
-#   bash scripts/validate.sh
-#
-# Validates:
-#   - .claude-plugin/plugin.json and marketplace.json are valid JSON
-#   - the plugin version matches across plugin.json + marketplace.json (both places)
-#   - every skills/<name>/SKILL.md has a name + description in its frontmatter
-#   - every agents/*.md has name + description
-#   - hooks/hooks.json (if present) is valid JSON
-#   - no SKILL.md exceeds the soft 500-line progressive-disclosure guideline (warning)
-#
-# Exit code 0 = all hard checks pass, non-zero = at least one failure.
 
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
 fail=0
 warn=0
-err()  { printf 'FAIL: %s\n' "$1"; fail=$((fail+1)); }
-warns(){ printf 'WARN: %s\n' "$1"; warn=$((warn+1)); }
-ok()   { printf 'ok:   %s\n' "$1"; }
+err() { printf 'FAIL: %s\n' "$1"; fail=$((fail + 1)); }
+warns() { printf 'WARN: %s\n' "$1"; warn=$((warn + 1)); }
+ok() { printf 'ok:   %s\n' "$1"; }
 
-json_ok() { python3 -m json.tool "$1" >/dev/null 2>&1; }
-
-# --- JSON manifests ----------------------------------------------------------
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
-  if [ ! -f "$f" ]; then err "$f missing"; continue; fi
-  if json_ok "$f"; then ok "$f valid JSON"; else err "$f is not valid JSON"; fi
+for file in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json hooks/claude-hooks.json hooks/hooks.json; do
+  if [ ! -f "$file" ]; then
+    err "$file missing"
+  elif python3 -m json.tool "$file" >/dev/null 2>&1; then
+    ok "$file valid JSON"
+  else
+    err "$file is not valid JSON"
+  fi
 done
 
-if [ -f hooks/hooks.json ]; then
-  if json_ok hooks/hooks.json; then ok "hooks/hooks.json valid JSON"; else err "hooks/hooks.json is not valid JSON"; fi
+if python3 - <<'PY'
+import json
+from pathlib import Path
+
+claude = json.loads(Path(".claude-plugin/plugin.json").read_text())
+market = json.loads(Path(".claude-plugin/marketplace.json").read_text())
+codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
+versions = {claude["version"], codex["version"]}
+versions.update(plugin["version"] for plugin in market["plugins"])
+assert versions == {"2.4.0"}, versions
+assert claude["name"] == codex["name"] == "git-workflow"
+assert codex["skills"] == "./skills/"
+assert claude["hooks"] == "./hooks/claude-hooks.json"
+assert "hooks" not in codex, "Codex hooks are discovered from hooks/hooks.json"
+
+codex_hooks = json.loads(Path("hooks/hooks.json").read_text())["hooks"]["PostToolUse"]
+assert any(entry.get("matcher") == "Bash" and any(hook.get("async") is True for hook in entry.get("hooks", [])) for entry in codex_hooks)
+PY
+then ok "manifest versions, paths, and Codex hook registration aligned"
+else err "manifest versions, paths, or hook registration are inconsistent"
 fi
 
-# --- version alignment -------------------------------------------------------
-# Collect every "version": "..." from the two manifests; they must all match.
-versions="$(grep -hoE '"version":[[:space:]]*"[^"]+"' .claude-plugin/plugin.json .claude-plugin/marketplace.json 2>/dev/null \
-  | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/' | sort -u)"
-vcount="$(printf '%s\n' "$versions" | grep -c .)"
-if [ "$vcount" -eq 1 ] && [ -n "$versions" ]; then
-  ok "version aligned: $versions"
+if python3 scripts/validate-codex-plugin.py >/dev/null; then
+  ok "Codex plugin ingestion contract"
 else
-  err "version mismatch across manifests: $(printf '%s ' $versions)"
+  err "Codex plugin ingestion contract"
 fi
 
-# --- frontmatter helper ------------------------------------------------------
-# Prints "ok" if the file has a YAML frontmatter block containing `field:`.
-has_frontmatter_field() {
-  awk -v field="$2" '
-    NR==1 && $0!="---" { print "no-open"; exit }
-    NR>1 && $0=="---"  { exit }
-    NR>1 && $0 ~ "^" field ":" { found=1 }
-    END { if (found) print "yes"; else print "no" }
-  ' "$1"
-}
-
-# --- skills ------------------------------------------------------------------
-skill_count=0
-if [ -d skills ]; then
-  for d in skills/*/; do
-    sk="$d/SKILL.md"
-    name="$(basename "$d")"
-    [ -f "$sk" ] || { err "skills/$name has no SKILL.md"; continue; }
-    skill_count=$((skill_count+1))
-    [ "$(has_frontmatter_field "$sk" name)" = "yes" ] || err "skills/$name: missing 'name' in frontmatter"
-    [ "$(has_frontmatter_field "$sk" description)" = "yes" ] || err "skills/$name: missing 'description' in frontmatter"
-    lines="$(wc -l < "$sk" | tr -d ' ')"
-    [ "$lines" -gt 500 ] && warns "skills/$name/SKILL.md is $lines lines (>500 soft guideline — consider references/)"
-  done
-  ok "skills checked: $skill_count"
+if node scripts/generate-codex-agents.mjs --check >/dev/null; then
+  ok "generated Codex agents are current"
+else
+  err "generated Codex agents drifted from agents/*.md"
 fi
 
-# --- agents ------------------------------------------------------------------
-agent_count=0
-if [ -d agents ]; then
-  for a in agents/*.md; do
-    [ -f "$a" ] || continue
-    agent_count=$((agent_count+1))
-    [ "$(has_frontmatter_field "$a" name)" = "yes" ] || err "$a: missing 'name' in frontmatter"
-    [ "$(has_frontmatter_field "$a" description)" = "yes" ] || err "$a: missing 'description' in frontmatter"
-  done
-  ok "agents checked: $agent_count"
+if python3 - <<'PY'
+import re
+import tomllib
+from pathlib import Path
+
+sources = {}
+for path in sorted(Path("agents").glob("*.md")):
+    text = path.read_text()
+    match = re.match(r"^---\n(.*?)\n---\n+(.*)$", text, re.S)
+    assert match, f"invalid frontmatter: {path}"
+    fields = dict(re.findall(r"^([a-z-]+):\s*(.*)$", match.group(1), re.M))
+    assert fields.get("name") and fields.get("description"), path
+    sources[fields["name"]] = match.group(2).rstrip()
+
+generated = {}
+for path in sorted(Path(".codex/agents").glob("*.toml")):
+    with path.open("rb") as file:
+        data = tomllib.load(file)
+    assert set(data) == {"name", "description", "sandbox_mode", "developer_instructions"}, path
+    assert data["sandbox_mode"] in {"read-only", "workspace-write"}, path
+    assert "model" not in data and "model_reasoning_effort" not in data, path
+    generated[data["name"]] = data
+
+assert len(sources) == len(generated) == 8
+assert set(sources) == set(generated)
+for name, instructions in sources.items():
+    assert generated[name]["developer_instructions"] == instructions
+    expected = "workspace-write" if name in {"release-validator", "qa-executor"} else "read-only"
+    assert generated[name]["sandbox_mode"] == expected
+PY
+then ok "eight canonical agents have one-to-one valid TOML definitions"
+else err "canonical and Codex agent definitions failed parity validation"
 fi
 
-# --- result ------------------------------------------------------------------
-echo
+if python3 - <<'PY'
+import re
+from pathlib import Path
+
+skills = sorted(Path("skills").glob("*/SKILL.md"))
+assert len(skills) == 17, len(skills)
+for path in skills:
+    text = path.read_text()
+    match = re.match(r"^---\n(.*?)\n---\n+(.*)$", text, re.S)
+    assert match, f"invalid frontmatter: {path}"
+    fields = dict(re.findall(r"^([a-z-]+):\s*(.*)$", match.group(1), re.M))
+    assert fields.get("name") == path.parent.name, path
+    assert fields.get("description"), path
+    body = match.group(2)
+    for host_tool in ("AskUserQuestion", "WebFetch", "Task tool", "Task agent"):
+        assert host_tool not in body, f"{path}: host-only wording {host_tool!r}"
+    assert "runtime compatibility" in body.lower(), f"{path}: missing compatibility guidance"
+    lines = len(text.splitlines())
+    if lines > 500:
+        print(f"WARN {path} has {lines} lines")
+PY
+then ok "17 shared skills have valid neutral instructions"
+else err "skill count, frontmatter, or runtime-neutral wording failed validation"
+fi
+
+for script in hooks/review-commit.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh; do
+  if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
+done
+
+if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; else err "review hook behavior"; fi
+if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
+if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
+
+if node scripts/status-report.mjs | grep -q '<!doctype html>'; then
+  ok "status report smoke test"
+else
+  err "status report smoke test"
+fi
+
+printf '\n'
 if [ "$fail" -gt 0 ]; then
   printf 'RESULT: %d failure(s), %d warning(s)\n' "$fail" "$warn"
   exit 1
 fi
 printf 'RESULT: all checks passed (%d warning(s))\n' "$warn"
-exit 0

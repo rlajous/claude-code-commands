@@ -1,10 +1,12 @@
 ---
 name: finish
 description: Create a pull request with comprehensive description following repo best practices
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git log:*), Bash(git status:*), Bash(git diff:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr edit:*), AskUserQuestion
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a pull request with a comprehensive description. Your task is to gather information, generate the PR description, push the branch, and create the PR using project conventions.
 
@@ -14,14 +16,14 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+[ -f ".git-workflow/pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
 
 # Get current branch
 git branch --show-current
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from `.git-workflow/config.yaml` (if exists):**
 
 ```yaml
 workflow:
@@ -35,7 +37,7 @@ issueTracker:
   type: auto
 ```
 
-**Load from `.claude/.pr-context.json` (if exists):**
+**Load from `.git-workflow/pr-context.json` (if exists):**
 
 ```json
 {
@@ -121,7 +123,7 @@ Commits:
 
 ## Step 4: Gather PR Information
 
-Ask the user for additional context (use AskUserQuestion tool):
+Ask the user for additional context (use the active host user-input mechanism):
 
 ### Question 1: Summary of Changes
 
@@ -362,7 +364,7 @@ Ask if user wants to clean up context:
 
 ```bash
 # Remove context file (optional)
-rm .claude/.pr-context.json
+rm .git-workflow/pr-context.json
 ```
 
 Or keep for reference until PR is merged.

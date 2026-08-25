@@ -1,3 +1,9 @@
 .claude/.pr-context.json
 .claude/.git-workflow-reviewed-shas
 .claude/*.local.md
+
+# Git Workflow generated state (configuration and version ledger stay tracked)
+.git-workflow/pr-context.json
+.git-workflow/status.html
+.git-workflow/git-workflow.local.md
+.git-workflow/.git-workflow-reviewed-shas

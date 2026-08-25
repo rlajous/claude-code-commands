@@ -1,10 +1,12 @@
 ---
 name: commit
 description: Stage and commit changes with proper formatting following repo conventions
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), AskUserQuestion, Edit
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping commit changes for a pull request. Your task is to stage changes, generate a properly formatted commit message following project conventions, and handle pre-commit hooks.
 
@@ -14,11 +16,11 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+[ -f ".git-workflow/pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from `.git-workflow/config.yaml` (if exists):**
 
 ```yaml
 commits:
@@ -28,10 +30,10 @@ commits:
   ticketPattern: "^[A-Z]+-\\d+$"
 attribution:
   enabled: false
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  format: ""
 ```
 
-**Load from `.claude/.pr-context.json` (if exists):**
+**Load from `.git-workflow/pr-context.json` (if exists):**
 
 ```json
 {
@@ -251,14 +253,14 @@ Example:
 ```
 [Fix] Update token schema (PROJ-1234)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: AI Assistant <noreply@example.com>
 ```
 
 **Note:** Attribution is disabled by default.
 
 ## Step 7: Update Context
 
-Update `.claude/.pr-context.json`:
+Update `.git-workflow/pr-context.json`:
 
 ```json
 {
@@ -311,7 +313,7 @@ Message: [Fix] Update token schema (PROJ-1234)
 | `commits.types`      | Feature, Fix, Hotfix...           | Allowed commit types           |
 | `commits.requireTicket` | `false`                        | Require ticket ID              |
 | `attribution.enabled` | `false`                          | Add AI co-author               |
-| `attribution.format` | `Co-Authored-By: Claude <...>`    | Attribution line format        |
+| `attribution.format` | empty                              | Optional attribution line      |
 
 ## Error Handling
 

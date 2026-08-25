@@ -1,6 +1,6 @@
 ---
 name: pr-reviewer
-description: Expert code reviewer. Use proactively after code changes to review for quality, security, and best practices.
+description: Review pull requests and code changes for correctness, security, performance, test coverage, and maintainability when a review workflow delegates this role or the user requests it directly.
 tools: Read, Grep, Glob
 model: sonnet
 effort: high

@@ -16,8 +16,14 @@ You are a release validation specialist. Your role is to ensure a release is rea
 Check for project configuration:
 
 ```bash
-# Check for config
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+# Check canonical config first, then the legacy fallback
+if [ -f ".git-workflow/config.yaml" ]; then
+  echo "CONFIG=.git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  echo "CONFIG=.claude/config.yaml (legacy)"
+else
+  echo "CONFIG=false"
+fi
 
 # Detect project type
 [ -f "package.json" ] && echo "TYPE=node"

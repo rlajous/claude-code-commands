@@ -1,485 +1,154 @@
-# Claude Code Git Workflow
+# Git Workflow
 
-Production-ready slash commands for Claude Code that automate your Git workflow, PR creation, release management, and QA testing.
+An agent-neutral package of 17 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
-## Features
+## What it includes
 
-- **Framework-agnostic** - Works with any language or framework
-- **Configurable** - Customize everything via `.claude/config.yaml`
-- **Issue tracker integration** - Linear, Jira, and GitHub Issues
-- **Multi-workflow support** - Staging-based, tag-based, or direct workflows
-- **Zero configuration** - Sensible defaults work out of the box
-- **Subagents** - Specialized AI assistants for code review, release validation, and QA
-- **Hooks** - Automate actions before/after tool use
-- **Marketplace plugin** - Installable from Claude marketplace
+- Framework-agnostic branch, commit, PR, release, QA, RFC, and status workflows
+- Linear, Jira, and GitHub issue integration through the host's MCP configuration
+- Native Claude plugin packaging and a native Codex plugin manifest
+- Eight review, release, version-research, and QA agents
+- Canonical runtime-neutral configuration and state in `.git-workflow/`
+- Backward-compatible reads from legacy `.claude/` state
+- An opt-in asynchronous review hook for new commits and pushes
 
-## Quick Start
+## Install for Claude Code
 
-### Option 1: Install from Marketplace (Recommended)
+The existing marketplace installation remains supported:
 
-```bash
-# Add the marketplace
+```text
 /plugin marketplace add rlajous/claude-code-commands
-
-# Install the plugin
 /plugin install git-workflow@git-workflow-marketplace
 ```
 
-After installation, commands are available with the `git-workflow:` prefix:
+Skills installed from the marketplace use the package prefix, for example:
 
-```bash
+```text
 /git-workflow:start PROJ-123
 /git-workflow:commit
 /git-workflow:finish
 ```
 
-### Option 2: Manual Installation (Shorter Command Names)
+For unprefixed project skills, copy `skills/` to `.claude/skills/`, `agents/` to `.claude/agents/`, and the shared `references/` directory to `.claude/references/`.
 
-For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
+## Install for Codex
 
-```bash
-# Clone and copy to your project
-git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/skills your-project/.claude/
-cp -r claude-code-commands/agents your-project/.claude/
+Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 17 directories under `skills/`. Then run the setup skill in the target project:
+
+```text
+$setup
 ```
 
-> **Cursor users**: Cursor also detects commands from `.claude/`. Manual installation works as-is. See [INSTALLATION.md](./INSTALLATION.md#cursor-compatibility) for details.
+Codex plugins distribute skills and hooks, while named project agents are discovered from `.codex/agents/`. `$setup` installs the eight generated agent definitions there. It shows a diff and asks before replacing a customized file; pass `--force` only when replacement is intentional.
 
-### 3. (Optional) Add Configuration
+During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
-Create `.claude/config.yaml` for project-specific settings:
+## Configure
+
+Run `/setup` in Claude or `$setup` in Codex. New projects use:
+
+```text
+.git-workflow/
+├── config.yaml
+└── version.json
+```
+
+Generated local state—`pr-context.json`, `status.html`, hook opt-in settings, and the reviewed-SHA ledger—also lives under `.git-workflow/` and is ignored where appropriate. Setup imports legacy values from `.claude/` without deleting or silently overwriting the original files.
+
+A minimal configuration is:
 
 ```yaml
-# Basic configuration example
 workflow:
+  type: staging
   developmentBranch: staging
   productionBranch: main
 
 issueTracker:
-  type: linear  # or jira, github
+  type: auto
 
-pullRequests:
-  reviewers:
-    - your-team
+attribution:
+  enabled: false
+  format: ""
 ```
 
-See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
+See [CONFIGURATION.md](CONFIGURATION.md) and [INSTALLATION.md](INSTALLATION.md).
 
-### 4. Run Setup (Recommended)
+## Skills
 
-```bash
-/setup  # or /git-workflow:setup if installed via marketplace
-```
+Invoke a skill as `/name` in Claude and `$name` in Codex.
 
-This guides you through configuring issue trackers and MCP servers.
+| Skill | Purpose |
+| --- | --- |
+| `setup` | Configure the workflow and install project agents |
+| `update` | Safely synchronize skills, agents, templates, and metadata |
+| `start` | Create a feature branch from a ticket |
+| `tdd` | Implement a ticket test-first |
+| `commit` | Create a formatted commit |
+| `finish` | Push and open a pull request |
+| `review` | Fan out a comprehensive PR review |
+| `release` | Prepare and validate a release |
+| `release-notes` | Generate release notes |
+| `sync` | Back-merge production into development |
+| `plan-qa` | Generate a QA plan |
+| `start-qa` | Execute a QA plan |
+| `rfc` | Create an RFC |
+| `review-request` | Draft a review request |
+| `standup` | Summarize recent work |
+| `status` | Show workflow state and next action |
+| `clean-gone` | Remove gone branches and linked worktrees safely |
 
-### 5. Use the Commands
+Detailed examples are in [COMMANDS.md](COMMANDS.md).
 
-```bash
-# Start a new feature
-/start
+## Agents and delegation
 
-# Commit changes
-/commit
+The canonical instructions live in `agents/*.md`; generated Codex definitions live in `.codex/agents/*.toml`.
 
-# Create a PR
-/finish
-```
+- `review` starts the specialized review agents in parallel and waits for all findings.
+- `release` uses `release-validator` and uses `version-delta-analyst` when a dependency, framework, or API version changed.
+- `start-qa` delegates sufficiently large plans to `qa-executor`.
+- Routine edits remain in the main session.
 
-## Commands
+Read the complete catalog in [docs/SUBAGENTS.md](docs/SUBAGENTS.md).
 
-| Command | Description |
-|---------|-------------|
-| `/setup` | Interactive setup wizard for MCP and config |
-| `/start` | Create a feature branch from a ticket ID |
-| `/tdd` | Implement ticket using Test-Driven Development |
-| `/commit` | Stage and commit with conventional format |
-| `/finish` | Push branch and create PR with full description |
-| `/review` | Comprehensive code review on a PR |
-| `/release` | Create release branch with version bump |
-| `/release-notes` | Generate GitHub release with detailed notes |
-| `/sync` | Back-merge production to development branch |
-| `/plan-qa` | Generate QA test plan from ticket |
-| `/start-qa` | Execute QA tests from plan file |
-| `/rfc` | Create a new RFC document from template with auto-numbering |
-| `/review-request` | Draft a paste-ready message asking teammates to review a PR |
-| `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity |
-| `/status` | Show where you are in the workflow and the recommended next step |
-| `/update` | Update skills and agents from source repo |
-| `/clean-gone` | Delete local branches gone on the remote and their worktrees |
+## Commit-review hook
 
-> **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
-
-## Subagents
-
-Specialized AI assistants for common tasks:
-
-| Agent | Description |
-|-------|-------------|
-| `pr-reviewer` | Expert code reviewer for quality, security, and best practices |
-| `release-validator` | Pre-release validation (tests, build, dependencies) |
-| `qa-executor` | Executes QA test plans with detailed reporting |
-| `silent-failure-hunter` | Hunts swallowed errors, over-broad catch blocks, and silent fallbacks in changed code |
-| `type-design-analyzer` | Rates type design: encapsulation, invariant expression, usefulness, enforcement (1-10 each) |
-| `pr-test-analyzer` | Finds behavioral test-coverage gaps, rating each missing test's criticality and the regression it catches |
-| `comment-analyzer` | Detects comment rot and docstrings that no longer match the code |
-| `version-delta-analyst` | Catalogs breaking changes, deprecations, and migration steps between two versions of a dependency/stack/API |
-
-> **Note**: `/review` now fans out to the specialized review agents (`silent-failure-hunter`, `type-design-analyzer`, `pr-test-analyzer`, `comment-analyzer`) in parallel for a deeper analysis.
-
-### Using Subagents
-
-Subagents are invoked automatically when relevant, or explicitly:
-
-```
-Review the code changes in this PR
-Use the release-validator to check if we're ready to release
-```
-
-See [AGENTS.md](./AGENTS.md) for complete documentation.
-
-## Hooks
-
-Automate actions at key points in your workflow:
-
-- **PostToolUse** - Run after file edits (auto-format, lint)
-- **PreToolUse** - Validate before execution (prevent dangerous commands)
-- **SessionStart/End** - Setup and logging
-
-The plugin also ships an **opt-in** background review hook (`hooks/hooks.json`) that reviews new commits/pushes as they happen. It is **off by default** — enable it by adding `review-on-commit: true` to `.claude/git-workflow.local.md`.
-
-### Example Hook
-
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npm run lint:fix -- $CLAUDE_FILE_PATH"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-See [HOOKS.md](./HOOKS.md) for complete documentation.
-
-## Commands
-
-Commands are defined using **YAML frontmatter** in markdown files.
-
-### Using Commands
-
-Commands can be invoked in multiple ways:
-
-```bash
-# As slash commands
-/start PROJ-123
-/commit
-/finish
-
-# With arguments
-/plan-qa PROJ-123 --url https://api.staging.example.com
-
-# In conversation
-"Run /commit and then /finish for me"
-```
-
-### Command Format
-
-Each command file uses YAML frontmatter for configuration:
+The hook is disabled by default. Enable it in the target project:
 
 ```yaml
----
-description: What this command does
-argument-hint: "[optional-arg]"
-disable-model-invocation: true
----
+# .git-workflow/git-workflow.local.md
+review-on-commit: true
 ```
 
-See [COMMANDS.md](./COMMANDS.md) for complete documentation.
+Claude registers `hooks/claude-hooks.json`; Codex discovers `hooks/hooks.json`. Both invoke the same script. It reacts only to `git commit` and `git push`, suppresses duplicate SHAs, and returns host-appropriate output. See [HOOKS.md](HOOKS.md).
 
-Discover more command ideas at [skills.sh](https://skills.sh/).
+## Updating safely
 
-## Workflow
-
-### Standard PR Flow
-
-```
-/start → make changes → /commit → /finish → /review
-```
-
-1. **`/start`** - Creates feature branch, fetches ticket details
-2. **Work** - Make your code changes
-3. **`/commit`** - Stages files, creates formatted commit
-4. **`/finish`** - Pushes branch, creates comprehensive PR
-5. **`/review`** - Comprehensive code review on the PR
-
-### TDD Flow
+Use `/update` or `$update`. By default it previews differences and requires confirmation before overwriting a locally customized skill or agent.
 
 ```text
-/start → /tdd → /commit → /finish
+$update --dry-run
+$update --source ../git-workflow
+$update --prune
+$update --force
 ```
 
-1. **`/start`** - Creates feature branch, fetches ticket details
-2. **`/tdd`** - Implement using Test-Driven Development:
-   - **RED** - Write failing tests based on acceptance criteria
-   - **GREEN** - Implement minimum code to pass tests
-   - **REFACTOR** - Clean up code while keeping tests green
-3. **`/commit`** - Stages files, creates formatted commit
-4. **`/finish`** - Pushes branch, creates comprehensive PR
+## Development
 
-### Release Flow
-
-```
-/release → review → merge → /release-notes → /sync
-```
-
-1. **`/release`** - Creates release branch, bumps version, opens PR to main
-2. **Review** - Team reviews and approves
-3. **Merge** - Merge to production branch
-4. **`/release-notes`** - Creates GitHub release with categorized notes
-5. **`/sync`** - Back-merges main to development branch
-
-## Configuration
-
-Commands work without configuration using sensible defaults:
-
-| Default | Value |
-|---------|-------|
-| Development branch | `staging` |
-| Production branch | `main` |
-| Branch format | `{type}/{ticket}-{description}` |
-| Commit format | `[{type}] {message} ({ticket})` |
-| Issue tracker | Auto-detected |
-| Package manager | Auto-detected |
-
-### Override with Config
-
-```yaml
-# .claude/config.yaml
-workflow:
-  developmentBranch: develop
-  productionBranch: main
-
-commits:
-  format: "{type}: {message}"
-  requireTicket: false
-
-issueTracker:
-  type: jira  # Uses MCP server for authentication
-  jira:
-    baseUrl: https://company.atlassian.net
-```
-
-See [CONFIGURATION.md](./CONFIGURATION.md) for complete reference.
-
-## Issue Tracker Integration
-
-Commands integrate with issue trackers via **MCP servers** (recommended) for automatic authentication, or can fall back to manual API configuration.
-
-### Linear (via MCP)
-
-```json
-// In ~/.claude/settings.json
-{
-  "mcpServers": {
-    "linear": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
-    }
-  }
-}
-```
-
-Commands will fetch ticket details, update status, and link PRs.
-
-### Jira (via MCP)
-
-```json
-// In ~/.claude/settings.json
-{
-  "mcpServers": {
-    "jira": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
-    }
-  }
-}
-```
-
-### GitHub Issues
-
-```yaml
-issueTracker:
-  type: github
-```
-
-Uses `gh` CLI for issue integration (no additional setup required).
-
-## Examples
-
-Pre-configured examples for common stacks:
-
-- **[NestJS Backend](./examples/nestjs/)** - Node.js API with Prisma
-- **[Next.js Frontend](./examples/nextjs/)** - React app with App Router
-- **[Python FastAPI](./examples/python/)** - Python API with SQLAlchemy
-- **[React Native](./examples/react-native/)** - Mobile app with Expo
-- **[Monorepo](./examples/monorepo/)** - Turborepo with multiple apps
-
-## Supported Tech Stacks
-
-### Package Managers
-
-- npm, pnpm, yarn, bun (Node.js)
-- uv, pip, poetry (Python)
-- cargo (Rust)
-- go mod (Go)
-
-### Version Files
-
-Auto-detected from project:
-
-- `package.json` (Node.js)
-- `pyproject.toml` (Python)
-- `Cargo.toml` (Rust)
-- `VERSION` (Generic)
-
-## Installation
-
-### Option 1: Marketplace (Recommended)
+After changing a canonical agent, regenerate the committed Codex definitions:
 
 ```bash
-/plugin marketplace add rlajous/claude-code-commands
-/plugin install git-workflow@git-workflow-marketplace
+node scripts/generate-codex-agents.mjs
+node scripts/generate-codex-agents.mjs --check
 ```
 
-### Option 2: Manual Copy
+Run all repository checks with:
 
 ```bash
-git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/skills your-project/.claude/
-cp -r claude-code-commands/agents your-project/.claude/
+bash scripts/validate.sh
 ```
 
-### Option 3: Plugin Directory
-
-```bash
-claude --plugin-dir /path/to/claude-code-commands
-```
-
-See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions.
-
-### Updating (Manual Installation)
-
-Use the `/update` command to update tooling files while preserving your configuration:
-
-```bash
-/update                    # Update from default remote
-/update --dry-run          # Preview changes
-/update --prune            # Remove old commands no longer in source
-/update --force            # Force re-copy even if up to date
-```
-
-See [INSTALLATION.md](./INSTALLATION.md#updating) for details.
-
-## CLAUDE.md Template
-
-Add a `CLAUDE.md` to your project to provide context:
-
-```markdown
-# CLAUDE.md
-
-## Project Overview
-Brief description of your project...
-
-## Development Commands
-npm install
-npm run dev
-npm test
-
-## Git Workflow
-Uses Claude Code slash commands...
-```
-
-See [templates/CLAUDE.md.template](./templates/CLAUDE.md.template) for a complete template.
-
-## Customization
-
-### Custom Commit Format
-
-```yaml
-commits:
-  format: "{type}({scope}): {message}"
-  types: [feat, fix, docs, style, refactor, test, chore]
-```
-
-### Custom Branch Naming
-
-```yaml
-branches:
-  feature: "feature/{ticket}/{description}"
-  release: "v{version}"
-```
-
-### Custom Reviewers
-
-```yaml
-pullRequests:
-  reviewers:
-    - alice
-    - bob
-    - team/backend
-  labels:
-    - needs-review
-```
-
-## Best Practices
-
-1. **Start with defaults** - Commands work without config
-2. **Add config gradually** - Only configure what you need
-3. **Use CLAUDE.md** - Help Claude understand your project
-4. **Consistent workflow** - Use the same commands across teams
-
-## Troubleshooting
-
-### Command Not Found
-
-For marketplace installation, ensure you prefix with `git-workflow:`:
-```bash
-/git-workflow:start  # Not /start
-```
-
-For manual installation, ensure `.claude/skills/` directory exists with `<name>/SKILL.md` files.
-
-### GitHub CLI Issues
-
-```bash
-# Authenticate with GitHub
-gh auth login
-```
-
-### Issue Tracker Not Working
-
-Check MCP server configuration in `~/.claude/settings.json`:
-
-```bash
-cat ~/.claude/settings.json | grep -A 10 mcpServers
-```
-
-See [INSTALLATION.md](./INSTALLATION.md) for MCP server setup instructions.
-
-## Contributing
-
-Contributions welcome! Please read our contributing guidelines.
+The Claude and Codex manifests, skill/agent parity, TOML syntax, generated-file drift, and hook behavior are validated in CI.
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+MIT. See [LICENSE](LICENSE).

@@ -2,20 +2,22 @@
 name: start
 description: Start a new PR by creating a feature branch following repo conventions
 argument-hint: "[ticket-id]"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git checkout:*), Bash(git pull:*), Bash(gh issue view:*), AskUserQuestion, Write
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a new pull request. Your task is to create a properly named feature branch, optionally fetch ticket details, and store context for subsequent commands.
 
 ## Step 1: Load Configuration
 
-Check for `.claude/config.yaml` to load project-specific settings:
+Check for `.git-workflow/config.yaml` to load project-specific settings:
 
 ```bash
 # Check if config exists
-if [ -f ".claude/config.yaml" ]; then
+if [ -f ".git-workflow/config.yaml" ]; then
   echo "CONFIG_EXISTS=true"
 else
   echo "CONFIG_EXISTS=false"
@@ -24,7 +26,7 @@ fi
 
 **Configuration Priority:**
 
-1. `.claude/config.yaml` (if exists)
+1. `.git-workflow/config.yaml` (if exists)
 2. Auto-detection (package.json, pyproject.toml, etc.)
 3. Sensible defaults
 
@@ -47,7 +49,7 @@ issueTracker:
 
 ## Step 2: Gather Information
 
-Ask the user for the following information (use AskUserQuestion tool):
+Ask the user for the following information (use the active host user-input mechanism):
 
 ### Question 1: Ticket ID
 
@@ -195,7 +197,7 @@ git checkout -b {branch_name}
 
 ## Step 5: Store Context
 
-Create `.claude/.pr-context.json` with collected information:
+Create `.git-workflow/pr-context.json` with collected information:
 
 ```json
 {
@@ -244,7 +246,7 @@ Ticket Details:
 
 ## Configuration Reference
 
-All configurable options from `.claude/config.yaml`:
+All configurable options from `.git-workflow/config.yaml`:
 
 | Setting                     | Default                          | Description                       |
 | --------------------------- | -------------------------------- | --------------------------------- |

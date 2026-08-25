@@ -1,392 +1,98 @@
-# Hooks Reference
+# Git Workflow hooks
 
-Hooks allow you to run custom commands at specific points during Claude Code's execution. This enables automation, validation, and integration with your development workflow.
+Git Workflow ships one opt-in asynchronous hook that notices successful `git commit` and `git push` commands and provides the resulting diff to the active host for review.
 
-**Official Documentation**: https://code.claude.com/docs/en/hooks
+## Host registration
 
-## Overview
+The shared implementation is `hooks/review-commit.sh`.
 
-Hooks are configured in your `settings.json` file and can run:
+| Host | Registration | Output |
+| --- | --- | --- |
+| Claude Code | `hooks/claude-hooks.json`, selected by the Claude manifest | Plain review context with Claude's asynchronous re-wake behavior |
+| Codex | `hooks/hooks.json`, discovered by the Codex plugin | JSON containing `hookSpecificOutput.additionalContext` |
 
-- **Before** a tool is used (PreToolUse) - Can block execution
-- **After** a tool is used (PostToolUse) - For cleanup or validation
-- **At session start/end** (SessionStart/SessionEnd) - For setup and logging
-- **On notifications** (Notification) - For alerts
+Both registrations use `PostToolUse`, match Bash execution, and run asynchronously. The script parses the hook payload and exits without output unless the executed command contains `git commit` or `git push`.
 
-## Shipped Hook: Background Commit Review (opt-in)
+## Enable it
 
-This plugin ships one active hook in `hooks/hooks.json`: after a `git commit` or `git push`, it can run a **background review** of the new changes and re-wake the agent with the diff (using `asyncRewake`, so it never blocks your work). The agent then reviews the diff — delegating to the `pr-reviewer` agent for anything non-trivial — and surfaces real issues before continuing.
+The hook is disabled by default. Add this project-local file:
 
-**It is OFF by default.** Installing the plugin does not change your git behavior until you opt in per project:
-
-```markdown
-<!-- .claude/git-workflow.local.md -->
+```yaml
+# .git-workflow/git-workflow.local.md
 review-on-commit: true
 ```
 
-- The gate, diff extraction, and de-duplication live in a self-contained bash script (`hooks/review-commit.sh`) — no Python, no external dependencies beyond `git`.
-- A local ledger (`.claude/.git-workflow-reviewed-shas`, git-ignored) records reviewed commit SHAs so the same commit is never reviewed twice.
-- Both the settings file (`.claude/*.local.md`) and the ledger are git-ignored — nothing is committed to your repo.
-- To disable, set `review-on-commit: false` (or delete the settings file). Changes take effect on the next Claude Code session.
+The neutral path is checked first. For compatibility, the script falls back to `.claude/git-workflow.local.md` when the canonical file is absent. Restart or reload the host after changing plugin hook registration.
 
-The sections below document how to write your own hooks.
+To disable the behavior, set the value to `false` or remove the opt-in file.
 
-## Configuration
+## What it does
 
-Hooks are configured in `~/.claude/settings.json` (global) or `.claude/settings.json` (project).
+After an eligible command, the script:
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [...],
-    "PreToolUse": [...],
-    "SessionStart": [...],
-    "SessionEnd": [...],
-    "Notification": [...]
-  }
-}
-```
+1. Reads the hook JSON from standard input and extracts the Bash command.
+2. Verifies that project opt-in is enabled.
+3. Resolves the current commit SHA.
+4. Checks `.git-workflow/.git-workflow-reviewed-shas` to avoid reviewing the same SHA twice.
+5. Builds a bounded diff for the new commit or push state.
+6. Records the SHA only when it has useful review context to emit.
+7. Produces the host-specific output format.
 
-See `templates/settings.json.template` for a complete example.
+The reviewed-SHA ledger is local generated state and should be git-ignored. A legacy `.claude/.git-workflow-reviewed-shas` ledger is read for duplicate suppression, but new entries are written only to `.git-workflow/`.
 
-## Hook Types
+## Review behavior
 
-### PostToolUse
+The additional context asks the main workflow to inspect the bounded diff and use `pr-reviewer` for non-trivial changes. The review path may fan out through `$review` or `/review`; it must wait for all requested specialist reports and must not modify source files merely to perform a review.
 
-Runs after a tool completes. Useful for:
+Large diffs are truncated deliberately so a background hook cannot flood the next agent turn. The message identifies truncation and encourages an explicit full review when needed.
 
-- Auto-formatting code after edits
-- Running linters
-- Triggering builds
-- Logging changes
+## Safety properties
 
-```json
-{
-  "PostToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "npm run lint:fix -- $CLAUDE_FILE_PATH"
-        }
-      ]
-    }
-  ]
-}
-```
+- Disabled unless the repository opts in
+- Ignores unrelated Bash commands
+- Does not execute the detected commit or push command itself
+- Does not modify tracked source files
+- Suppresses duplicate SHAs, including those present in the legacy ledger
+- Treats malformed hook input and non-Git directories as no-op paths
+- Keeps hook stdout machine-readable under Codex
 
-### PreToolUse
+## Manual testing
 
-Runs before a tool executes. Can **block** execution by returning non-zero exit code.
-
-```json
-{
-  "PreToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "if echo \"$CLAUDE_BASH_COMMAND\" | grep -q 'rm -rf /'; then echo 'BLOCKED' && exit 1; fi"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### SessionStart
-
-Runs when a Claude Code session begins.
-
-```json
-{
-  "SessionStart": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "echo 'Session started' >> .claude/session.log"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### SessionEnd
-
-Runs when a Claude Code session ends.
-
-```json
-{
-  "SessionEnd": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "echo 'Session ended' >> .claude/session.log"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Notification
-
-Runs when Claude sends notifications.
-
-```json
-{
-  "Notification": [
-    {
-      "matcher": ".*",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "osascript -e 'display notification \"$CLAUDE_NOTIFICATION\"'"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Hook Structure
-
-Each hook entry has:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `matcher` | string | Regex pattern to match tool names |
-| `hooks` | array | Array of hook definitions |
-
-Each hook definition has:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `type` | string | Currently only `"command"` is supported |
-| `command` | string | Shell command to execute |
-
-## Environment Variables
-
-Hooks have access to special environment variables:
-
-| Variable | Description | Available In |
-|----------|-------------|--------------|
-| `$CLAUDE_FILE_PATH` | Path of file being modified | Write, Edit |
-| `$CLAUDE_BASH_COMMAND` | Bash command being run | Bash (PreToolUse) |
-| `$CLAUDE_NOTIFICATION` | Notification message | Notification |
-
-## Common Use Cases
-
-### Auto-Format on Save
-
-```json
-{
-  "PostToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Prevent Dangerous Commands
-
-```json
-{
-  "PreToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "if echo \"$CLAUDE_BASH_COMMAND\" | grep -qE 'git push.*--force'; then echo 'BLOCK: Force push not allowed' && exit 1; fi"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Type Check After TypeScript Changes
-
-```json
-{
-  "PostToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "[[ $CLAUDE_FILE_PATH == *.ts ]] && npx tsc --noEmit 2>/dev/null || true"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Run Tests After Code Changes
-
-```json
-{
-  "PostToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "[[ $CLAUDE_FILE_PATH == *.test.* ]] && npm test -- --findRelatedTests \"$CLAUDE_FILE_PATH\" || true"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Notify on Task Completion (macOS)
-
-```json
-{
-  "Notification": [
-    {
-      "matcher": ".*",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "osascript -e 'display notification \"Task completed\" with title \"Claude Code\"'"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Log All Sessions
-
-```json
-{
-  "SessionStart": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "echo \"$(date): Session started in $(pwd)\" >> ~/.claude/sessions.log"
-        }
-      ]
-    }
-  ],
-  "SessionEnd": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "echo \"$(date): Session ended\" >> ~/.claude/sessions.log"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Prevent Commits to Main
-
-```json
-{
-  "PreToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "if echo \"$CLAUDE_BASH_COMMAND\" | grep -qE 'git commit' && git branch --show-current | grep -qE '^(main|master)$'; then echo 'BLOCK: Use feature branches' && exit 1; fi"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Best Practices
-
-### 1. Use Error Suppression
-
-Add `|| true` or `2>/dev/null` to prevent hooks from blocking on non-critical failures:
-
-```json
-{
-  "command": "npm run lint:fix -- $CLAUDE_FILE_PATH 2>/dev/null || true"
-}
-```
-
-### 2. Be Specific with Matchers
-
-Use specific tool matchers instead of `.*` when possible:
-
-```json
-{
-  "matcher": "Write|Edit",  // Better than ".*"
-  "hooks": [...]
-}
-```
-
-### 3. Keep Hooks Fast
-
-Hooks run synchronously. Slow hooks will impact Claude's responsiveness:
-
-- Avoid network calls in PreToolUse hooks
-- Use background processes for slow operations
-- Cache results when possible
-
-### 4. Test Hooks Thoroughly
-
-Test hooks in a safe environment before deploying:
+From a temporary Git repository containing at least one commit:
 
 ```bash
-# Test a hook command manually
-CLAUDE_FILE_PATH="test.ts" npm run lint:fix -- $CLAUDE_FILE_PATH
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git status"}}' \
+  | hooks/review-commit.sh --host codex
+
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git commit -m test"}}' \
+  | hooks/review-commit.sh --host codex
 ```
 
-### 5. Use Clear Block Messages
+The first call emits nothing. The second also emits nothing until `.git-workflow/git-workflow.local.md` enables the feature. With opt-in enabled, Codex output must be valid JSON and include `hookSpecificOutput.additionalContext`.
 
-When blocking in PreToolUse, provide clear feedback:
+Run the repository's automated hook checks with:
 
-```json
-{
-  "command": "echo 'BLOCK: Reason for blocking' && exit 1"
-}
+```bash
+bash scripts/test-review-hook.sh
 ```
 
 ## Troubleshooting
 
-### Hook Not Running
+### Hook never runs
 
-1. Check `matcher` regex matches the tool name
-2. Verify command syntax is correct
-3. Check file permissions
+- Confirm the plugin is enabled and start a fresh host session.
+- Confirm the host loaded the correct registration file.
+- Verify `.git-workflow/git-workflow.local.md` contains `review-on-commit: true`.
+- Verify the Bash payload actually contains `git commit` or `git push`.
 
-### Hook Blocking Unexpectedly
+### Codex reports invalid hook output
 
-1. Check exit codes in your command
-2. Add `|| true` to allow non-zero exits
-3. Review the matcher pattern
+Run the script manually and pipe the result through `python3 -m json.tool`. Diagnostic output must go to stderr; successful Codex context is emitted as one JSON object on stdout.
 
-### Session Hooks Not Firing
+### A commit is skipped
 
-1. Ensure `settings.json` is in the correct location
-2. Check JSON syntax is valid
-3. Restart Claude Code
+Inspect `.git-workflow/.git-workflow-reviewed-shas` and the legacy fallback ledger. Removing the current SHA permits a new review, but normally the ledger should be left intact to prevent repetition.
 
-## Template
+### Package root is unresolved
 
-See `templates/settings.json.template` for a complete configuration template with common hooks pre-configured.
+Plugin instructions resolve their package from `PLUGIN_ROOT`, with `CLAUDE_PLUGIN_ROOT` retained as a compatibility fallback. Installed host registrations supply the relevant package context.

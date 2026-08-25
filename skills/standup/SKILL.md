@@ -6,6 +6,8 @@ allowed-tools: Read, Grep, Glob, Bash(git log:*), Bash(git config:*), Bash(gh ap
 user-invocable: true
 ---
 
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
+
 You are generating a concise, paste-ready async standup update. Your task is to gather the user's recent work from Git, GitHub (via the `gh` CLI), and — if configured — the issue tracker, then organize it into **Did / Next / Blockers**. Follow each step in order.
 
 ## Step 1: Parse Arguments
@@ -24,7 +26,7 @@ AUTHOR="$(gh api user --jq .login 2>/dev/null || git config user.name)"
 
 ## Step 2: Load Configuration
 
-Check for `.claude/config.yaml` to resolve the repository and issue tracker:
+Check for `.git-workflow/config.yaml` to resolve the repository and issue tracker:
 
 - `issueTracker.type` → `auto` | `linear` | `jira` | `github` | `none`
 - `issueTracker.github.repository` or the current repo (via `gh repo view`)

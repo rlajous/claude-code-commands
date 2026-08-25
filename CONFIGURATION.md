@@ -1,10 +1,10 @@
 # Configuration Reference
 
-Complete reference for `.claude/config.yaml` configuration options.
+Complete reference for `.git-workflow/config.yaml` configuration options.
 
 ## Configuration File
 
-Create `.claude/config.yaml` in your project root. All settings are optional - commands use sensible defaults.
+Create `.git-workflow/config.yaml` in your project root. All settings are optional - commands use sensible defaults.
 
 ## Full Configuration Example
 
@@ -50,7 +50,7 @@ versioning:
 # AI Attribution (disabled by default)
 attribution:
   enabled: false
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  format: ""
 
 # Testing commands
 testing:
@@ -200,7 +200,7 @@ pullRequests:
 
 ### Issue Tracker
 
-Issue tracker integration uses **MCP servers** for authentication. Configure MCP servers in `~/.claude/settings.json` or `.claude/settings.json`.
+Issue tracker integration uses **MCP servers** for authentication. Configure them in the active host: Claude settings for Claude Code, or Codex MCP configuration for Codex. Authentication does not belong in this shared YAML file.
 
 ```yaml
 issueTracker:
@@ -217,9 +217,9 @@ issueTracker:
     baseUrl: https://company.atlassian.net
 ```
 
-#### MCP Server Setup
+#### Claude MCP example
 
-Add to your Claude Code settings (`~/.claude/settings.json`):
+Claude users can add remote MCP servers to `~/.claude/settings.json`:
 
 ```json
 {
@@ -237,6 +237,8 @@ Add to your Claude Code settings (`~/.claude/settings.json`):
 ```
 
 See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions.
+
+Codex users should register the same endpoints through Codex MCP configuration or its MCP management command. The workflow consumes whichever tools the active host exposes.
 
 ### Versioning
 
@@ -262,8 +264,8 @@ attribution:
   # Add AI co-author to commits (default: false)
   enabled: false
 
-  # Attribution format
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  # Attribution format. Empty by default; customize only when enabled.
+  format: ""
 ```
 
 ### Testing
@@ -338,9 +340,10 @@ qa:
 
 ## Configuration Priority
 
-1. `.claude/config.yaml` (explicit config)
-2. Auto-detection (package.json, pyproject.toml, etc.)
-3. Sensible defaults
+1. `.git-workflow/config.yaml` (canonical explicit config)
+2. `.claude/config.yaml` (legacy read-only fallback)
+3. Auto-detection (`package.json`, `pyproject.toml`, and similar files)
+4. Sensible defaults
 
 ## Default Values
 
@@ -362,9 +365,9 @@ qa:
 
 ## Hooks Configuration
 
-Hooks are configured separately in `settings.json` (not `config.yaml`).
+The packaged commit-review hook is configured separately from `config.yaml`: Claude loads `hooks/claude-hooks.json`, while Codex discovers `hooks/hooks.json`. Project opt-in is stored in `.git-workflow/git-workflow.local.md`.
 
-Location: `~/.claude/settings.json` (global) or `.claude/settings.json` (project)
+Host-specific custom hooks can also be configured in host settings. For example, Claude supports `~/.claude/settings.json` (global) or `.claude/settings.json` (project):
 
 ```json
 {

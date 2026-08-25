@@ -2,10 +2,12 @@
 name: tdd
 description: Implement a ticket using Test-Driven Development (RED-GREEN-REFACTOR)
 argument-hint: "<ticket-id>"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit, Write
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping implement a ticket using Test-Driven Development (TDD). Your task is to guide the user through the RED-GREEN-REFACTOR cycle: write failing tests first, implement code to pass tests, then refactor while keeping tests green.
 
@@ -15,11 +17,11 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+[ -f ".git-workflow/pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from `.git-workflow/config.yaml` (if exists):**
 
 ```yaml
 qa:
@@ -434,7 +436,7 @@ mypy .
 
 ## Step 10: Update Context
 
-Update `.claude/.pr-context.json` with TDD information:
+Update `.git-workflow/pr-context.json` with TDD information:
 
 ```json
 {

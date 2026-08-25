@@ -90,7 +90,7 @@ github.com/rlajous/claude-code-commands
 
 ### Angle 1 - Speed
 ```
-My PR workflow before Claude Code Commands: 30 minutes
+My PR workflow before Git Workflow: 30 minutes
 
 My PR workflow now:
 
@@ -122,7 +122,7 @@ Open source: github.com/rlajous/claude-code-commands
 ```
 "But my tickets are in Linear/Jira/GitHub..."
 
-Claude Code Commands integrates with all of them via MCP servers.
+Git Workflow integrates with all of them via MCP servers.
 
 /start LINEAR-123 → Fetches ticket title, description, acceptance criteria
 /finish → Links PR back to ticket automatically

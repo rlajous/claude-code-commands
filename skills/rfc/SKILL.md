@@ -2,10 +2,12 @@
 name: rfc
 description: Create a new RFC document from template with auto-numbering
 argument-hint: "<title>"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git config:*), Bash(mkdir:*), Bash(ls:*), Bash(sed:*), Bash(tr:*), Bash(basename:*), Bash(printf:*), Bash(echo:*), Write, AskUserQuestion
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a new RFC (Request for Comments) document. Your task is to generate a properly numbered RFC file from the template with pre-filled metadata.
 
@@ -13,7 +15,7 @@ You are helping create a new RFC (Request for Comments) document. Your task is t
 
 Extract the RFC title from `$ARGUMENTS`.
 
-- If `$ARGUMENTS` is empty or not provided, use AskUserQuestion to prompt: "What is the title for this RFC? (e.g., 'add deploy command', 'config schema v2')"
+- If `$ARGUMENTS` is empty or not provided, use the active host user-input mechanism to prompt: "What is the title for this RFC? (e.g., 'add deploy command', 'config schema v2')"
 - Validate the title contains only alphanumeric characters, spaces, and hyphens
 - If invalid characters are found, strip them and confirm with the user
 
@@ -86,7 +88,7 @@ Resolve the author name with a fallback:
 ```bash
 AUTHOR="$(git config user.name 2>/dev/null)"
 if [ -z "$AUTHOR" ]; then
-  # Use AskUserQuestion to prompt: "Could not detect git user name. What name should be used as the RFC author?"
+  # Ask: "Could not detect git user name. What name should be used as the RFC author?"
 fi
 ```
 
@@ -112,7 +114,7 @@ Next steps:
 
 | Scenario | Action |
 | -------- | ------ |
-| No title provided | Prompt with AskUserQuestion |
+| No title provided | Ask the user for a title |
 | Template file missing | Error: "RFC template not found at docs/rfcs/RFC_TEMPLATE.md. Please ensure the template exists." |
 | File already exists | Ask: "RFC file already exists. Overwrite or choose a different title?" |
 | Invalid characters in title | Strip invalid characters and confirm with user |

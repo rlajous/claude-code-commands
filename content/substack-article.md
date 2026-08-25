@@ -18,7 +18,7 @@ These tasks eat hours every week. They're repetitive, error-prone, and frankly..
 
 So I built a solution.
 
-## Introducing Claude Code Commands
+## Introducing Git Workflow
 
 Over the past few months, I've developed a set of 10 slash commands that automate the entire development workflow. Today I'm open-sourcing them.
 
@@ -112,7 +112,7 @@ Here's what I'm most proud of: **you don't need any configuration to start**.
 
 Just install the commands and go. They use sensible defaults that work for most projects.
 
-But when you need customization, everything is configurable via `.claude/config.yaml`:
+But when you need customization, everything is configurable via `.git-workflow/config.yaml`:
 
 - Branch naming patterns
 - Commit message formats

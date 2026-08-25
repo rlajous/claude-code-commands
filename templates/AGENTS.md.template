@@ -1,0 +1,26 @@
+# AGENTS.md
+
+This file provides project guidance to Codex.
+
+## Project overview
+
+{PROJECT_NAME} is {BRIEF_DESCRIPTION}.
+
+## Development commands
+
+```bash
+{INSTALL_COMMAND}
+{TEST_COMMAND}
+{LINT_COMMAND}
+{BUILD_COMMAND}
+```
+
+## Git Workflow
+
+This project uses Git Workflow. Invoke shared skills with `$`, for example `$start`, `$commit`, `$finish`, and `$review`. Configuration and generated state use `.git-workflow/`. Project agents are installed under `.codex/agents/` by `$setup` and synchronized by `$update`.
+
+Routine implementation stays in the main session. Review, release validation/version analysis, and large QA workflows may delegate to the named project agents.
+
+## Project conventions
+
+{PROJECT_CONVENTIONS}
