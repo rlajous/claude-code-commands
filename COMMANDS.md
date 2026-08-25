@@ -123,6 +123,7 @@ model: haiku   # Fastest, for simple tasks
 | `/commit` | Stage and commit with formatting | - |
 | `/finish` | Create PR with description | - |
 | `/review` | Comprehensive code review on a PR | `[pr-number-or-url]` |
+| `/review-request` | Draft a paste-ready PR review request | `[pr-number-or-url]` |
 
 ### Release Management
 
@@ -144,6 +145,12 @@ model: haiku   # Fastest, for simple tasks
 | Command | Description | Arguments |
 |---------|-------------|-----------|
 | `/rfc` | Create a new RFC document from template with auto-numbering | `<title>` |
+
+### Team & Reporting
+
+| Command | Description | Arguments |
+|---------|-------------|-----------|
+| `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity | `[--since <when>] [--author <user>]` |
 
 ## Using Commands
 
