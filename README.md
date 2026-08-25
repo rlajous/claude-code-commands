@@ -103,7 +103,9 @@ This guides you through configuring issue trackers and MCP servers.
 | `/plan-qa` | Generate QA test plan from ticket |
 | `/start-qa` | Execute QA tests from plan file |
 | `/rfc` | Create a new RFC document from template with auto-numbering |
-| `/update` | Update commands and agents from source repo |
+| `/review-request` | Draft a paste-ready message asking teammates to review a PR |
+| `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity |
+| `/update` | Update skills and agents from source repo |
 
 > **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
 

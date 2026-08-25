@@ -32,6 +32,8 @@ skills/                    # Skills (each an invocable slash command via SKILL.m
 ├── plan-qa/SKILL.md       # Generate QA test plan
 ├── start-qa/SKILL.md      # Execute QA tests
 ├── rfc/SKILL.md           # Create an auto-numbered RFC document
+├── review-request/SKILL.md # Draft a paste-ready PR review request
+├── standup/SKILL.md       # Async standup from recent activity
 └── update/SKILL.md        # Update skills/agents from source
 
 agents/                    # Subagents for specialized tasks
@@ -119,6 +121,9 @@ Users can install via:
 | `/sync`          | Back-merge main to development branch          |
 | `/plan-qa`       | Generate QA test plan YAML from ticket         |
 | `/start-qa`      | Execute QA tests from plan file                |
+| `/rfc`           | Create an auto-numbered RFC document           |
+| `/review-request`| Draft a paste-ready PR review request          |
+| `/standup`       | Async standup (Did / Next / Blockers)          |
 | `/update`        | Update skills/agents from source repo          |
 
 ## Subagents
