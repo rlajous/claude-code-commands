@@ -113,6 +113,7 @@ model: haiku   # Fastest, for simple tasks
 |---------|-------------|-----------|
 | `/setup` | Interactive setup for MCP servers and project configuration | - |
 | `/update` | Update commands and agents from the source repository | `[--dry-run] [--prune] [--force] [--source <path>]` |
+| `/clean-gone` | Delete local branches whose upstream is gone on the remote, and remove their worktrees | `[--dry-run]` |
 
 ### PR Workflow
 
@@ -285,7 +286,8 @@ skills/                 # Skills (each is an invocable slash command)
 ├── plan-qa/SKILL.md
 ├── start-qa/SKILL.md
 ├── rfc/SKILL.md
-└── update/SKILL.md
+├── update/SKILL.md
+└── clean-gone/SKILL.md
 
 agents/                 # Subagents
 ├── pr-reviewer.md

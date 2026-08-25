@@ -106,6 +106,7 @@ This guides you through configuring issue trackers and MCP servers.
 | `/review-request` | Draft a paste-ready message asking teammates to review a PR |
 | `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity |
 | `/update` | Update skills and agents from source repo |
+| `/clean-gone` | Delete local branches gone on the remote and their worktrees |
 
 > **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
 
@@ -144,6 +145,8 @@ Automate actions at key points in your workflow:
 - **PostToolUse** - Run after file edits (auto-format, lint)
 - **PreToolUse** - Validate before execution (prevent dangerous commands)
 - **SessionStart/End** - Setup and logging
+
+The plugin also ships an **opt-in** background review hook (`hooks/hooks.json`) that reviews new commits/pushes as they happen. It is **off by default** — enable it by adding `review-on-commit: true` to `.claude/git-workflow.local.md`.
 
 ### Example Hook
 
