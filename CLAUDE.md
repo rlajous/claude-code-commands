@@ -133,6 +133,11 @@ Users can install via:
 | `pr-reviewer`      | Expert code reviewer for quality and security  |
 | `release-validator`| Pre-release validation (tests, build, deps)    |
 | `qa-executor`      | Execute QA tests with detailed reporting       |
+| `silent-failure-hunter` | Hunts swallowed errors, over-broad catch blocks, and silent fallbacks in changed code |
+| `type-design-analyzer` | Rates type design: encapsulation, invariant expression, usefulness, enforcement (1-10 each) |
+| `pr-test-analyzer` | Finds behavioral test-coverage gaps, rating each missing test's criticality and the regression it catches |
+| `comment-analyzer` | Detects comment rot and docstrings that no longer match the code |
+| `version-delta-analyst` | Catalogs breaking changes, deprecations, and migration steps between two versions of a dependency/stack/API |
 
 ## Standard Workflows
 

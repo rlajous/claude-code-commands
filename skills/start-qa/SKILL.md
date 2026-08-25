@@ -3,7 +3,7 @@ name: start-qa
 description: Execute QA tests from plan file
 argument-hint: "[plan-file]"
 disable-model-invocation: true
-allowed-tools: Read, Bash, WebFetch, Write
+allowed-tools: Read, Task, Bash, WebFetch, Write
 user-invocable: true
 ---
 
@@ -97,6 +97,8 @@ sqs_assertions: [...]
 Replace `${VAR_NAME}` patterns with actual environment values.
 
 ## Step 4: Execute Test Cases
+
+> **Optional — delegate execution.** For large or complex test plans (many endpoints, SQS event verification), delegate execution to the **`qa-executor`** agent via the Task tool; it runs the plan and returns a detailed pass/fail report, keeping this session's context lean. For small plans, execute inline as below.
 
 For each test case in the plan:
 

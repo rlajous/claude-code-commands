@@ -118,6 +118,13 @@ Specialized AI assistants for common tasks:
 | `pr-reviewer` | Expert code reviewer for quality, security, and best practices |
 | `release-validator` | Pre-release validation (tests, build, dependencies) |
 | `qa-executor` | Executes QA test plans with detailed reporting |
+| `silent-failure-hunter` | Hunts swallowed errors, over-broad catch blocks, and silent fallbacks in changed code |
+| `type-design-analyzer` | Rates type design: encapsulation, invariant expression, usefulness, enforcement (1-10 each) |
+| `pr-test-analyzer` | Finds behavioral test-coverage gaps, rating each missing test's criticality and the regression it catches |
+| `comment-analyzer` | Detects comment rot and docstrings that no longer match the code |
+| `version-delta-analyst` | Catalogs breaking changes, deprecations, and migration steps between two versions of a dependency/stack/API |
+
+> **Note**: `/review` now fans out to the specialized review agents (`silent-failure-hunter`, `type-design-analyzer`, `pr-test-analyzer`, `comment-analyzer`) in parallel for a deeper analysis.
 
 ### Using Subagents
 

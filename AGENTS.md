@@ -14,13 +14,18 @@ Subagents are defined as markdown files in `.claude/agents/` with YAML frontmatt
 
 ## Available Subagents
 
-This repository includes three specialized subagents:
+This repository includes eight specialized subagents:
 
 | Agent | Purpose | Tools |
 |-------|---------|-------|
 | `pr-reviewer` | Code review for quality and security | Read, Grep, Glob |
 | `release-validator` | Pre-release validation checks | Read, Grep, Glob, Bash |
 | `qa-executor` | QA test execution and reporting | Read, Bash, WebFetch |
+| `silent-failure-hunter` | Hunts swallowed errors, over-broad catch blocks, and silent fallbacks in changed code | Read, Grep, Glob |
+| `type-design-analyzer` | Rates type design: encapsulation, invariant expression, usefulness, enforcement (1-10 each) | Read, Grep, Glob |
+| `pr-test-analyzer` | Finds behavioral test-coverage gaps, rating each missing test's criticality and the regression it catches | Read, Grep, Glob |
+| `comment-analyzer` | Detects comment rot and docstrings that no longer match the code | Read, Grep, Glob |
+| `version-delta-analyst` | Catalogs breaking changes, deprecations, and migration steps between two versions of a dependency/stack/API | Read, Grep, Glob, Bash, WebFetch |
 
 ## Agent Configuration
 
@@ -118,6 +123,94 @@ Execute the QA tests in tests/qa/proj-123-test.yaml
 
 **Output**: Test execution report with pass/fail status and failure details.
 
+### Silent Failure Hunter
+
+**File**: `.claude/agents/silent-failure-hunter.md`
+
+**Purpose**: Hunts for silent failures and inadequate error handling in changed code:
+
+- Empty or overly broad catch blocks
+- Errors logged but not surfaced to users
+- Unjustified fallback behavior that masks real problems
+- Missing or unhelpful error messages
+
+**Usage**:
+```
+Review this PR for silent failures and error handling issues
+```
+
+**Output**: Findings by severity (CRITICAL/HIGH/MEDIUM) with file:line locations and recommended fixes.
+
+### Type Design Analyzer
+
+**File**: `.claude/agents/type-design-analyzer.md`
+
+**Purpose**: Analyzes type design quality for new or modified types:
+
+- Encapsulation
+- Invariant expression
+- Invariant usefulness
+- Invariant enforcement
+
+**Usage**:
+```
+Analyze the type design of the new types in this PR
+```
+
+**Output**: Per-type report with 1-10 ratings on each axis, strengths, concerns, and recommended improvements.
+
+### PR Test Analyzer
+
+**File**: `.claude/agents/pr-test-analyzer.md`
+
+**Purpose**: Reviews a pull request for behavioral test-coverage gaps:
+
+- Untested error handling and edge cases
+- Missing negative/validation test cases
+- Tests that are brittle or overfit to implementation
+
+**Usage**:
+```
+Check whether the tests in this PR are thorough
+```
+
+**Output**: Coverage summary with critical/important gaps, each rated 1-10 for criticality and mapped to the regression it would catch.
+
+### Comment Analyzer
+
+**File**: `.claude/agents/comment-analyzer.md`
+
+**Purpose**: Detects comment rot and inaccurate documentation:
+
+- Comments/docstrings that no longer match the code
+- Misleading or ambiguous wording
+- Comments that add no value and should be removed
+
+**Usage**:
+```
+Check the comments added in this PR for accuracy
+```
+
+**Output**: Critical issues, improvement opportunities, and recommended removals, each with file:line references. Advisory only — does not modify code.
+
+### Version Delta Analyst
+
+**File**: `.claude/agents/version-delta-analyst.md`
+
+**Purpose**: Catalogs what changed between two versions of a dependency, framework, or API for release documentation:
+
+- Breaking changes with severity ratings
+- Deprecations and removal timelines
+- Behavioral changes that don't break builds but could surprise consumers
+- A concrete migration checklist
+
+**Usage**:
+```
+Compare our ORM v4 to v6 and list what will break
+```
+
+**Output**: Version delta report with breaking changes, deprecations, behavioral changes, assumptions/gaps, and a migration checklist.
+
 ## Creating Custom Agents
 
 ### 1. Create the Agent File
@@ -189,6 +282,11 @@ tools: Read, Grep, Glob, Bash
 │   ├── pr-reviewer.md
 │   ├── release-validator.md
 │   ├── qa-executor.md
+│   ├── silent-failure-hunter.md
+│   ├── type-design-analyzer.md
+│   ├── pr-test-analyzer.md
+│   ├── comment-analyzer.md
+│   ├── version-delta-analyst.md
 │   └── your-custom-agent.md
 └── skills/
     └── ...
