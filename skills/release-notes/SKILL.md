@@ -2,7 +2,7 @@
 name: release-notes
 description: Enhance GitHub release with detailed notes after release PR is merged to main
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git pull:*), Bash(git tag:*), Bash(git rev-list:*), Bash(git log:*), Bash(gh release view:*), Bash(gh release create:*), Bash(gh release edit:*), Bash(gh pr view:*)
 user-invocable: true
 ---
 

@@ -3,7 +3,7 @@ name: plan-qa
 description: Generate QA test plan YAML from ticket
 argument-hint: "<ticket-id> [--url <url>]"
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, WebFetch, Write, Bash
+allowed-tools: Read, Grep, Glob, WebFetch, Write, Bash(gh issue view:*), Bash(mkdir:*), Bash(cat:*)
 user-invocable: true
 ---
 

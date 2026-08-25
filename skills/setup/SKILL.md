@@ -3,7 +3,7 @@ name: setup
 description: Interactive setup for MCP servers and project configuration
 argument-hint: ""
 disable-model-invocation: true
-allowed-tools: Read, Write, Bash, AskUserQuestion, Glob
+allowed-tools: Read, Write, Bash(mkdir:*), AskUserQuestion, Glob
 user-invocable: true
 ---
 

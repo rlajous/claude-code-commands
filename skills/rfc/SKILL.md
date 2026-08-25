@@ -3,7 +3,7 @@ name: rfc
 description: Create a new RFC document from template with auto-numbering
 argument-hint: "<title>"
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, Write, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(git config:*), Bash(mkdir:*), Bash(ls:*), Bash(sed:*), Bash(tr:*), Bash(basename:*), Bash(printf:*), Bash(echo:*), Write, AskUserQuestion
 user-invocable: true
 ---
 

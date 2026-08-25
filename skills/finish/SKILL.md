@@ -2,7 +2,7 @@
 name: finish
 description: Create a pull request with comprehensive description following repo best practices
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git log:*), Bash(git status:*), Bash(git diff:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr edit:*), AskUserQuestion
 user-invocable: true
 ---
 

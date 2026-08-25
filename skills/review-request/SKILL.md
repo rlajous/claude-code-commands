@@ -2,7 +2,7 @@
 name: review-request
 description: Draft a short, paste-ready message asking teammates to review a pull request. Pulls the PR title, link, size, and CI status via the gh CLI, and reviewers from project config. Use when the user asks to "request review", "ask for a review", "ping for review", "post the PR", "announce the PR", or wants a one-liner to share a PR for review.
 argument-hint: "[pr-number-or-url]"
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash(gh pr view:*)
 user-invocable: true
 ---
 
