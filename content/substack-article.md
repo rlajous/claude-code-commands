@@ -158,10 +158,11 @@ Total time spent on Git workflow: maybe 5 minutes across the entire feature life
 
 ## Getting Started
 
-Copy the commands to your project:
+Copy the skills to your project:
 ```bash
 git clone https://github.com/rlajous/claude-code-commands
-cp -r claude-code-commands/.claude/* .claude/
+cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
 ```
 
 Then run `/setup` to configure MCP servers (Linear, Jira, GitHub), branch naming conventions, and other options.
@@ -170,7 +171,7 @@ No dependencies. No accounts to create. Just better workflows.
 
 ## What's Next
 
-This is v1.0, but there's more coming:
+This is v2.0 (now packaged as skills), but there's more coming:
 - More issue tracker integrations
 - Customizable PR templates
 - Team workflow presets
