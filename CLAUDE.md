@@ -19,19 +19,20 @@ This repository is a **Claude Code plugin marketplace** containing production-re
 ├── marketplace.json       # Marketplace catalog for distribution
 └── plugin.json            # Plugin manifest
 
-commands/                  # Slash commands
-├── setup.md               # Interactive setup wizard
-├── start.md               # Create feature branch from ticket
-├── tdd.md                 # Test-Driven Development workflow
-├── commit.md              # Stage and commit with conventions
-├── finish.md              # Create PR with full description
-├── review.md              # Comprehensive code review on a PR
-├── release.md             # Create release branch and PR
-├── release-notes.md       # Generate GitHub release notes
-├── sync.md                # Back-merge main to development
-├── plan-qa.md             # Generate QA test plan
-├── start-qa.md            # Execute QA tests
-└── update.md              # Update commands/agents from source
+skills/                    # Skills (each an invocable slash command via SKILL.md)
+├── setup/SKILL.md         # Interactive setup wizard
+├── start/SKILL.md         # Create feature branch from ticket
+├── tdd/SKILL.md           # Test-Driven Development workflow
+├── commit/SKILL.md        # Stage and commit with conventions
+├── finish/SKILL.md        # Create PR with full description
+├── review/SKILL.md        # Comprehensive code review on a PR
+├── release/SKILL.md       # Create release branch and PR
+├── release-notes/SKILL.md # Generate GitHub release notes
+├── sync/SKILL.md          # Back-merge main to development
+├── plan-qa/SKILL.md       # Generate QA test plan
+├── start-qa/SKILL.md      # Execute QA tests
+├── rfc/SKILL.md           # Create an auto-numbered RFC document
+└── update/SKILL.md        # Update skills/agents from source
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -59,24 +60,36 @@ HOOKS.md                   # Hooks documentation
 LICENSE                    # MIT license
 ```
 
-## Commands Format
+## Skills Format
 
-Commands use YAML frontmatter in `.md` files:
+Each capability is a **skill**: a directory under `skills/` containing a `SKILL.md`
+with YAML frontmatter. This is the current, preferred format (the older
+`.claude/commands/*.md` layout is legacy). A skill with `user-invocable: true`
+still works as a manual slash command (`/start`), and — unless
+`disable-model-invocation: true` is set — can also be auto-invoked by Claude when
+its `description` matches the task.
 
 ```yaml
 ---
-description: What this command does
+name: start
+description: What this skill does, with trigger phrases for auto-invocation
 argument-hint: "[optional-arg]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash
+user-invocable: true
 ---
 ```
 
 Key frontmatter fields:
-- `description`: Shown in autocomplete menu
+- `name`: Skill identifier (required); also the slash command name
+- `description`: Shown in the menu and used to decide auto-invocation
 - `argument-hint`: Shows expected arguments
-- `disable-model-invocation`: Prevents auto-invocation (recommended for workflow actions)
+- `disable-model-invocation`: Prevents auto-invocation (kept on side-effecting workflow actions; omitted on read-only skills like `review`)
 - `allowed-tools`: Tools Claude can use without asking permission
+- `user-invocable`: Makes the skill available as a `/name` slash command
+
+Skills may bundle `references/`, `scripts/`, `examples/`, or `assets/` in their
+directory for progressive disclosure (loaded on demand, keeping `SKILL.md` lean).
 
 ## Marketplace Format
 
@@ -106,7 +119,7 @@ Users can install via:
 | `/sync`          | Back-merge main to development branch          |
 | `/plan-qa`       | Generate QA test plan YAML from ticket         |
 | `/start-qa`      | Execute QA tests from plan file                |
-| `/update`        | Update commands/agents from source repo        |
+| `/update`        | Update skills/agents from source repo          |
 
 ## Subagents
 
@@ -147,7 +160,7 @@ See [HOOKS.md](./HOOKS.md) for complete documentation.
 
 ### Marketplace Structure
 - Single plugin containing all commands (cohesive workflow)
-- Commands in `commands/*.md` format
+- Skills in `skills/<name>/SKILL.md` format
 - Agents in `agents/` at root level
 
 ### Configuration System

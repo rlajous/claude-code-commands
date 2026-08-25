@@ -1,4 +1,5 @@
 ---
+name: commit
 description: Stage and commit changes with proper formatting following repo conventions
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit

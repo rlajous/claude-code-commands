@@ -1,4 +1,5 @@
 ---
+name: rfc
 description: Create a new RFC document from template with auto-numbering
 argument-hint: "<title>"
 disable-model-invocation: true

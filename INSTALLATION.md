@@ -40,8 +40,8 @@ For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
 # Clone the repository
 git clone https://github.com/rlajous/claude-code-commands.git
 
-# Copy commands to your project
-cp -r claude-code-commands/commands your-project/.claude/
+# Copy skills to your project
+cp -r claude-code-commands/skills your-project/.claude/
 
 # (Optional) Copy agents
 cp -r claude-code-commands/agents your-project/.claude/
@@ -69,14 +69,14 @@ Cursor detects commands, agents, and hooks from the `.claude/` directory, so man
 ```bash
 # Same manual installation works for both tools
 git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/commands your-project/.claude/
+cp -r claude-code-commands/skills your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
 If you prefer not to have a `.claude/` folder in your repo, you can install directly to `.cursor/` instead:
 
 ```bash
-cp -r claude-code-commands/commands your-project/.cursor/
+cp -r claude-code-commands/skills your-project/.cursor/
 cp -r claude-code-commands/agents your-project/.cursor/
 ```
 
@@ -112,20 +112,20 @@ After manual installation, your project should have:
 ```
 your-project/
 ├── .claude/
-│   ├── commands/             # Slash commands
-│   │   ├── setup.md
-│   │   ├── start.md
-│   │   ├── tdd.md
-│   │   ├── commit.md
-│   │   ├── finish.md
-│   │   ├── review.md
-│   │   ├── release.md
-│   │   ├── release-notes.md
-│   │   ├── sync.md
-│   │   ├── plan-qa.md
-│   │   ├── start-qa.md
-│   │   ├── rfc.md
-│   │   └── update.md
+│   ├── skills/                # Skills
+│   │   ├── setup/SKILL.md
+│   │   ├── start/SKILL.md
+│   │   ├── tdd/SKILL.md
+│   │   ├── commit/SKILL.md
+│   │   ├── finish/SKILL.md
+│   │   ├── review/SKILL.md
+│   │   ├── release/SKILL.md
+│   │   ├── release-notes/SKILL.md
+│   │   ├── sync/SKILL.md
+│   │   ├── plan-qa/SKILL.md
+│   │   ├── start-qa/SKILL.md
+│   │   ├── rfc/SKILL.md
+│   │   └── update/SKILL.md
 │   ├── agents/               # Subagents (optional)
 │   │   ├── pr-reviewer.md
 │   │   ├── release-validator.md
@@ -364,7 +364,7 @@ Use the `/update` command to update tooling files while preserving your configur
 /update --force                # Force re-copy even if up to date
 ```
 
-The command updates `.claude/commands/`, `.claude/agents/`, and RFC template files. It never touches your `.claude/config.yaml`, `.claude/settings.json`, `CLAUDE.md`, or user-created RFCs.
+The command updates `.claude/skills/`, `.claude/agents/`, and RFC template files. It never touches your `.claude/config.yaml`, `.claude/settings.json`, `CLAUDE.md`, or user-created RFCs.
 
 ---
 
@@ -381,10 +381,10 @@ Ensure you're using the prefixed command name:
 
 ### Commands Not Recognized (Manual)
 
-Ensure commands are in `.claude/commands/*.md` format:
+Ensure skills are in `.claude/skills/<name>/SKILL.md` format:
 
 ```bash
-ls -la .claude/commands/start.md
+ls -la .claude/skills/start/SKILL.md
 ```
 
 ### GitHub CLI Not Authenticated
@@ -405,14 +405,14 @@ cat ~/.claude/settings.json | grep mcpServers
 ### Permission Denied
 
 ```bash
-chmod -R 644 .claude/commands/*.md
+chmod -R 644 .claude/skills/*/SKILL.md
 ```
 
 ---
 
 ## Migration
 
-No migration needed. This plugin uses `.claude/commands/*.md`.
+No migration needed. This plugin uses `.claude/skills/<name>/SKILL.md`.
 
 ---
 

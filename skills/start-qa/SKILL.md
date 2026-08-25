@@ -1,4 +1,5 @@
 ---
+name: start-qa
 description: Execute QA tests from plan file
 argument-hint: "[plan-file]"
 disable-model-invocation: true

@@ -1,4 +1,5 @@
 ---
+name: setup
 description: Interactive setup for MCP servers and project configuration
 argument-hint: ""
 disable-model-invocation: true

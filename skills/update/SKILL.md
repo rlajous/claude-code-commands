@@ -1,12 +1,13 @@
 ---
-description: Update commands and agents from the source repository
+name: update
+description: Update skills and agents from the source repository
 argument-hint: "[--dry-run] [--prune] [--force] [--source <path>]"
 disable-model-invocation: true
 allowed-tools: Read, Bash, Write, Glob, Grep, AskUserQuestion
 user-invocable: true
 ---
 
-You are helping the user update their installed commands and agents from the source repository. Parse arguments from `$ARGUMENTS` and follow each step in order.
+You are helping the user update their installed skills and agents from the source repository. Parse arguments from `$ARGUMENTS` and follow each step in order.
 
 ## Step 1: Parse Arguments
 
@@ -81,12 +82,14 @@ Read `$PROJECT_ROOT/.claude/.tooling-version` (if it exists) and compare the sto
 
 ## Step 5: Discover Managed Files
 
-Find all `*.md` files in the source repository under these directories:
+Find all managed files in the source repository. Skills are directories, each containing a `SKILL.md` (plus optional `references/`, `scripts/`, `examples/`, `assets/`):
 
 | Source path | Target path |
 |-------------|-------------|
-| `commands/*.md` | `.claude/commands/*.md` |
+| `skills/*/` (each skill directory, including `SKILL.md` and any bundled files) | `.claude/skills/*/` |
 | `agents/*.md` | `.claude/agents/*.md` |
+
+> **Migrating from the legacy layout:** older installs stored slash commands as `.claude/commands/*.md`. This source now ships them as `.claude/skills/<name>/SKILL.md`. Treat any matching `.claude/commands/*.md` as superseded — with `--prune`, list them as orphans to remove after the equivalent skill is installed.
 
 Also check for these individual files:
 
@@ -105,7 +108,7 @@ For each discovered source file, compare it against the corresponding target fil
 
 ## Step 7: Detect Orphans
 
-Find `*.md` files in the target directories (`.claude/commands/` and `.claude/agents/`) that do NOT have a corresponding file in the source. Mark these as orphans (`?`).
+Find skill directories in `.claude/skills/` and `*.md` files in `.claude/agents/` that do NOT have a corresponding entry in the source. Mark these as orphans (`?`). Also treat legacy `.claude/commands/*.md` files as orphans when a same-named skill now exists in the source.
 
 ## Step 8: Print Summary
 
@@ -114,10 +117,10 @@ Display the comparison results with status indicators:
 ```text
 Summary
 
-  + .claude/commands/new-command.md
-  ~ .claude/commands/commit.md
-  = .claude/commands/start.md
-  ? .claude/commands/old-removed-command.md  (not in source)
+  + .claude/skills/new-skill/SKILL.md
+  ~ .claude/skills/commit/SKILL.md
+  = .claude/skills/start/SKILL.md
+  ? .claude/commands/commit.md  (legacy command superseded by skill)
 
   + 1 added  ~ 1 updated  = 8 unchanged  ? 1 orphaned
 ```
@@ -170,8 +173,9 @@ Print: "Update complete."
 
 **Files this command manages (will create/update/delete):**
 
-- `*.md` files in `.claude/commands/`
+- skill directories in `.claude/skills/` (each `SKILL.md` and any bundled `references/`, `scripts/`, `examples/`, `assets/`)
 - `*.md` files in `.claude/agents/`
+- legacy `*.md` files in `.claude/commands/` (only removed with `--prune`, when superseded by a skill)
 - `docs/rfcs/RFC_TEMPLATE.md`
 - `docs/rfcs/RFC_BEST_PRACTICES.md`
 - `.claude/.tooling-version`
