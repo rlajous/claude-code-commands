@@ -74,7 +74,8 @@ One command set for polyglot teams.
 Get started in 2 minutes:
 
 git clone https://github.com/rlajous/claude-code-commands
-cp -r claude-code-commands/.claude your-project/
+cp -r claude-code-commands/skills your-project/.claude/
+cp -r claude-code-commands/agents your-project/.claude/
 
 Then run /setup to configure.
 
