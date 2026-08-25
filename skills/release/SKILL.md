@@ -2,7 +2,7 @@
 name: release
 description: Create a release branch and PR to main with auto-extracted changes from staging
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit
+allowed-tools: Read, Grep, Glob, Task, Bash, AskUserQuestion, Edit
 user-invocable: true
 ---
 
@@ -231,6 +231,8 @@ echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | sort -u
 ```
 
 ## Step 7: Detect Special Changes
+
+> **Optional — validate readiness first.** For a higher-stakes release, delegate a pre-release check to the **`release-validator`** agent via the Task tool (it checks tests, build, lint, types, dependency audit, changelog, and git state) and fold any blockers into the checklist. For releases that bump a major dependency or change a public API, delegate to the **`version-delta-analyst`** agent to catalog breaking changes and populate the PR's "Breaking Changes" section.
 
 ### OpenAPI Changes
 

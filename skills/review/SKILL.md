@@ -2,7 +2,7 @@
 name: review
 description: Perform a comprehensive code review on a GitHub pull request. Use when the user asks to review a PR, review code changes, check a pull request for quality, security, bugs, or best practices, or provides a PR number or GitHub PR URL to review.
 argument-hint: "[pr-number-or-url]"
-allowed-tools: Read, Grep, Glob, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh api:*), AskUserQuestion, Write
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh api:*), AskUserQuestion, Write
 user-invocable: true
 ---
 
@@ -133,70 +133,32 @@ cat -- "{file_path}"
 - Read type definitions, interfaces, or schemas referenced by changed files
 - Read configuration files if config was changed
 
-## Step 7: Deep Analysis
+## Step 7: Dispatch Specialized Review Agents (parallel)
 
-Review across these dimensions:
+Instead of reviewing every dimension inline, fan out to focused subagents via the **Task** tool and aggregate their findings. This yields sharper, single-concern analysis than one monolithic pass.
 
-### Architecture & Design
+**Select aspects** from `$ARGUMENTS` (space-separated; default `all`):
 
-- Does the change follow existing patterns in the codebase?
-- Is there proper separation of concerns?
-- Are dependencies flowing in the right direction?
-- Is coupling appropriate or excessive?
-- Are new abstractions justified?
+- `code` — general quality + bug detection → **`pr-reviewer`** agent
+- `errors` — swallowed errors / inadequate error handling → **`silent-failure-hunter`** agent
+- `types` — type design, invariants, encapsulation → **`type-design-analyzer`** agent
+- `tests` — behavioral coverage gaps → **`pr-test-analyzer`** agent
+- `comments` — comment rot / inaccurate docstrings → **`comment-analyzer`** agent
+- `all` — every applicable agent (default)
 
-### Business Logic & Correctness
+**Map changed files to applicable agents** (only launch what applies):
 
-- Trace the execution end-to-end from entry point to response
-- Check edge cases: empty inputs, null values, boundary conditions
-- Look for race conditions in concurrent operations
-- Verify state transitions are valid
-- Check that error paths don't leave data in an inconsistent state
+| Signal in the changed files | Agent to launch |
+|-----------------------------|-----------------|
+| Always (any code change) | `pr-reviewer` |
+| try/catch, error handling, fallbacks | `silent-failure-hunter` |
+| New/modified types, interfaces, schemas | `type-design-analyzer` |
+| Test files added/changed, or new behavior lacking tests | `pr-test-analyzer` |
+| Comments/docstrings added or changed | `comment-analyzer` |
 
-### Data Integrity
+**Launch in parallel:** issue the applicable Task calls in a single message so the agents run concurrently. Give each agent: the PR number/repo, the changed-file list, and the diff (or file paths for large PRs). Each agent returns its own findings; collect them all before continuing.
 
-- Are database operations wrapped in transactions where needed?
-- Is idempotency handled for operations that could retry?
-- What happens on partial failure?
-- Are foreign key relationships maintained?
-
-### Error Handling & Resilience
-
-- Are errors caught at appropriate levels?
-- Do catch blocks handle errors meaningfully (not silently swallowed)?
-- Are retries implemented where appropriate?
-- Are error messages helpful for debugging?
-- Are external service failures handled gracefully?
-
-### Security & Validation
-
-- Is user input validated before use?
-- Are there injection risks (SQL, command, template)?
-- Are secrets kept out of code and logs?
-- Are authentication/authorization checks in place?
-- Is sensitive data properly handled (no logging PII, proper encryption)?
-
-### Performance
-
-- Are there N+1 query patterns?
-- Could operations be batched?
-- Are there memory concerns with large datasets?
-- Are blocking operations in async contexts?
-- Are expensive operations cached where appropriate?
-
-### Testing
-
-- Are there tests for the new functionality?
-- Do tests cover edge cases and error scenarios?
-- Are tests testing behavior, not implementation details?
-- Is test coverage adequate for the risk level of the change?
-
-### Code Quality
-
-- Does naming follow project conventions?
-- Is there dead code or unnecessary complexity?
-- Are comments used appropriately (explaining why, not what)?
-- Is the code readable and maintainable?
+> **Review lenses** the general `pr-reviewer` pass (and your own synthesis) applies — architecture, business logic, data integrity, error handling, security, performance, testing, code quality. Use them to fill gaps the specialized agents don't cover. Full checklist: see `references/review-lenses.md`.
 
 ## Step 8: Identify Open Questions
 
@@ -208,9 +170,21 @@ Collect questions that **cannot be answered from code alone**:
 - External system behavior ("What does this API return on timeout?")
 - Migration concerns ("Do existing records need backfilling?")
 
-## Step 9: Categorize Findings
+## Step 9: Score, Filter, and Categorize Findings
 
-Assign each finding a severity:
+First **aggregate** the findings from all specialized agents plus your own general pass, de-duplicating any that overlap (same file+line+issue).
+
+**Confidence score (0–100).** Assign each finding a confidence that it is a real, actionable defect in the changed code. **Only keep findings with confidence ≥ 80.** Discard the rest (they add noise). This mirrors the high-signal bar used by mature review tooling.
+
+**False-positive taxonomy — drop a finding (do NOT report) if it is:**
+
+- **Pre-existing** — the issue is on lines this PR did not modify (not introduced by this change).
+- **Linter/type-checker-catchable** — a lint or type error that CI would already surface.
+- **Intentionally silenced** — explicitly suppressed via a lint-ignore/`// eslint-disable`/`# noqa` with a reason.
+- **Style-only nit** already handled by a formatter (Prettier/Black/gofmt).
+- **Speculative** — depends on runtime facts you cannot verify from the diff (score it below 80).
+
+Then assign each surviving finding a severity:
 
 | Severity | Criteria | Examples |
 |----------|----------|----------|
@@ -222,6 +196,7 @@ Assign each finding a severity:
 Each finding should include:
 
 - **File and line reference**: `src/services/auth.ts:45`
+- **Confidence**: `0–100` (only findings ≥ 80 are reported)
 - **Issue description**: What's wrong and why it matters
 - **Suggested fix**: Concrete code or approach to resolve it
 - **Severity justification**: Why this severity level
@@ -374,6 +349,21 @@ If `postToGitHub` is `ask`: use AskUserQuestion:
 ## Step 14: Post to GitHub
 
 If the user chose to post:
+
+**Use SHA-based permalinks for every file reference** so the links stay valid even after the branch moves. First capture the PR head commit SHA:
+
+```bash
+# Full head SHA of the PR (do NOT inline $(git rev-parse HEAD) into the Markdown — the link must be literal)
+HEAD_SHA=$(gh pr view {PR_NUMBER} {REPO_FLAG} --json headRefOid --jq '.headRefOid')
+```
+
+Render each finding's location as a literal permalink:
+
+```text
+https://github.com/{owner}/{repo}/blob/{HEAD_SHA}/{file_path}#L{start}-L{end}
+```
+
+Build the URL with the resolved SHA already substituted (a literal 40-char hash in the Markdown) — never leave a `$(...)` command substitution or a branch name in the posted text.
 
 ```bash
 # Post review as a PR review comment
