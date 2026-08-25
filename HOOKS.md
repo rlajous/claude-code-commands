@@ -13,6 +13,24 @@ Hooks are configured in your `settings.json` file and can run:
 - **At session start/end** (SessionStart/SessionEnd) - For setup and logging
 - **On notifications** (Notification) - For alerts
 
+## Shipped Hook: Background Commit Review (opt-in)
+
+This plugin ships one active hook in `hooks/hooks.json`: after a `git commit` or `git push`, it can run a **background review** of the new changes and re-wake the agent with the diff (using `asyncRewake`, so it never blocks your work). The agent then reviews the diff — delegating to the `pr-reviewer` agent for anything non-trivial — and surfaces real issues before continuing.
+
+**It is OFF by default.** Installing the plugin does not change your git behavior until you opt in per project:
+
+```markdown
+<!-- .claude/git-workflow.local.md -->
+review-on-commit: true
+```
+
+- The gate, diff extraction, and de-duplication live in a self-contained bash script (`hooks/review-commit.sh`) — no Python, no external dependencies beyond `git`.
+- A local ledger (`.claude/.git-workflow-reviewed-shas`, git-ignored) records reviewed commit SHAs so the same commit is never reviewed twice.
+- Both the settings file (`.claude/*.local.md`) and the ledger are git-ignored — nothing is committed to your repo.
+- To disable, set `review-on-commit: false` (or delete the settings file). Changes take effect on the next Claude Code session.
+
+The sections below document how to write your own hooks.
+
 ## Configuration
 
 Hooks are configured in `~/.claude/settings.json` (global) or `.claude/settings.json` (project).

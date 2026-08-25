@@ -34,7 +34,8 @@ skills/                    # Skills (each an invocable slash command via SKILL.m
 ├── rfc/SKILL.md           # Create an auto-numbered RFC document
 ├── review-request/SKILL.md # Draft a paste-ready PR review request
 ├── standup/SKILL.md       # Async standup from recent activity
-└── update/SKILL.md        # Update skills/agents from source
+├── update/SKILL.md        # Update skills/agents from source
+└── clean-gone/SKILL.md    # Delete local branches gone on the remote
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -125,6 +126,7 @@ Users can install via:
 | `/review-request`| Draft a paste-ready PR review request          |
 | `/standup`       | Async standup (Did / Next / Blockers)          |
 | `/update`        | Update skills/agents from source repo          |
+| `/clean-gone`    | Delete local branches gone on the remote and their worktrees |
 
 ## Subagents
 
@@ -163,6 +165,8 @@ Hooks automate actions during Claude Code execution. Configure in `settings.json
 - `PostToolUse`: Run after file edits (auto-format, lint)
 - `PreToolUse`: Validate before execution (block dangerous commands)
 - `SessionStart/End`: Setup and logging
+
+The repo also ships an **opt-in** background review hook (`hooks/hooks.json` + `hooks/review-commit.sh`) that reviews new commits/pushes; enable it by adding `review-on-commit: true` to `.claude/git-workflow.local.md`.
 
 See [HOOKS.md](./HOOKS.md) for complete documentation.
 

@@ -1,1 +1,3 @@
 .claude/.pr-context.json
+.claude/.git-workflow-reviewed-shas
+.claude/*.local.md
