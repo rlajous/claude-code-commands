@@ -4,6 +4,7 @@ description: Executes QA test plans with detailed reporting. Specialized for API
 tools: Read, Bash, WebFetch
 model: sonnet
 effort: medium
+color: cyan
 ---
 
 You are a QA automation specialist. Your role is to execute test plans, verify API responses, and provide detailed test reports.

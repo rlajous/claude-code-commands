@@ -174,68 +174,7 @@ grep -r "describe\|it\|test\|expect" --include="*.test.*" -l | head -5
 
 ### Detect Test Framework
 
-**Node.js:**
-
-```bash
-# Check package.json for test framework
-cat package.json | grep -E "(jest|vitest|mocha|ava)" || echo "UNKNOWN"
-
-# Check for config files
-ls jest.config.* vitest.config.* 2>/dev/null
-```
-
-| Detection | Framework | Test Command |
-| --------- | --------- | ------------ |
-| `jest` in package.json | Jest | `npm test` or `pnpm test` |
-| `vitest` in package.json | Vitest | `npm test` or `pnpm vitest` |
-| `vitest.config.*` exists | Vitest | `pnpm vitest` |
-| `mocha` in package.json | Mocha | `npm test` |
-
-**Python:**
-
-```bash
-# Check for pytest
-cat pyproject.toml 2>/dev/null | grep pytest || ls .pytest_cache 2>/dev/null
-```
-
-| Detection | Framework | Test Command |
-| --------- | --------- | ------------ |
-| pytest in pyproject.toml | pytest | `pytest` |
-| .pytest_cache exists | pytest | `pytest` |
-| unittest pattern | unittest | `python -m unittest` |
-
-**Rust:**
-
-```bash
-# Check for Cargo.toml
-[ -f "Cargo.toml" ] && echo "RUST"
-```
-
-| Detection | Framework | Test Command |
-| --------- | --------- | ------------ |
-| Cargo.toml exists | cargo test | `cargo test` |
-
-**Go:**
-
-```bash
-# Check for go.mod
-[ -f "go.mod" ] && echo "GO"
-```
-
-| Detection | Framework | Test Command |
-| --------- | --------- | ------------ |
-| go.mod exists | go test | `go test ./...` |
-
-**Store Detection Results:**
-
-```json
-{
-  "testFramework": "jest|vitest|pytest|cargo|go",
-  "testCommand": "npm test|pnpm vitest|pytest|cargo test|go test ./...",
-  "testFilePattern": "*.test.ts|*.spec.ts|*_test.py|*_test.go",
-  "relatedFiles": ["src/services/auth.ts", "tests/auth.test.ts"]
-}
-```
+> Full per-language detection commands, tables, and the detection-results JSON shape: see `references/test-frameworks.md`.
 
 ## Step 5: Reproduce Issue (Bugs Only)
 
@@ -297,64 +236,16 @@ If test file doesn't exist, create it following project conventions:
 
 Based on ticket acceptance criteria, generate failing tests:
 
-**For Bugs:**
-```typescript
-describe('AuthService', () => {
-  describe('login', () => {
-    it('should complete within 3 seconds', async () => {
-      // TC-001: Performance requirement
-      const startTime = Date.now();
-      await authService.login(credentials);
-      const elapsed = Date.now() - startTime;
-      expect(elapsed).toBeLessThan(3000);
-    });
-
-    it('should show friendly message on timeout', async () => {
-      // TC-002: User experience requirement
-      // Simulate timeout scenario
-      const result = await authService.loginWithTimeout(credentials, 100);
-      expect(result.error).toBe('Login is taking longer than expected. Please try again.');
-    });
-  });
-});
-```
-
-**For Features:**
-```typescript
-describe('NewFeature', () => {
-  it('should satisfy acceptance criteria 1', () => {
-    // AC-001: Description from ticket
-    expect(feature.behavior()).toBe(expected);
-  });
-
-  it('should satisfy acceptance criteria 2', () => {
-    // AC-002: Description from ticket
-    expect(feature.otherBehavior()).toBe(expected);
-  });
-});
-```
+> Sample generated test code for bugs and features: see `references/examples.md`.
 
 ### Run Tests - Verify RED
 
 ```bash
 # Run the specific test target (varies by framework)
-
-# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
-
-# Go:
-go test ./...              # or: go test ./path -run TestName
-
-# Rust:
-cargo test <pattern>       # or: cargo test --package <pkg>
-
-# Examples:
-# npm test -- tests/auth.test.ts
-# pnpm vitest run tests/auth.test.ts
-# pytest tests/test_auth.py
-# go test ./services -run TestAuth
-# cargo test auth_service
 ```
+
+> Per-language run commands (Go, Rust, etc.) and examples: see `references/test-frameworks.md`.
 
 **Expected:** Tests should FAIL (RED phase)
 
@@ -415,16 +306,10 @@ Write the minimum code necessary to make tests pass:
 
 ```bash
 # Run tests again (use the same target as RED phase)
-
-# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
-
-# Go:
-go test ./...              # or: go test ./path -run TestName
-
-# Rust:
-cargo test <pattern>       # or: cargo test --package <pkg>
 ```
+
+> Per-language run commands: see `references/test-frameworks.md`.
 
 **Expected:** Tests should PASS (GREEN phase)
 
@@ -492,15 +377,10 @@ Review and improve the implementation:
 After each refactoring change:
 
 ```bash
-# JS/TS + Python:
 {TEST_COMMAND} {TEST_FILE}
-
-# Go:
-go test ./...              # or: go test ./path -run TestName
-
-# Rust:
-cargo test <pattern>       # or: cargo test --package <pkg>
 ```
+
+> Per-language run commands: see `references/test-frameworks.md`.
 
 Ensure tests remain GREEN throughout refactoring.
 
@@ -582,147 +462,16 @@ This enables `/commit` to generate better commit messages and `/finish` to inclu
 
 Output a completion summary:
 
-```text
-TDD Workflow Complete!
-
-Ticket: {TICKET_ID} - {TICKET_TITLE}
-Type: {bug|feature|refactor}
-
-Phases Completed:
-  RED    - Wrote failing tests
-  GREEN  - Implemented passing code
-  REFACTOR - Cleaned up code
-
-Files Changed:
-  Tests:
-    + tests/auth/login.test.ts (new, 2 test cases)
-  Implementation:
-    ~ src/services/auth.ts (modified)
-
-Test Results:
-  New tests: 2 added, 0 modified
-  Full suite: 156 tests passing
-
-Next Steps:
-  1. Review the changes: git diff
-  2. Commit: /commit
-  3. Create PR: /finish
-```
+> Sample completion summary format: see `references/examples.md`.
 
 ## Configuration Reference
 
-| Setting | Default | Description |
-| ------- | ------- | ----------- |
-| `qa.tdd.confirmBeforeGreen` | `true` | Pause for confirmation before GREEN phase |
-| `qa.tdd.confirmBeforeRefactor` | `true` | Pause for confirmation before REFACTOR phase |
-| `qa.tdd.maxRedAttempts` | `3` | Maximum attempts to achieve RED (failing tests) |
-| `qa.tdd.runFullSuiteEachPhase` | `false` | Run full test suite after each phase |
-| `qa.tdd.autoStartServer` | `false` | Auto-start dev server for bug reproduction |
+> Full settings table: see `references/configuration.md`.
 
 ## Error Handling
 
-| Scenario | Action |
-| -------- | ------ |
-| Ticket ID not provided | Prompt for ticket ID |
-| Ticket not found | Error with suggestion to check ID |
-| Tests pass in RED phase | Warn, ask to adjust tests or confirm already fixed |
-| Tests fail in GREEN phase | Show errors, retry implementation |
-| Max attempts reached | Ask user for guidance |
-| Test framework not detected | Ask user for test command |
-| No acceptance criteria | Ask user to define test cases |
+> Full error-scenario table: see `references/error-handling.md`.
 
 ## Examples
 
-### Bug Fix Flow
-
-```text
-User: /tdd ENG-456
-
-Agent: [Fetches ticket from Linear]
-  Ticket: ENG-456 - Login times out after 10 seconds
-  Type: Bug
-
-Agent: [Explores codebase]
-  Found: src/services/auth.ts, tests/auth.test.ts
-  Framework: Vitest
-
-Agent: Can you reproduce the bug?
-User: Yes, login takes 15+ seconds
-
-Agent: RED Phase - Writing failing tests...
-  Creating tests/auth/login.test.ts:
-  - TC-001: Login should complete within 3 seconds
-  - TC-002: Timeout should show friendly message
-
-  Running tests...
-  FAIL: 2 tests failed (as expected)
-
-Agent: Proceed to GREEN phase? [Yes/No]
-User: Yes
-
-Agent: GREEN Phase - Implementing fix...
-  Modified: src/services/auth.ts
-  - Added connection pooling
-  - Added timeout handling
-
-  Running tests...
-  PASS: 2 tests passing
-
-Agent: Proceed to REFACTOR? [Yes/Skip]
-User: Yes
-
-Agent: REFACTOR Phase - Cleaning up...
-  - Extracted timeout logic to utility function
-  - Added JSDoc comments
-
-  Running tests...
-  PASS: All tests still passing
-
-Agent: TDD Complete!
-  Files: tests/auth/login.test.ts (new), src/services/auth.ts (modified)
-  Next: /commit → /finish
-```
-
-### Feature Flow
-
-```text
-User: /tdd PROJ-789
-
-Agent: [Fetches ticket]
-  Ticket: PROJ-789 - Add dark mode support
-  Type: Feature
-
-  Acceptance Criteria:
-  - User can toggle dark mode
-  - Preference is persisted
-  - All components respect theme
-
-Agent: RED Phase - Writing failing tests...
-  - TC-001: Toggle should switch theme
-  - TC-002: Theme persists across sessions
-  - TC-003: Components use theme colors
-
-  FAIL: 3 tests failed (expected)
-
-Agent: Proceed to GREEN?
-User: Yes
-
-Agent: [Implements feature]
-  PASS: 3 tests passing
-
-Agent: Proceed to REFACTOR?
-User: Skip
-
-Agent: TDD Complete!
-```
-
-### No Ticket Flow
-
-```text
-User: /tdd
-
-Agent: What is the ticket ID?
-User: ENG-123
-
-Agent: [Continues with normal flow...]
-```
+> Full worked examples (Bug Fix Flow, Feature Flow, No Ticket Flow): see `references/examples.md`.

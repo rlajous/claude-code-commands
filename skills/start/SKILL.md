@@ -3,7 +3,7 @@ name: start
 description: Start a new PR by creating a feature branch following repo conventions
 argument-hint: "[ticket-id]"
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Write
+allowed-tools: Read, Grep, Glob, Bash(git checkout:*), Bash(git pull:*), Bash(gh issue view:*), AskUserQuestion, Write
 user-invocable: true
 ---
 

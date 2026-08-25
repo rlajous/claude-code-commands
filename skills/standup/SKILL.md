@@ -2,7 +2,7 @@
 name: standup
 description: Generate an async standup update (Did / Next / Blockers) from recent Git and GitHub activity, and optionally issue-tracker tickets. Use when the user asks for a "standup", "daily update", "async update", "what did I do", "update for the meeting", or wants to summarize their recent work for a team thread.
 argument-hint: "[--since <when>] [--author <user>]"
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash(git log:*), Bash(git config:*), Bash(gh api:*), Bash(gh repo view:*), Bash(gh search prs:*), Bash(gh search issues:*)
 user-invocable: true
 ---
 

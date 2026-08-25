@@ -5,17 +5,20 @@
   },
   "metadata": {
     "description": "Git workflow automation skills for Claude Code",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "plugins": [
     {
       "name": "git-workflow",
       "source": "./",
       "description": "Production-ready slash commands for Git workflow automation including PR creation, release management, and QA testing",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
-        "name": "Community"
+        "name": "rlajous",
+        "url": "https://github.com/rlajous"
       },
+      "homepage": "https://github.com/rlajous/claude-code-commands",
+      "repository": "https://github.com/rlajous/claude-code-commands",
       "license": "MIT",
       "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"],
       "category": "productivity"

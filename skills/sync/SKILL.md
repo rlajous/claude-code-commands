@@ -2,7 +2,7 @@
 name: sync
 description: Back-merge main to staging after a release to keep branches synchronized
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash
+allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git pull:*), Bash(git fetch:*), Bash(git log:*), Bash(git checkout:*), Bash(git push:*), Bash(git rebase:*), Bash(git add:*), Bash(gh pr create:*)
 user-invocable: true
 ---
 

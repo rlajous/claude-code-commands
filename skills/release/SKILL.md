@@ -470,77 +470,16 @@ Next steps:
 
 ## Configuration Reference
 
-| Setting                       | Default              | Description                    |
-| ----------------------------- | -------------------- | ------------------------------ |
-| `workflow.developmentBranch`  | `staging`            | Development/integration branch |
-| `workflow.productionBranch`   | `main`               | Production branch              |
-| `branches.release`            | `release/{version}`  | Release branch pattern         |
-| `versioning.file`             | `auto`               | Version file location          |
-| `release.watchFiles.openapi`  | -                    | OpenAPI spec path              |
-| `release.watchFiles.migrations` | -                  | Migration files pattern        |
-| `release.watchFiles.schema`   | -                    | Schema file path               |
-| `release.generateChangelog`   | `true`               | Generate changelog             |
+> Full settings table: see `references/configuration.md`.
 
 ## Error Handling
 
-| Scenario                    | Action                                         |
-| --------------------------- | ---------------------------------------------- |
-| Not on development branch   | Instruct to checkout and pull                  |
-| Behind remote               | Instruct to pull latest                        |
-| Release branch exists       | Ask to delete and recreate                     |
-| No commits to release       | Warn nothing to release                        |
-| Version bump fails          | Show error, manual instructions                |
-| Merge conflicts             | Show conflict resolution instructions          |
-| `gh` not authenticated      | Provide auth instructions                      |
+> Full error-scenario table: see `references/error-handling.md`.
 
 ## Version File Examples
 
-### package.json
-
-```json
-{
-  "name": "my-app",
-  "version": "1.2.3"
-}
-```
-
-### pyproject.toml
-
-```toml
-[project]
-name = "my-app"
-version = "1.2.3"
-```
-
-### Cargo.toml
-
-```toml
-[package]
-name = "my-app"
-version = "1.2.3"
-```
-
-### VERSION
-
-```
-1.2.3
-```
+> Example `package.json`, `pyproject.toml`, `Cargo.toml`, and `VERSION` snippets: see `references/version-file-examples.md`.
 
 ## Example Complete Flow
 
-```bash
-# User runs: /release
-# Checks: on staging, up-to-date ✓
-# Detects: package.json with version 2.76.0
-# Asks: What type? → User selects "minor"
-# Shows: 2.76.0 → 2.77.0
-# Extracts: 15 commits (8 fixes, 4 features, 3 improvements)
-# Detects: 2 new migrations, OpenAPI changes
-# Contributors: @alice @bob @charlie
-# Creates: release/2.77.0 branch
-# Merges: origin/main into release branch
-# Runs: npm version minor
-# Pushes: release/2.77.0 with tags
-# Creates: PR #679 to main
-# Output: Success message with next steps and migration alert
-```
+> Full worked example of a complete `/release` run: see `references/examples.md`.
