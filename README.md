@@ -105,6 +105,7 @@ This guides you through configuring issue trackers and MCP servers.
 | `/rfc` | Create a new RFC document from template with auto-numbering |
 | `/review-request` | Draft a paste-ready message asking teammates to review a PR |
 | `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity |
+| `/status` | Show where you are in the workflow and the recommended next step |
 | `/update` | Update skills and agents from source repo |
 | `/clean-gone` | Delete local branches gone on the remote and their worktrees |
 

@@ -35,7 +35,8 @@ skills/                    # Skills (each an invocable slash command via SKILL.m
 ├── review-request/SKILL.md # Draft a paste-ready PR review request
 ├── standup/SKILL.md       # Async standup from recent activity
 ├── update/SKILL.md        # Update skills/agents from source
-└── clean-gone/SKILL.md    # Delete local branches gone on the remote
+├── clean-gone/SKILL.md    # Delete local branches gone on the remote
+└── status/SKILL.md        # Show workflow position and next step
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -127,6 +128,7 @@ Users can install via:
 | `/standup`       | Async standup (Did / Next / Blockers)          |
 | `/update`        | Update skills/agents from source repo          |
 | `/clean-gone`    | Delete local branches gone on the remote and their worktrees |
+| `/status`        | Show workflow position and the recommended next step         |
 
 ## Subagents
 
@@ -201,6 +203,10 @@ When modifying commands:
 2. Check command steps are numbered correctly
 3. Ensure config references match schema
 4. Test with and without config file
+
+Run `bash scripts/validate.sh` to check manifests (valid JSON, aligned versions),
+skill/agent frontmatter, and SKILL.md sizes. CI runs the same check on every PR
+(`.github/workflows/validate.yml`).
 
 ## Git Commits
 

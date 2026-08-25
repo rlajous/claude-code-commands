@@ -1,7 +1,7 @@
 ---
 name: review
 description: Perform a comprehensive code review on a GitHub pull request. Use when the user asks to review a PR, review code changes, check a pull request for quality, security, bugs, or best practices, or provides a PR number or GitHub PR URL to review.
-argument-hint: "[pr-number-or-url]"
+argument-hint: "[pr-number-or-url] [--sarif]"
 allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh api:*), AskUserQuestion, Write
 user-invocable: true
 ---
@@ -426,6 +426,16 @@ Review posted: {pr_url}
 | `review.reviewsDir` | `docs` | Directory for review documents |
 | `review.postToGitHub` | `ask` | Post to PR: `ask`, `always`, or `never` |
 | `review.maxDiffLines` | `3000` | Max diff lines before file-by-file reading |
+
+### SARIF Export (`--sarif`)
+
+If `--sarif` was passed as an argument, also export the findings from Step 9 as a SARIF 2.1.0 log for CI / code-scanning ingestion. Serialize the findings to the JSON array shape `[{ file, line, severity, confidence, message, rule }]` and pipe it through the converter script:
+
+```bash
+echo '{FINDINGS_JSON}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/to-sarif.mjs" > review.sarif
+```
+
+Tell the user the SARIF file was written to `review.sarif` (e.g. for `github/codeql-action/upload-sarif`).
 
 ## Error Handling
 
