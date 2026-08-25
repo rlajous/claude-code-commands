@@ -1,4 +1,5 @@
 ---
+name: release-notes
 description: Enhance GitHub release with detailed notes after release PR is merged to main
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash

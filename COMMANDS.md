@@ -238,17 +238,18 @@ Commands are designed to work together in workflows:
 
 To add a custom command:
 
-1. Create a command file:
+1. Create a skill file:
 
 ```bash
-mkdir -p .claude/commands
-touch .claude/commands/my-command.md
+mkdir -p .claude/skills/my-skill
+touch .claude/skills/my-skill/SKILL.md
 ```
 
 2. Add command frontmatter and instructions:
 
 ```markdown
 ---
+name: my-skill
 description: Your command description
 argument-hint: "[optional-arg]"
 disable-model-invocation: true
@@ -257,27 +258,27 @@ disable-model-invocation: true
 Your command instructions here...
 ```
 
-3. Use it with `/my-command`
+3. Use it with `/my-skill`
 
 ## Directory Structure
 
 ### Plugin Format (This Repo)
 
 ```text
-commands/               # Slash commands
-├── setup.md
-├── start.md
-├── tdd.md
-├── commit.md
-├── finish.md
-├── review.md
-├── release.md
-├── release-notes.md
-├── sync.md
-├── plan-qa.md
-├── start-qa.md
-├── rfc.md
-└── update.md
+skills/                 # Skills (each is an invocable slash command)
+├── setup/SKILL.md
+├── start/SKILL.md
+├── tdd/SKILL.md
+├── commit/SKILL.md
+├── finish/SKILL.md
+├── review/SKILL.md
+├── release/SKILL.md
+├── release-notes/SKILL.md
+├── sync/SKILL.md
+├── plan-qa/SKILL.md
+├── start-qa/SKILL.md
+├── rfc/SKILL.md
+└── update/SKILL.md
 
 agents/                 # Subagents
 ├── pr-reviewer.md
@@ -289,9 +290,9 @@ agents/                 # Subagents
 
 ```text
 .claude/
-├── commands/           # Slash commands
-│   ├── start.md
-│   ├── commit.md
+├── skills/             # Skills (each is an invocable slash command)
+│   ├── start/SKILL.md
+│   ├── commit/SKILL.md
 │   └── ...
 └── agents/             # Subagents
     ├── pr-reviewer.md
@@ -354,7 +355,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for all options.
 - Use the prefixed command: `/git-workflow:start` instead of `/start`
 
 **For manual installation:**
-- Ensure the command exists as `.claude/commands/{name}.md`
+- Ensure the skill exists as `.claude/skills/{name}/SKILL.md`
 
 ### Arguments Not Passed
 

@@ -1,4 +1,5 @@
 ---
+name: finish
 description: Create a pull request with comprehensive description following repo best practices
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion

@@ -1,4 +1,5 @@
 ---
+name: plan-qa
 description: Generate QA test plan YAML from ticket
 argument-hint: "<ticket-id> [--url <url>]"
 disable-model-invocation: true

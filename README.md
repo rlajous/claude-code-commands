@@ -40,7 +40,7 @@ For shorter command names (e.g., `/start` instead of `/git-workflow:start`):
 ```bash
 # Clone and copy to your project
 git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/commands your-project/.claude/
+cp -r claude-code-commands/skills your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
@@ -352,7 +352,7 @@ Auto-detected from project:
 
 ```bash
 git clone https://github.com/rlajous/claude-code-commands.git
-cp -r claude-code-commands/commands your-project/.claude/
+cp -r claude-code-commands/skills your-project/.claude/
 cp -r claude-code-commands/agents your-project/.claude/
 ```
 
@@ -444,7 +444,7 @@ For marketplace installation, ensure you prefix with `git-workflow:`:
 /git-workflow:start  # Not /start
 ```
 
-For manual installation, ensure `.claude/commands/` directory exists with `*.md` files.
+For manual installation, ensure `.claude/skills/` directory exists with `<name>/SKILL.md` files.
 
 ### GitHub CLI Issues
 

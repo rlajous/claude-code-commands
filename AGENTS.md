@@ -190,7 +190,7 @@ tools: Read, Grep, Glob, Bash
 │   ├── release-validator.md
 │   ├── qa-executor.md
 │   └── your-custom-agent.md
-└── commands/
+└── skills/
     └── ...
 ```
 

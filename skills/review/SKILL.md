@@ -1,7 +1,7 @@
 ---
-description: Perform a comprehensive code review on a GitHub PR
+name: review
+description: Perform a comprehensive code review on a GitHub pull request. Use when the user asks to review a PR, review code changes, check a pull request for quality, security, bugs, or best practices, or provides a PR number or GitHub PR URL to review.
 argument-hint: "[pr-number-or-url]"
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Write
 user-invocable: true
 ---
