@@ -58,11 +58,18 @@ This project uses the Claude Code slash commands for Git workflow:
 | Command        | Purpose                                      |
 | -------------- | -------------------------------------------- |
 | `/start`       | Create feature branch from ticket            |
+| `/tdd`         | Implement ticket using TDD (RED-GREEN-REFACTOR) |
 | `/commit`      | Stage and commit with conventions            |
 | `/finish`      | Create PR with comprehensive description     |
+| `/review`      | Comprehensive code review on a PR            |
 | `/release`     | Create release branch and PR to main         |
 | `/release-notes` | Generate GitHub release notes              |
 | `/sync`        | Back-merge main to development branch        |
+| `/plan-qa`     | Generate QA test plan from ticket            |
+| `/start-qa`    | Execute QA tests from plan file              |
+| `/rfc`         | Create a new RFC document with auto-numbering |
+| `/setup`       | Interactive setup for MCP servers and config |
+| `/update`      | Update commands and agents from source repo  |
 
 ### Branch Strategy
 

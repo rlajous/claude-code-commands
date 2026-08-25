@@ -118,11 +118,14 @@ your-project/
 │   │   ├── tdd.md
 │   │   ├── commit.md
 │   │   ├── finish.md
+│   │   ├── review.md
 │   │   ├── release.md
 │   │   ├── release-notes.md
 │   │   ├── sync.md
 │   │   ├── plan-qa.md
-│   │   └── start-qa.md
+│   │   ├── start-qa.md
+│   │   ├── rfc.md
+│   │   └── update.md
 │   ├── agents/               # Subagents (optional)
 │   │   ├── pr-reviewer.md
 │   │   ├── release-validator.md
@@ -201,7 +204,7 @@ Commands integrate with issue trackers via **MCP (Model Context Protocol) server
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "@anthropic/linear-mcp"]
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
     }
   }
 }
@@ -227,10 +230,7 @@ issueTracker:
   "mcpServers": {
     "jira": {
       "command": "npx",
-      "args": ["-y", "@anthropic/jira-mcp"],
-      "env": {
-        "JIRA_INSTANCE_URL": "https://your-company.atlassian.net"
-      }
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
     }
   }
 }

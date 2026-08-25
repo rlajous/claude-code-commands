@@ -102,14 +102,11 @@ pullRequests:
 #   "mcpServers": {
 #     "linear": {
 #       "command": "npx",
-#       "args": ["-y", "@anthropic/linear-mcp"]
+#       "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
 #     },
 #     "jira": {
 #       "command": "npx",
-#       "args": ["-y", "@anthropic/jira-mcp"],
-#       "env": {
-#         "JIRA_INSTANCE_URL": "https://your-org.atlassian.net"
-#       }
+#       "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
 #     }
 #   }
 # }
@@ -128,7 +125,7 @@ issueTracker:
 
   # Jira-specific settings (only baseUrl needed - auth handled by MCP)
   jira:
-    # Your Jira instance URL (must match JIRA_INSTANCE_URL in MCP config)
+    # Your Jira instance URL (used to build issue links; auth is handled by the MCP server via OAuth)
     baseUrl: https://your-org.atlassian.net
 
     # Project key for ticket prefixes (e.g., "PROJ" for PROJ-123)
@@ -216,10 +213,6 @@ qa:
   # SQS queue URL for event verification (optional)
   sqsQueueUrl: ${SQS_QUEUE_URL}
 
-# ==============================================================================
-# QA SETTINGS
-# ==============================================================================
-qa:
   # TDD (Test-Driven Development) settings
   tdd:
     # Pause for confirmation before GREEN phase (implementing code)
