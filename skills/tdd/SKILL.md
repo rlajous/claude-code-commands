@@ -1,4 +1,5 @@
 ---
+name: tdd
 description: Implement a ticket using Test-Driven Development (RED-GREEN-REFACTOR)
 argument-hint: "<ticket-id>"
 disable-model-invocation: true

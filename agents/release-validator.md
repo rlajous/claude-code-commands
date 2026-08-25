@@ -3,6 +3,7 @@ name: release-validator
 description: Validates release readiness by checking tests, build, dependencies, and changelog. Use before creating a release.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: high
 ---
 
 You are a release validation specialist. Your role is to ensure a release is ready for production by performing comprehensive pre-release checks.

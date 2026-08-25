@@ -1,4 +1,5 @@
 ---
+name: start
 description: Start a new PR by creating a feature branch following repo conventions
 argument-hint: "[ticket-id]"
 disable-model-invocation: true

@@ -1,4 +1,5 @@
 ---
+name: sync
 description: Back-merge main to staging after a release to keep branches synchronized
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash

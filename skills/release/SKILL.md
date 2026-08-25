@@ -1,4 +1,5 @@
 ---
+name: release
 description: Create a release branch and PR to main with auto-extracted changes from staging
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit
