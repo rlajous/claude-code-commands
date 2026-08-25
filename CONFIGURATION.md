@@ -226,11 +226,11 @@ Add to your Claude Code settings (`~/.claude/settings.json`):
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
     },
     "jira": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
     }
   }
 }

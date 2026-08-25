@@ -204,7 +204,7 @@ Commands integrate with issue trackers via **MCP (Model Context Protocol) server
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
     }
   }
 }
@@ -230,7 +230,7 @@ issueTracker:
   "mcpServers": {
     "jira": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
     }
   }
 }
