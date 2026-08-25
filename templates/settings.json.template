@@ -8,8 +8,8 @@
 
   "mcpServers": {
     "// instructions": "Add MCP servers for issue tracker integration. Run /setup for guided configuration.",
-    "// example-linear": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@anthropic/linear-mcp\"] }",
-    "// example-jira": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@anthropic/jira-mcp\"], \"env\": { \"JIRA_INSTANCE_URL\": \"https://your-company.atlassian.net\" } }"
+    "// example-linear": "{ \"command\": \"npx\", \"args\": [\"-y\", \"mcp-remote\", \"https://mcp.linear.app/sse\"] }",
+    "// example-jira": "{ \"command\": \"npx\", \"args\": [\"-y\", \"mcp-remote\", \"https://mcp.atlassian.com/v1/sse\"] }"
   },
 
   "// HOOKS CONFIGURATION": "Automate actions during Claude Code execution",

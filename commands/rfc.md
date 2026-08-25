@@ -3,6 +3,7 @@ description: Create a new RFC document from template with auto-numbering
 argument-hint: "<title>"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash, Write, AskUserQuestion
+user-invocable: true
 ---
 
 You are helping create a new RFC (Request for Comments) document. Your task is to generate a properly numbered RFC file from the template with pre-filled metadata.

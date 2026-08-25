@@ -107,6 +107,13 @@ model: haiku   # Fastest, for simple tasks
 
 ## Available Commands
 
+### Setup & Maintenance
+
+| Command | Description | Arguments |
+|---------|-------------|-----------|
+| `/setup` | Interactive setup for MCP servers and project configuration | - |
+| `/update` | Update commands and agents from the source repository | `[--dry-run] [--prune] [--force] [--source <path>]` |
+
 ### PR Workflow
 
 | Command | Description | Arguments |
@@ -131,6 +138,12 @@ model: haiku   # Fastest, for simple tasks
 |---------|-------------|-----------|
 | `/plan-qa` | Generate QA test plan | `<ticket-id> [--url <url>]` |
 | `/start-qa` | Execute QA tests | `[plan-file]` |
+
+### Documentation
+
+| Command | Description | Arguments |
+|---------|-------------|-----------|
+| `/rfc` | Create a new RFC document from template with auto-numbering | `<title>` |
 
 ## Using Commands
 
@@ -262,7 +275,9 @@ commands/               # Slash commands
 ├── release-notes.md
 ├── sync.md
 ├── plan-qa.md
-└── start-qa.md
+├── start-qa.md
+├── rfc.md
+└── update.md
 
 agents/                 # Subagents
 ├── pr-reviewer.md

@@ -96,7 +96,7 @@ Based on selections, generate the appropriate `settings.json` content.
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "@anthropic/linear-mcp"]
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
     }
   }
 }
@@ -109,10 +109,7 @@ Based on selections, generate the appropriate `settings.json` content.
   "mcpServers": {
     "jira": {
       "command": "npx",
-      "args": ["-y", "@anthropic/jira-mcp"],
-      "env": {
-        "JIRA_INSTANCE_URL": "{user_provided_url}"
-      }
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
     }
   }
 }

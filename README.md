@@ -102,6 +102,7 @@ This guides you through configuring issue trackers and MCP servers.
 | `/sync` | Back-merge production to development branch |
 | `/plan-qa` | Generate QA test plan from ticket |
 | `/start-qa` | Execute QA tests from plan file |
+| `/rfc` | Create a new RFC document from template with auto-numbering |
 | `/update` | Update commands and agents from source repo |
 
 > **Note**: If installed via marketplace, prefix commands with `git-workflow:` (e.g., `/git-workflow:start`)
@@ -279,7 +280,7 @@ Commands integrate with issue trackers via **MCP servers** (recommended) for aut
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "@anthropic/linear-mcp"]
+      "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
     }
   }
 }
@@ -295,10 +296,7 @@ Commands will fetch ticket details, update status, and link PRs.
   "mcpServers": {
     "jira": {
       "command": "npx",
-      "args": ["-y", "@anthropic/jira-mcp"],
-      "env": {
-        "JIRA_INSTANCE_URL": "https://company.atlassian.net"
-      }
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/sse"]
     }
   }
 }
