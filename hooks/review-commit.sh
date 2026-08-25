@@ -41,23 +41,26 @@ if grep -qxF "$HEAD_SHA" "$LEDGER" 2>/dev/null; then
   exit 0
 fi
 
-# --- determine the range of unreviewed commits ------------------------------
+# --- determine what to review ------------------------------------------------
+# DIFF_BASE..HEAD is what we diff; REVLIST_RANGE lists the commits to record.
 LAST_REVIEWED="$(tail -n 1 "$LEDGER" 2>/dev/null)"
-RANGE=""
+EMPTY_TREE="$(git -C "$PROJECT_DIR" hash-object -t tree /dev/null 2>/dev/null)"
+
 if [ -n "$LAST_REVIEWED" ] && git -C "$PROJECT_DIR" merge-base --is-ancestor "$LAST_REVIEWED" "$HEAD_SHA" 2>/dev/null; then
-  RANGE="$LAST_REVIEWED..$HEAD_SHA"
+  DIFF_BASE="$LAST_REVIEWED"; REVLIST_RANGE="$LAST_REVIEWED..$HEAD_SHA"
 elif git -C "$PROJECT_DIR" rev-parse "$HEAD_SHA~1" >/dev/null 2>&1; then
-  RANGE="$HEAD_SHA~1..$HEAD_SHA"   # first review, or ledger stale: just the newest commit
+  DIFF_BASE="$HEAD_SHA~1"; REVLIST_RANGE="$HEAD_SHA~1..$HEAD_SHA"   # first review, or ledger stale
 else
-  RANGE="$HEAD_SHA"                # root commit
+  DIFF_BASE="$EMPTY_TREE"; REVLIST_RANGE="$HEAD_SHA"                # root commit: diff against the empty tree
 fi
 
-# List of new commit SHAs (for the ledger), capped.
-NEW_SHAS="$(git -C "$PROJECT_DIR" rev-list --max-count=20 "$RANGE" 2>/dev/null)"
+# Commit SHAs to record, OLDEST-first so the ledger's last line is the newest
+# reviewed commit (which becomes the next baseline via `tail -n 1`).
+NEW_SHAS="$(git -C "$PROJECT_DIR" rev-list --reverse --max-count=20 "$REVLIST_RANGE" 2>/dev/null)"
 [ -n "$NEW_SHAS" ] || { echo "$HEAD_SHA" >> "$LEDGER" 2>/dev/null || true; exit 0; }
 
 # --- emit the diff for the agent to review -----------------------------------
-DIFF="$(git -C "$PROJECT_DIR" diff "$RANGE" 2>/dev/null)"
+DIFF="$(git -C "$PROJECT_DIR" diff "$DIFF_BASE" "$HEAD_SHA" 2>/dev/null)"
 if [ -z "$DIFF" ]; then
   # Merge/empty commit with no content diff — record and skip.
   printf '%s\n' $NEW_SHAS >> "$LEDGER" 2>/dev/null || true
@@ -65,9 +68,9 @@ if [ -z "$DIFF" ]; then
 fi
 
 COMMIT_COUNT="$(printf '%s\n' "$NEW_SHAS" | grep -c . )"
-echo "Commits not yet reviewed: $COMMIT_COUNT ($RANGE)"
+echo "Commits not yet reviewed: $COMMIT_COUNT ($REVLIST_RANGE)"
 echo
-git -C "$PROJECT_DIR" log --no-decorate --oneline "$RANGE" 2>/dev/null | head -n 20
+git -C "$PROJECT_DIR" log --no-decorate --oneline "$REVLIST_RANGE" 2>/dev/null | head -n 20
 echo
 echo "----- diff (truncated to ${MAX_DIFF_LINES} lines) -----"
 printf '%s\n' "$DIFF" | head -n "$MAX_DIFF_LINES"
@@ -76,6 +79,6 @@ if [ "$DIFF_LINES" -gt "$MAX_DIFF_LINES" ]; then
   echo "... (diff truncated; $DIFF_LINES lines total — read the files directly for the rest)"
 fi
 
-# Record the reviewed SHAs so they are not reviewed again.
+# Record the reviewed SHAs (oldest-first) so they are not reviewed again.
 printf '%s\n' $NEW_SHAS >> "$LEDGER" 2>/dev/null || true
 exit 0
