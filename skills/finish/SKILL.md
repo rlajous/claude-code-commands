@@ -16,14 +16,14 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".git-workflow/pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
+if [ -f ".git-workflow/pr-context.json" ]; then CONTEXT_PATH=".git-workflow/pr-context.json"; elif [ -f ".claude/.pr-context.json" ]; then CONTEXT_PATH=".claude/.pr-context.json"; else CONTEXT_PATH=""; fi
 
 # Get current branch
 git branch --show-current
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 workflow:
@@ -37,7 +37,7 @@ issueTracker:
   type: auto
 ```
 
-**Load from `.git-workflow/pr-context.json` (if exists):**
+**Load from the resolved `CONTEXT_PATH` (canonical first, legacy read-only fallback):**
 
 ```json
 {

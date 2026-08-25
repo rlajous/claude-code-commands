@@ -15,10 +15,16 @@ You are helping sync the production branch changes back to the development branc
 Check for configuration:
 
 ```bash
-[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then
+  CONFIG_PATH=".git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  CONFIG_PATH=".claude/config.yaml" # legacy read-only fallback
+else
+  CONFIG_PATH=""
+fi
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 workflow:

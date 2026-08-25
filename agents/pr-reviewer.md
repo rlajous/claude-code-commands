@@ -13,17 +13,23 @@ You are a senior code reviewer with expertise in software engineering best pract
 
 ### 1. Understand the Change Context
 
-First, gather context about the changes:
+First, determine the review scope supplied by the caller:
+
+- **Pull request scope:** require or resolve the pull request base SHA and compare `BASE_SHA...HEAD` so every PR commit is included.
+- **Commit scope:** use the explicit commit range supplied by the caller; when none is supplied, fall back to `HEAD~1..HEAD`.
+- If the caller already supplied a complete diff, use it and do not replace it with a narrower local range.
 
 ```bash
 # Get the current branch
 git branch --show-current
 
-# Show files changed
-git diff --name-only HEAD~1
+# Pull request review
+git diff --name-only "${BASE_SHA}...HEAD"
+git diff "${BASE_SHA}...HEAD"
 
-# Get the diff
-git diff HEAD~1
+# Commit-scoped fallback
+git diff --name-only HEAD~1..HEAD
+git diff HEAD~1..HEAD
 ```
 
 ### 2. Code Quality Review

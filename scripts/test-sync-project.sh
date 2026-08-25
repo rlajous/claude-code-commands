@@ -68,4 +68,36 @@ node "$SYNC" --source "$SOURCE_DIR" --target "$CLAUDE_TARGET" --host claude >/de
 [ "$(find "$CLAUDE_TARGET/.claude/agents" -name '*.md' | wc -l | tr -d ' ')" = "8" ] || fail "Claude install did not create eight agents"
 [ -f "$CLAUDE_TARGET/.claude/references/runtime-compatibility.md" ] || fail "Claude install omitted shared compatibility reference"
 
+BOTH_TARGET="$TEST_ROOT/both"
+mkdir -p "$BOTH_TARGET"
+node "$SYNC" --source "$SOURCE_DIR" --target "$BOTH_TARGET" --host both >/dev/null
+CLAUDE_ORPHAN="$BOTH_TARGET/.claude/agents/removed-claude.md"
+CODEX_ORPHAN="$BOTH_TARGET/.codex/agents/removed-codex.toml"
+printf 'removed claude\n' > "$CLAUDE_ORPHAN"
+printf 'name = "removed-codex"\n' > "$CODEX_ORPHAN"
+BOTH_LEDGER="$BOTH_TARGET/.git-workflow/version.json"
+BOTH_LEDGER="$BOTH_LEDGER" python3 - <<'PY'
+import json
+import os
+p = os.environ["BOTH_LEDGER"]
+with open(p) as f:
+    data = json.load(f)
+data["managed_files"].extend([
+    ".claude/agents/removed-claude.md",
+    ".codex/agents/removed-codex.toml",
+])
+with open(p, "w") as f:
+    json.dump(data, f)
+PY
+node "$SYNC" --source "$SOURCE_DIR" --target "$BOTH_TARGET" --host codex --prune --confirm-prune >/dev/null
+[ ! -e "$CODEX_ORPHAN" ] || fail "single-host prune retained selected Codex orphan"
+[ -f "$CLAUDE_ORPHAN" ] || fail "single-host prune deleted unselected Claude asset"
+python3 -c '
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert ".claude/agents/removed-claude.md" in d["managed_files"]
+assert ".codex/agents/removed-codex.toml" not in d["managed_files"]
+assert d["hosts"] == ["claude", "codex"]
+' "$BOTH_LEDGER" || fail "single-host update discarded unselected ledger state"
+
 printf 'ok: setup/update synchronization scenarios\n'

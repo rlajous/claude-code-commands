@@ -16,10 +16,10 @@ You are helping generate a QA test plan from a ticket description, issue tracker
 Check for configuration:
 
 ```bash
-[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 qa:

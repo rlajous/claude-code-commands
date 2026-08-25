@@ -16,11 +16,11 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".git-workflow/pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
+if [ -f ".git-workflow/pr-context.json" ]; then CONTEXT_PATH=".git-workflow/pr-context.json"; elif [ -f ".claude/.pr-context.json" ]; then CONTEXT_PATH=".claude/.pr-context.json"; else CONTEXT_PATH=""; fi
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 commits:
@@ -33,7 +33,7 @@ attribution:
   format: ""
 ```
 
-**Load from `.git-workflow/pr-context.json` (if exists):**
+**Load from the resolved `CONTEXT_PATH` (canonical first, legacy read-only fallback):**
 
 ```json
 {
@@ -240,7 +240,7 @@ If commit fails due to pre-commit hooks:
 
 ### Attribution (If Enabled)
 
-If `attribution.enabled: true` in config:
+If `attribution.enabled: true` in config, append the configured prose note to the commit body. The note must comply with repository commit rules and must not impersonate or add another commit author.
 
 ```bash
 git commit -m "{message}
@@ -253,7 +253,7 @@ Example:
 ```
 [Fix] Update token schema (PROJ-1234)
 
-Co-Authored-By: AI Assistant <noreply@example.com>
+This commit was created with assistance from an AI coding agent.
 ```
 
 **Note:** Attribution is disabled by default.
@@ -261,6 +261,10 @@ Co-Authored-By: AI Assistant <noreply@example.com>
 ## Step 7: Update Context
 
 Update `.git-workflow/pr-context.json`:
+
+```bash
+mkdir -p .git-workflow
+```
 
 ```json
 {
@@ -312,8 +316,8 @@ Message: [Fix] Update token schema (PROJ-1234)
 | `commits.format`     | `[{type}] {message} ({ticket})`   | Commit message format          |
 | `commits.types`      | Feature, Fix, Hotfix...           | Allowed commit types           |
 | `commits.requireTicket` | `false`                        | Require ticket ID              |
-| `attribution.enabled` | `false`                          | Add AI co-author               |
-| `attribution.format` | empty                              | Optional attribution line      |
+| `attribution.enabled` | `false`                          | Add an AI assistance note      |
+| `attribution.format` | empty                              | Optional prose note             |
 
 ## Error Handling
 

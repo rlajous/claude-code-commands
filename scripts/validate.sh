@@ -112,6 +112,60 @@ then ok "17 shared skills have valid neutral instructions"
 else err "skill count, frontmatter, or runtime-neutral wording failed validation"
 fi
 
+if python3 - <<'PY'
+from pathlib import Path
+
+def read(path):
+    return Path(path).read_text()
+
+qa = read("agents/qa-executor.md")
+assert "Redact `Authorization`" in qa
+assert "full bodies only after explicit user approval" in qa
+
+reviewer = read("agents/pr-reviewer.md")
+assert "BASE_SHA...HEAD" in reviewer
+assert "HEAD~1..HEAD" in reviewer
+review = read("skills/review/SKILL.md")
+assert "baseRefOid" in review and "baseRefOid...HEAD" in review
+
+for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
+    text = read(path)
+    assert "explicit confirmation" in text, path
+    assert "Immediately before" in text, path
+
+for path in ("skills/start/SKILL.md", "skills/tdd/SKILL.md", "skills/status/SKILL.md"):
+    assert "mkdir -p .git-workflow" in read(path), path
+
+for path in (
+    "skills/review-request/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/start-qa/SKILL.md",
+    "skills/start/SKILL.md",
+    "skills/standup/SKILL.md",
+    "skills/sync/SKILL.md",
+    "skills/tdd/SKILL.md",
+):
+    text = read(path)
+    assert ".git-workflow/config.yaml" in text, path
+    assert ".claude/config.yaml" in text, path
+
+tdd = read("skills/tdd/SKILL.md")
+assert ".git-workflow/pr-context.json" in tdd
+assert ".claude/.pr-context.json" in tdd
+
+workflow = read(".github/workflows/validate.yml")
+assert "permissions:\n  contents: read" in workflow
+assert "```text\n/start PROJ-123" in read("COMMANDS.md")
+
+template = read("templates/config.yaml.template")
+assert '"mcpServers"' in template
+assert "[mcp_servers.linear]" in template
+assert "[mcp_servers.jira]" in template
+PY
+then ok "review-remediation safety and compatibility assertions"
+else err "review-remediation safety or compatibility assertions failed"
+fi
+
 for script in hooks/review-commit.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done

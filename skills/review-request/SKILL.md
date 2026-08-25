@@ -25,7 +25,7 @@ If no PR exists for the current branch, stop and tell the user to create one fir
 
 ## Step 2: Load Configuration
 
-Check for `.git-workflow/config.yaml`:
+Resolve `.git-workflow/config.yaml` first, then `.claude/config.yaml` as a legacy read-only fallback. Use defaults only when neither file exists.
 
 - `pullRequests.reviewers` → default reviewers (GitHub usernames or `org/team` slugs). Use these as the people/teams to @-mention.
 - `pullRequests.labels` → for context only.

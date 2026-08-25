@@ -26,7 +26,7 @@ AUTHOR="$(gh api user --jq .login 2>/dev/null || git config user.name)"
 
 ## Step 2: Load Configuration
 
-Check for `.git-workflow/config.yaml` to resolve the repository and issue tracker:
+Resolve `.git-workflow/config.yaml` first, then `.claude/config.yaml` as a legacy read-only fallback, to determine the repository and issue tracker:
 
 - `issueTracker.type` → `auto` | `linear` | `jira` | `github` | `none`
 - `issueTracker.github.repository` or the current repo (via `gh repo view`)

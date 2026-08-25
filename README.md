@@ -45,7 +45,7 @@ During local plugin development, this repository can be loaded from a checkout w
 
 ## Configure
 
-Run `/setup` in Claude or `$setup` in Codex. New projects use:
+Run `/git-workflow:setup` for a Claude marketplace install, `/setup` for a manual Claude project copy, or `$setup` in Codex. New projects use:
 
 ```text
 .git-workflow/

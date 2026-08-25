@@ -82,4 +82,39 @@ git -C "$TEST_DIR" commit -qm "large diff"
 TRUNCATED="$(invoke "$TEST_DIR" "git commit -m large")"
 printf '%s' "$TRUNCATED" | grep -q 'diff truncated' || fail "large diff was not marked truncated"
 
+BRANCH_DIR="$TEST_DIR/branch-switch"
+git -C "$TEST_DIR" init -q -b main "$BRANCH_DIR"
+git -C "$BRANCH_DIR" config user.name "Git Workflow Test"
+git -C "$BRANCH_DIR" config user.email "git-workflow@example.invalid"
+printf 'base\n' > "$BRANCH_DIR/base.txt"
+git -C "$BRANCH_DIR" add base.txt
+git -C "$BRANCH_DIR" commit -qm "base"
+mkdir -p "$BRANCH_DIR/.git-workflow" "$BRANCH_DIR/.claude"
+printf 'review-on-commit: true\n' > "$BRANCH_DIR/.git-workflow/git-workflow.local.md"
+invoke "$BRANCH_DIR" "git commit -m base" >/dev/null
+BASE_SHA="$(git -C "$BRANCH_DIR" rev-parse HEAD)"
+
+git -C "$BRANCH_DIR" switch -qc feature
+printf 'one\n' > "$BRANCH_DIR/feature-one.txt"
+git -C "$BRANCH_DIR" add feature-one.txt
+git -C "$BRANCH_DIR" commit -qm "feature one"
+FEATURE_ONE_SHA="$(git -C "$BRANCH_DIR" rev-parse HEAD)"
+printf 'two\n' > "$BRANCH_DIR/feature-two.txt"
+git -C "$BRANCH_DIR" add feature-two.txt
+git -C "$BRANCH_DIR" commit -qm "feature two"
+
+git -C "$BRANCH_DIR" switch -qc side main
+printf 'side\n' > "$BRANCH_DIR/side.txt"
+git -C "$BRANCH_DIR" add side.txt
+git -C "$BRANCH_DIR" commit -qm "side"
+invoke "$BRANCH_DIR" "git commit -m side" >/dev/null
+
+printf '%s\n' "$FEATURE_ONE_SHA" > "$BRANCH_DIR/.claude/.git-workflow-reviewed-shas"
+git -C "$BRANCH_DIR" switch -q feature
+BRANCH_OUTPUT="$(invoke "$BRANCH_DIR" "git push")"
+printf '%s' "$BRANCH_OUTPUT" | grep -q 'Commits not yet reviewed: 2' || fail "branch switch skipped unreviewed commits"
+printf '%s' "$BRANCH_OUTPUT" | grep -q 'feature-one.txt' || fail "branch switch diff omitted first feature commit"
+printf '%s' "$BRANCH_OUTPUT" | grep -q 'feature-two.txt' || fail "branch switch diff omitted second feature commit"
+grep -qxF "$BASE_SHA" "$BRANCH_DIR/.git-workflow/.git-workflow-reviewed-shas" || fail "canonical ancestor fixture missing"
+
 printf 'ok: review hook behavior\n'

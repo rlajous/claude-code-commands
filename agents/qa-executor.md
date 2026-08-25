@@ -78,6 +78,14 @@ aws sqs receive-message \
 
 ### 6. Generate Report
 
+Sanitize all report data before writing or displaying it:
+
+- Redact `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`, and equivalent credential headers.
+- Redact values whose keys contain `token`, `password`, `secret`, `api_key`, `apiKey`, `accessToken`, or `refreshToken`.
+- Exclude full request and response bodies by default. Report status, timing, schema mismatches, and short sanitized excerpts instead.
+- Capture full bodies only after explicit user approval for the current run, and still apply every redaction rule before persisting them.
+- Treat queue messages and user records as potentially sensitive; redact PII unless it is necessary to explain the failure and the user approved its inclusion.
+
 ## Test Execution Format
 
 For each test case:
@@ -177,7 +185,7 @@ Check API token permissions and user role.
 
 ## Artifacts
 
-- Full response logs: tests/qa/results/{timestamp}.json
+- Sanitized response summary: tests/qa/results/{timestamp}.json
 ```
 
 ## Execution Guidelines
@@ -185,7 +193,7 @@ Check API token permissions and user role.
 - Run tests in order unless parallel execution is enabled
 - Stop on first failure if `failFast: true`
 - Retry flaky tests according to retry configuration
-- Log full request/response for failed tests
+- Log sanitized metadata and excerpts for failed tests; require explicit approval before capturing full bodies
 - Clean up test data after execution
 - Report timing for performance analysis
 

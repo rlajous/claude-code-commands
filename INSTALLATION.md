@@ -57,7 +57,7 @@ mkdir -p .git-workflow
 cp /path/to/git-workflow/templates/config.yaml.template .git-workflow/config.yaml
 ```
 
-Or simply run `/setup` in Claude or `$setup` in Codex. Setup reads legacy `.claude/config.yaml` when no canonical file exists and offers to copy its values; it never deletes the legacy file.
+Or run `/git-workflow:setup` for a Claude marketplace install, `/setup` for a manual Claude project copy, or `$setup` in Codex. Setup reads legacy `.claude/config.yaml` when no canonical file exists and offers to copy its values; it never deletes the legacy file.
 
 The project layout after a typical dual-runtime setup is:
 

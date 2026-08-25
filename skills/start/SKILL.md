@@ -13,22 +13,24 @@ You are helping create a new pull request. Your task is to create a properly nam
 
 ## Step 1: Load Configuration
 
-Check for `.git-workflow/config.yaml` to load project-specific settings:
+Resolve project configuration with canonical-first precedence:
 
 ```bash
-# Check if config exists
 if [ -f ".git-workflow/config.yaml" ]; then
-  echo "CONFIG_EXISTS=true"
+  CONFIG_PATH=".git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  CONFIG_PATH=".claude/config.yaml" # legacy read-only fallback
 else
-  echo "CONFIG_EXISTS=false"
+  CONFIG_PATH=""
 fi
 ```
 
 **Configuration Priority:**
 
 1. `.git-workflow/config.yaml` (if exists)
-2. Auto-detection (package.json, pyproject.toml, etc.)
-3. Sensible defaults
+2. `.claude/config.yaml` (legacy read-only fallback)
+3. Auto-detection (package.json, pyproject.toml, etc.)
+4. Sensible defaults
 
 **Default Values (when no config):**
 
@@ -181,6 +183,8 @@ Result: fix/proj-1234-add-user-auth
 
 ### Create and Checkout Branch
 
+Immediately before running any command below, show the resolved base branch, pull target, new branch name, and canonical context destination. Ask for explicit confirmation to create and check out the branch. Do not treat automatic skill invocation or earlier information-gathering answers as approval.
+
 ```bash
 # Ensure we're on the development branch and up-to-date
 git checkout {workflow.developmentBranch} 2>/dev/null || git checkout main
@@ -198,6 +202,10 @@ git checkout -b {branch_name}
 ## Step 5: Store Context
 
 Create `.git-workflow/pr-context.json` with collected information:
+
+```bash
+mkdir -p .git-workflow
+```
 
 ```json
 {
@@ -218,8 +226,9 @@ Create `.git-workflow/pr-context.json` with collected information:
 
 **Important:**
 
-- Create `.claude/` directory if it doesn't exist
-- If `.pr-context.json` exists, ask before overwriting
+- Create `.git-workflow/` before writing.
+- If `.git-workflow/pr-context.json` exists, ask before overwriting.
+- Never overwrite or delete the legacy `.claude/.pr-context.json` fallback.
 
 ## Step 6: Confirm
 

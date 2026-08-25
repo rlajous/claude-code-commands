@@ -15,10 +15,10 @@ You are helping enhance a GitHub release with comprehensive release notes. This 
 Check for configuration:
 
 ```bash
-[ -f ".git-workflow/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 workflow:

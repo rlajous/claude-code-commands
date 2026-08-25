@@ -68,6 +68,8 @@ kebab_title=$(echo "$title" \
 
 ## Step 4: Create Directory
 
+Immediately before creating anything, show the RFC number, title, author, and final file path. Ask for explicit confirmation to create the directory and RFC file. Do not treat automatic skill invocation or title confirmation as approval for the write.
+
 ```bash
 mkdir -p docs/rfcs
 ```

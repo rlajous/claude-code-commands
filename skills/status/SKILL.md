@@ -83,6 +83,7 @@ Map the stage to the recommended next command:
 If `--html` was passed, generate a self-contained HTML status page:
 
 ```bash
+mkdir -p .git-workflow
 node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/status-report.mjs" > .git-workflow/status.html
 ```
 

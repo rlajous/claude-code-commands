@@ -32,7 +32,7 @@ When `REPO_FLAG` is empty (PR number or current-branch input), resolve `{owner}`
 ## Step 2: Fetch PR Metadata
 
 ```bash
-gh pr view {PR_NUMBER} {REPO_FLAG} --json number,title,body,author,state,baseRefName,headRefName,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
+gh pr view {PR_NUMBER} {REPO_FLAG} --json number,title,body,author,state,baseRefName,baseRefOid,headRefName,headRefOid,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
 ```
 
 If `{owner}` and `{repo}` were not set in Step 1 (i.e., input was a PR number or current branch), extract them from the `url` field in the response (format: `https://github.com/{owner}/{repo}/pull/{number}`).
@@ -62,6 +62,8 @@ Ask the following single question through the active host user-input mechanism:
 
 ## Step 4: Collect Changes
 
+Resolve `CONFIG_PATH` once: use `.git-workflow/config.yaml` when present, otherwise `.claude/config.yaml` as a legacy read-only fallback. Use defaults only when neither exists.
+
 Get the diff and assess its size:
 
 ```bash
@@ -69,7 +71,7 @@ Get the diff and assess its size:
 gh pr diff {PR_NUMBER} {REPO_FLAG} | wc -l
 ```
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:
@@ -158,7 +160,7 @@ Instead of reviewing every dimension inline, fan out to focused subagents throug
 | Test files added/changed, or new behavior lacking tests | `pr-test-analyzer` |
 | Comments/docstrings added or changed | `comment-analyzer` |
 
-**Launch in parallel:** start every applicable named agent before waiting so the agents run concurrently. Give each agent the PR number/repo, changed-file list, and diff (or file paths for large PRs). Wait for every agent and collect all findings before continuing.
+**Launch in parallel:** start every applicable named agent before waiting so the agents run concurrently. Give each agent the PR number/repo, `baseRefOid` as the pull request base SHA, `headRefOid`, changed-file list, and diff (or file paths for large PRs). The `pr-reviewer` must use `baseRefOid...HEAD` when it needs to reconstruct the PR diff. Wait for every agent and collect all findings before continuing.
 
 > **Review lenses** the general `pr-reviewer` pass (and your own synthesis) applies — architecture, business logic, data integrity, error handling, security, performance, testing, code quality. Use them to fill gaps the specialized agents don't cover. Full checklist: see `references/review-lenses.md`.
 
@@ -298,7 +300,7 @@ Produce a structured markdown document:
 
 ## Step 12: Save Review
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:
@@ -327,7 +329,7 @@ If `saveLocally` is false: the review content is held in memory for posting or d
 
 ## Step 13: Confirm Before Posting
 
-**Load from `.git-workflow/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:

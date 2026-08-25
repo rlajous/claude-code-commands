@@ -261,10 +261,10 @@ versioning:
 
 ```yaml
 attribution:
-  # Add AI co-author to commits (default: false)
+  # Add an AI assistance note to commit bodies (default: false)
   enabled: false
 
-  # Attribution format. Empty by default; customize only when enabled.
+  # Optional prose note; empty by default and subject to repository commit rules.
   format: ""
 ```
 

@@ -57,18 +57,51 @@ if grep -qxF "$HEAD_SHA" "$LEDGER" 2>/dev/null || grep -qxF "$HEAD_SHA" "$LEGACY
   exit 0
 fi
 
-LAST_REVIEWED="$(tail -n 1 "$LEDGER" 2>/dev/null)"
-if [ -z "$LAST_REVIEWED" ] && [ -f "$LEGACY_LEDGER" ]; then
-  LAST_REVIEWED="$(tail -n 1 "$LEGACY_LEDGER" 2>/dev/null)"
+find_latest_ancestor() {
+  local ledger_path="$1"
+  local candidate
+  [ -f "$ledger_path" ] || return 1
+  while IFS= read -r candidate; do
+    [ -n "$candidate" ] || continue
+    if git -C "$PROJECT_DIR" cat-file -e "${candidate}^{commit}" 2>/dev/null \
+      && git -C "$PROJECT_DIR" merge-base --is-ancestor "$candidate" "$HEAD_SHA" 2>/dev/null; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done < <(awk 'NF { lines[++count]=$0 } END { for (i=count; i>=1; i--) print lines[i] }' "$ledger_path")
+  return 1
+}
+
+find_default_branch_base() {
+  local candidate
+  local merge_base
+  local symbolic_default
+  symbolic_default="$(git -C "$PROJECT_DIR" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null)"
+  for candidate in "$symbolic_default" origin/main origin/master main master; do
+    [ -n "$candidate" ] || continue
+    if git -C "$PROJECT_DIR" rev-parse --verify "${candidate}^{commit}" >/dev/null 2>&1; then
+      merge_base="$(git -C "$PROJECT_DIR" merge-base "$candidate" "$HEAD_SHA" 2>/dev/null)"
+      if [ -n "$merge_base" ] && [ "$merge_base" != "$HEAD_SHA" ]; then
+        printf '%s\n' "$merge_base"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+LAST_REVIEWED="$(find_latest_ancestor "$LEDGER")"
+if [ -z "$LAST_REVIEWED" ]; then
+  LAST_REVIEWED="$(find_latest_ancestor "$LEGACY_LEDGER")"
 fi
 EMPTY_TREE="$(git -C "$PROJECT_DIR" hash-object -t tree /dev/null 2>/dev/null)"
 
-if [ -n "$LAST_REVIEWED" ] && git -C "$PROJECT_DIR" merge-base --is-ancestor "$LAST_REVIEWED" "$HEAD_SHA" 2>/dev/null; then
+if [ -n "$LAST_REVIEWED" ]; then
   DIFF_BASE="$LAST_REVIEWED"
   REVLIST_RANGE="$LAST_REVIEWED..$HEAD_SHA"
-elif git -C "$PROJECT_DIR" rev-parse "$HEAD_SHA~1" >/dev/null 2>&1; then
-  DIFF_BASE="$HEAD_SHA~1"
-  REVLIST_RANGE="$HEAD_SHA~1..$HEAD_SHA"
+elif DEFAULT_BRANCH_BASE="$(find_default_branch_base)" && [ -n "$DEFAULT_BRANCH_BASE" ]; then
+  DIFF_BASE="$DEFAULT_BRANCH_BASE"
+  REVLIST_RANGE="$DEFAULT_BRANCH_BASE..$HEAD_SHA"
 else
   DIFF_BASE="$EMPTY_TREE"
   REVLIST_RANGE="$HEAD_SHA"

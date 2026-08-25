@@ -154,7 +154,7 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 
 Use a forward slash in Claude or a dollar sign in Codex:
 
-```
+```text
 /start PROJ-123
 /commit
 /finish

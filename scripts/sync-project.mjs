@@ -128,14 +128,27 @@ if (fs.existsSync(ledgerPath)) {
   }
 }
 
+const selectedHosts = new Set(options.host === "both" ? ["claude", "codex"] : [options.host]);
+const hostForManagedPath = (relative) => {
+  if (relative.startsWith(".claude/")) return "claude";
+  if (relative.startsWith(".codex/")) return "codex";
+  return null;
+};
+const priorManaged = [...new Set(priorLedger.managed_files || [])];
+const expected = new Set(mappings.map(({ target }) => relativeTarget(target)));
+const pruneCandidates = priorManaged.filter((relative) => {
+  const owner = hostForManagedPath(relative);
+  return owner && selectedHosts.has(owner) && !expected.has(relative);
+});
+const confirmedPruned = new Set();
+
 if (options.prune) {
-  const expected = new Set(mappings.map(({ target }) => relativeTarget(target)));
-  const candidates = (priorLedger.managed_files || []).filter((relative) => !expected.has(relative));
-  if (candidates.length && !options.confirmPrune) {
-    for (const relative of candidates) console.log(`? ${relative}`);
+  if (pruneCandidates.length && !options.confirmPrune) {
+    for (const relative of pruneCandidates) console.log(`? ${relative}`);
     throw new Error("prune candidates require --confirm-prune after review");
   }
-  for (const relative of candidates) {
+  for (const relative of pruneCandidates) {
+    confirmedPruned.add(relative);
     const candidate = path.resolve(targetRoot, relative);
     if (candidate !== targetRoot && candidate.startsWith(`${targetRoot}${path.sep}`) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
       report.pruned.push(relative);
@@ -160,14 +173,17 @@ if (options.migrateConfig || options.initializeConfig) {
   }
 }
 
-const managedFiles = mappings.map(({ target }) => relativeTarget(target));
+const managedFiles = [...new Set([
+  ...priorManaged.filter((relative) => !confirmedPruned.has(relative)),
+  ...expected,
+])].sort();
 if (!options.dryRun) {
   fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
   const ledger = {
     version,
     source: sourceRoot,
     installed_at: new Date().toISOString(),
-    hosts: options.host === "both" ? ["claude", "codex"] : [options.host],
+    hosts: [...new Set([...(priorLedger.hosts || []), ...selectedHosts])].sort(),
     managed_files: managedFiles,
   };
   const temporary = path.join(path.dirname(ledgerPath), `.version.json.${process.pid}.${Date.now()}`);

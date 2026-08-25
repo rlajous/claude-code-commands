@@ -37,7 +37,7 @@ git for-each-ref --format '%(refname:short) %(upstream:track)' refs/heads \
   | awk '$2 == "[gone]" { print $1 }'
 ```
 
-**Resolve the protected branches** (never delete these), from `.git-workflow/config.yaml` if present, else defaults:
+**Resolve the protected branches** (never delete these) from `.git-workflow/config.yaml`, then `.claude/config.yaml` as a legacy read-only fallback, then defaults:
 
 - `workflow.developmentBranch` — default **`staging`**
 - `workflow.productionBranch` — default **`main`**
