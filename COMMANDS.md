@@ -118,8 +118,10 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 | `/tdd` | Implement ticket using TDD (RED-GREEN-REFACTOR) | `<ticket-id>` |
 | `/commit` | Stage and commit with formatting | - |
 | `/finish` | Create PR with description | - |
-| `/review` | Comprehensive code review on a PR | `[pr-number-or-url]` |
+| `/review` | Comprehensive code review on a PR | `[pr-number-or-url] [--sarif]` |
 | `/review-request` | Draft a paste-ready PR review request | `[pr-number-or-url]` |
+| `/review-watch` | Auto-review PRs that request your review in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) | `[pr-url-or-number] [--drain] [--comment-only]` |
+| `/change-brief` | Generate a self-contained HTML explainer of a change | `[pr-url-or-number]` |
 
 ### Release Management
 
@@ -286,6 +288,8 @@ skills/                 # Shared host-neutral skills
 ├── rfc/SKILL.md
 ├── update/SKILL.md
 ├── clean-gone/SKILL.md
+├── review-watch/SKILL.md
+├── change-brief/SKILL.md
 └── status/SKILL.md
 
 agents/                 # Canonical agent instructions

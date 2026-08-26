@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.0
+
+- Added the `review-watch` auto-reviewer: a console daemon (`scripts/review-watch.sh`) that listens for pull requests requesting your review and pings you with a local sound and desktop notification (`scripts/notify.sh`), plus a `review-watch` skill that reviews each PR in a loop.
+- The `review-watch` skill runs cheap deterministic checks first (project linters + a growing `references/known-issues.md` ruleset) and only escalates to the full review fan-out when those pass, posting `REQUEST_CHANGES` on problems and `APPROVE` when clean.
+- Added the `change-brief` skill: generates a self-contained human-readable HTML explainer of a change (Problem / Root cause / Fix / Verification, before/after), written to `.git-workflow/change-brief/`. Produced automatically when a watched PR passes.
+- The `review` skill can now post `REQUEST_CHANGES`/`APPROVE`/`COMMENT` reviews (previously `COMMENT` only), with a self-review guard.
+- Opt-in via `reviewWatch.enabled` in `.git-workflow/config.yaml`.
+
 ## 2.4.0
 
 - Added native Codex plugin packaging for the same 17 workflow skills shipped to Claude Code.

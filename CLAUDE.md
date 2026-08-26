@@ -41,7 +41,9 @@ skills/                    # Skills (each an invocable slash command via SKILL.m
 ├── standup/SKILL.md       # Async standup from recent activity
 ├── update/SKILL.md        # Update skills/agents from source
 ├── clean-gone/SKILL.md    # Delete local branches gone on the remote
-└── status/SKILL.md        # Show workflow position and next step
+├── status/SKILL.md        # Show workflow position and next step
+├── review-watch/SKILL.md  # Auto-review PRs that request your review, in a loop
+└── change-brief/SKILL.md  # Self-contained HTML explainer of a change
 
 agents/                    # Subagents for specialized tasks
 ├── pr-reviewer.md         # Code review agent
@@ -135,6 +137,8 @@ Users can install via:
 | `/update`        | Update skills/agents from source repo          |
 | `/clean-gone`    | Delete local branches gone on the remote and their worktrees |
 | `/status`        | Show workflow position and the recommended next step         |
+| `/review-watch`  | Auto-review PRs that request your review, in a loop (REQUEST_CHANGES / APPROVE) |
+| `/change-brief`  | Generate a self-contained HTML explainer of a change         |
 
 ## Subagents
 

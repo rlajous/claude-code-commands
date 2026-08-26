@@ -21,7 +21,7 @@ node "$SYNC" --source "$SOURCE_DIR" --target "$EMPTY_TARGET" --host codex --migr
 node "$SYNC" --source "$SOURCE_DIR" --target "$EMPTY_TARGET" --host codex --migrate-config --initialize-config >/dev/null
 [ "$(find "$EMPTY_TARGET/.codex/agents" -name '*.toml' | wc -l | tr -d ' ')" = "8" ] || fail "empty install did not create eight agents"
 [ -f "$EMPTY_TARGET/.git-workflow/config.yaml" ] || fail "empty setup did not create canonical config"
-python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["version"] == "2.4.0"; assert len(d["managed_files"]) == 8' "$EMPTY_TARGET/.git-workflow/version.json" || fail "invalid version ledger"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["version"] == "2.5.0"; assert len(d["managed_files"]) == 8' "$EMPTY_TARGET/.git-workflow/version.json" || fail "invalid version ledger"
 
 LEGACY_TARGET="$TEST_ROOT/legacy"
 mkdir -p "$LEGACY_TARGET/.claude"
@@ -64,7 +64,7 @@ node "$SYNC" --source "$SOURCE_DIR" --target "$LEGACY_TARGET" --host codex --pru
 CLAUDE_TARGET="$TEST_ROOT/claude"
 mkdir -p "$CLAUDE_TARGET"
 node "$SYNC" --source "$SOURCE_DIR" --target "$CLAUDE_TARGET" --host claude >/dev/null
-[ "$(find "$CLAUDE_TARGET/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')" = "17" ] || fail "Claude install did not create 17 skills"
+[ "$(find "$CLAUDE_TARGET/.claude/skills" -name SKILL.md | wc -l | tr -d ' ')" = "19" ] || fail "Claude install did not create 19 skills"
 [ "$(find "$CLAUDE_TARGET/.claude/agents" -name '*.md' | wc -l | tr -d ' ')" = "8" ] || fail "Claude install did not create eight agents"
 [ -f "$CLAUDE_TARGET/.claude/references/runtime-compatibility.md" ] || fail "Claude install omitted shared compatibility reference"
 
