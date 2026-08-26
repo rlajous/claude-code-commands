@@ -1,6 +1,6 @@
 # Skills reference
 
-Git Workflow provides the same 17 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
+Git Workflow provides the same 19 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
 
 ## Skill format
 

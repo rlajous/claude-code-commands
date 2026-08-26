@@ -1,6 +1,6 @@
 # Git Workflow
 
-An agent-neutral package of 17 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
+An agent-neutral package of 19 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
 ## What it includes
 
@@ -33,7 +33,7 @@ For unprefixed project skills, copy `skills/` to `.claude/skills/`, `agents/` to
 
 ## Install for Codex
 
-Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 17 directories under `skills/`. Then run the setup skill in the target project:
+Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 19 directories under `skills/`. Then run the setup skill in the target project:
 
 ```text
 $setup

@@ -128,11 +128,11 @@ This MUST return nothing. If it finds a match, remove the offending reference an
 
 ## Step 5 — Write the output
 
-Resolve the output directory from configuration (see below), create it, and write the file:
+Resolve the output base directory `{outputDir}` from configuration (`changeBrief.outputDir`, default `.git-workflow/change-brief`; see the table below). Use that same resolved value for the write **and** the report — do not hard-code the path. Create it and write the file:
 
 ```bash
-mkdir -p .git-workflow/change-brief/pr-<n>
-# write index.html to .git-workflow/change-brief/pr-<n>/index.html
+mkdir -p {outputDir}/pr-<n>
+# write index.html to {outputDir}/pr-<n>/index.html
 ```
 
 The file is fully self-contained (no other assets), so the folder can be copied or deleted as a
@@ -140,7 +140,7 @@ single unit.
 
 ## Step 6 — Report
 
-Tell the user the output path (`.git-workflow/change-brief/pr-<n>/index.html`) and that it is a
+Tell the user the output path (`{outputDir}/pr-<n>/index.html`, using the resolved `{outputDir}`) and that it is a
 single self-contained file they can open directly in a browser.
 
 ## Configuration Reference

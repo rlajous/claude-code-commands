@@ -44,7 +44,9 @@ Note the changed file list and languages. If the diff exceeds `review.maxDiffLin
 
 Run the fast, mechanical checks first so obvious problems cost nothing.
 
-**a) Project linters (only if the repo is checked out locally with deps).** Auto-detect and run against the changed files:
+First read the review-watch config (`.git-workflow/config.yaml`, legacy `.claude/config.yaml`): `reviewWatch.linters` (default `auto`), `reviewWatch.knownIssues` (default `references/known-issues.md`), and `reviewWatch.enabled` (only act when true). Honor these values in the checks below.
+
+**a) Project linters (only if the repo is checked out locally with deps).** When `reviewWatch.linters` is `auto`, auto-detect and run against the changed files; when it is an explicit command, run that:
 
 - JS/TS: `npx eslint <changed>` , `npx tsc --noEmit`
 - CSS/SCSS: `npx stylelint <changed css>`

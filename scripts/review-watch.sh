@@ -25,11 +25,18 @@ INTERVAL=60
 ONCE=0
 REPO_FILTER=""
 
+need_value() { [ $# -ge 2 ] && [ -n "$2" ] || { echo "review-watch: $1 needs a value" >&2; exit 2; }; }
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --interval) INTERVAL="${2:-60}"; shift 2 ;;
+    --interval)
+      need_value "$@"
+      case "$2" in ''|*[!0-9]*) echo "review-watch: --interval must be a positive integer" >&2; exit 2 ;; esac
+      INTERVAL="$2"; shift 2 ;;
     --once) ONCE=1; shift ;;
-    --repo) REPO_FILTER="${2:-}"; shift 2 ;;
+    --repo)
+      need_value "$@"
+      REPO_FILTER="$2"; shift 2 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "review-watch: unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -46,8 +53,15 @@ fetch_prs() {
     printf '%s' "$REVIEW_WATCH_PRS_JSON"
     return 0
   fi
-  gh search prs --review-requested @me --state open \
-    --json number,title,url,repository,headRefOid --limit 50 2>/dev/null
+  # Scope the query server-side when a repo is given, so the --limit truncation
+  # never drops the target repo's PRs before the client-side filter runs.
+  if [ -n "$REPO_FILTER" ]; then
+    gh search prs "repo:$REPO_FILTER" --review-requested @me --state open \
+      --json number,title,url,repository,headRefOid --limit 50 2>/dev/null
+  else
+    gh search prs --review-requested @me --state open \
+      --json number,title,url,repository,headRefOid --limit 50 2>/dev/null
+  fi
 }
 
 # Emits one tab-separated line per NEW (unseen head SHA) PR: number<TAB>title<TAB>url
