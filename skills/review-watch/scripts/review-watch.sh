@@ -18,8 +18,9 @@
 #   --show-config  print the resolved daemon configuration and exit
 #
 # Needs: gh (authenticated), python3. Never needs the repo checked out.
-# Testing hook: set REVIEW_WATCH_PRS_JSON to a gh-search-prs JSON array to
-# bypass the live gh call.
+# Testing hooks: set REVIEW_WATCH_PRS_JSON to a GraphQL-shaped PR JSON array to
+# bypass the live gh call, and REVIEW_WATCH_NOTIFY_SCRIPT to capture pings
+# without invoking the operating-system notifier.
 
 set -uo pipefail
 
@@ -29,6 +30,7 @@ ONCE=0
 REPO_FILTER=""
 FORCE=0
 SHOW_CONFIG=0
+NOTIFY_SCRIPT="${REVIEW_WATCH_NOTIFY_SCRIPT:-$SCRIPT_DIR/notify.sh}"
 
 need_value() { [ $# -ge 2 ] && [ -n "$2" ] || { echo "review-watch: $1 needs a value" >&2; exit 2; }; }
 
@@ -115,19 +117,34 @@ fetch_prs() {
     printf '%s' "$REVIEW_WATCH_PRS_JSON"
     return 0
   fi
-  # Scope the query server-side when a repo is given, so the --limit truncation
-  # never drops the target repo's PRs before the client-side filter runs.
+  # GitHub CLI's `gh search prs --json` does not expose headRefOid. Fetch every
+  # field needed for de-duplication and notification in one GraphQL request.
+  local search_query="is:pr is:open review-requested:@me"
   if [ -n "$REPO_FILTER" ]; then
-    gh search prs "repo:$REPO_FILTER" --review-requested @me --state open \
-      --json number,title,url,repository,headRefOid --limit 50 2>/dev/null
-  else
-    gh search prs --review-requested @me --state open \
-      --json number,title,url,repository,headRefOid --limit 50 2>/dev/null
+    search_query="repo:$REPO_FILTER $search_query"
   fi
+  gh api graphql \
+    -f 'query=query($searchQuery: String!) {
+      search(query: $searchQuery, type: ISSUE, first: 50) {
+        nodes {
+          ... on PullRequest {
+            number
+            title
+            url
+            headRefOid
+            author { login }
+            repository { nameWithOwner }
+          }
+        }
+      }
+    }' \
+    -f searchQuery="$search_query" \
+    --jq '[.data.search.nodes[] | select(. != null)]' 2>/dev/null
 }
 
-# Emits one tab-separated line per NEW (unseen head SHA) PR: number<TAB>title<TAB>url
-# Also records the key in the seen-ledger and appends the PR to the queue.
+# Emits one tab-separated line per NEW (unseen head SHA) PR:
+# repo<TAB>number<TAB>author-label<TAB>title<TAB>url. Also records the key in
+# the seen-ledger and appends the PR (including nullable author) to the queue.
 find_new() {
   local json tmp rc
   json="$(fetch_prs)" || return 1
@@ -168,7 +185,7 @@ for pr in prs:
         continue
     num = pr.get("number")
     sha = pr.get("headRefOid") or ""
-    if num is None or not sha:
+    if not repo or num is None or not sha:
         continue
     key = f"{repo}#{num}@{sha}"
     if key in seen:
@@ -176,13 +193,25 @@ for pr in prs:
     seen.add(key)
     seen_order.append(key)
     new_keys.append(key)
-    title = (pr.get("title") or "").replace("\t", " ").replace("\n", " ")
-    url = pr.get("url") or ""
-    print(f"{num}\t{title}\t{url}")
+    def clean(value):
+        return str(value or "").replace("\t", " ").replace("\r", " ").replace("\n", " ")
+
+    raw_author = pr.get("author")
+    if isinstance(raw_author, dict):
+        author = clean(raw_author.get("login"))
+    elif isinstance(raw_author, str):
+        author = clean(raw_author)
+    else:
+        author = ""
+    author_label = f"@{author}" if author else "unknown author"
+    title = clean(pr.get("title"))
+    url = clean(pr.get("url"))
+    print(f"{clean(repo)}\t{num}\t{author_label}\t{title}\t{url}")
     with open(queue_path, "a") as q:
         q.write(json.dumps({
             "repo": repo, "number": num, "headRefOid": sha,
-            "title": title, "url": url, "queuedAt": int(time.time()),
+            "author": author or None, "title": title, "url": url,
+            "queuedAt": int(time.time()),
         }) + "\n")
 
 if new_keys:
@@ -205,14 +234,14 @@ poll() {
   fi
   [ -n "$out" ] || return 0
   local count=0
-  while IFS=$'\t' read -r num title url; do
-    [ -n "$num" ] || continue
+  while IFS=$'\t' read -r repo num author_label title url; do
+    [ -n "$repo" ] && [ -n "$num" ] || continue
     count=$((count + 1))
-    echo "review-watch: review requested on #$num — $title"
+    echo "review-watch: review requested on $repo PR #$num by $author_label — $title"
     echo "             $url"
     echo "             Claude: run /review-watch $url"
     echo "             Codex:  run \$review-watch $url"
-    bash "$SCRIPT_DIR/notify.sh" "Review requested: #$num" "$title" >/dev/null 2>&1 || true
+    bash "$NOTIFY_SCRIPT" "$repo · PR #$num" "$author_label — $title" >/dev/null 2>&1 || true
   done <<< "$out"
   [ "$count" -gt 0 ] && echo "review-watch: $count new PR(s) queued for review."
   return 0

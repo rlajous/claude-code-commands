@@ -180,6 +180,13 @@ review_watch = read("skills/review-watch/SKILL.md")
 assert "reviewWatch.enabled=false" in review_watch
 assert "{SKILL_DIR}/../review/scripts/review-event.sh" in review_watch
 assert "--doctor" in review_watch and "--daemon-command" in review_watch
+assert '"{owner}/{repo} · PR #{PR}"' in review_watch
+assert '"{AUTHOR_LABEL} — Ready for merge: {title}"' in review_watch
+
+watcher_script = read("skills/review-watch/scripts/review-watch.sh")
+assert "gh api graphql" in watcher_script
+assert "author { login }" in watcher_script
+assert "REVIEW_WATCH_NOTIFY_SCRIPT" in watcher_script
 
 change_brief = read("skills/change-brief/SKILL.md")
 assert "validate-self-contained-html.py" in change_brief

@@ -77,11 +77,25 @@ assert arguments == ["-", sys.argv[2], sys.argv[3]], arguments
 PY
 
 STATE_HOME="$TEST_ROOT/state with spaces"
-PR_JSON='[{"number":42,"title":"test","url":"https://github.com/acme/app/pull/42","repository":{"nameWithOwner":"acme/app"},"headRefOid":"abc123"}]'
+WATCH_NOTIFY_ARGS_FILE="$TEST_ROOT/watcher notification arguments"
+WATCH_NOTIFY_SCRIPT="$TEST_ROOT/capture watcher notification.sh"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "$@" > "$WATCH_NOTIFY_ARGS_FILE"' > "$WATCH_NOTIFY_SCRIPT"
+PR_JSON='[{"number":42,"title":"Fix login redirect","url":"https://github.com/acme/app/pull/42","repository":{"nameWithOwner":"acme/app"},"headRefOid":"abc123","author":{"login":"alice"}}]'
 WATCH_OUTPUT="$(cd "$PROJECT" && XDG_STATE_HOME="$STATE_HOME" REVIEW_WATCH_PRS_JSON="$PR_JSON" \
-  env -u PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT bash "$PACKAGE/scripts/review-watch.sh" --once)"
+  REVIEW_WATCH_NOTIFY_SCRIPT="$WATCH_NOTIFY_SCRIPT" WATCH_NOTIFY_ARGS_FILE="$WATCH_NOTIFY_ARGS_FILE" \
+  env -u PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT \
+  bash "$PACKAGE/scripts/review-watch.sh" --once)"
 printf '%s\n' "$WATCH_OUTPUT" | grep -Fq 'Claude: run /review-watch' || fail "watcher omitted Claude invocation"
 printf '%s\n' "$WATCH_OUTPUT" | grep -Fq 'Codex:  run $review-watch' || fail "watcher omitted Codex invocation"
+printf '%s\n' "$WATCH_OUTPUT" | grep -Fq 'acme/app PR #42 by @alice — Fix login redirect' \
+  || fail "watcher output omitted repo, PR, author, or title"
+python3 - "$WATCH_NOTIFY_ARGS_FILE" <<'PY'
+import sys
+
+with open(sys.argv[1]) as file:
+    arguments = file.read().splitlines()
+assert arguments == ["acme/app · PR #42", "@alice — Fix login redirect"], arguments
+PY
 [ -s "$STATE_HOME/git-workflow/review-watch-queue.jsonl" ] || fail "watcher wrapper did not enqueue the PR"
 
 [ "$(cd "$PROJECT" && env -u PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT \

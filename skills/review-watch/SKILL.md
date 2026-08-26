@@ -28,6 +28,8 @@ variable or silently fall back to `/scripts`.
 - A PR URL or number → review just that PR.
 - `--drain` (or no argument) → process every queued PR in the daemon queue file
   `${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow/review-watch-queue.jsonl` (dedupe by `repo#number@headRefOid`; newest entry per PR wins). Remove entries as you finish them.
+  New entries include the nullable PR-author login as `author`; accept older entries where that field
+  is absent and fetch the author with the PR metadata below.
 - `--comment-only` → never post REQUEST_CHANGES/APPROVE, only a COMMENT review (safe mode).
 
 For each target resolve `{owner}/{repo}` and PR number (parse from the URL, or use the current repo for a bare number).
@@ -128,12 +130,19 @@ Respect `review.postToGitHub` (`ask` | `always` | `never`, default `ask`): when 
 
 When the PR is clean (`HAS_BLOCKING=false`, whether the posted event is `APPROVE` or `COMMENT`):
 
-- Generate the human-facing HTML explainer for the change by following the `change-brief` skill for this PR (Problem / Root cause / Fix / Verification + before/after). Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
+- Generate the human-facing HTML decision brief by following the `change-brief` skill for this PR.
+  Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
 - Ping the human that it is ready:
 
   ```bash
-  bash "{SKILL_DIR}/scripts/notify.sh" "PR #{PR} ready for merge" "Review passed. Change brief generated."
+  bash "{SKILL_DIR}/scripts/notify.sh" \
+    "{owner}/{repo} · PR #{PR}" \
+    "{AUTHOR_LABEL} — Ready for merge: {title}"
   ```
+
+  Resolve `{AUTHOR_LABEL}` as `@{author.login}`, or `unknown author` when GitHub returns no author.
+  This matches the daemon's initial review-request notification, which uses the same title and
+  `{AUTHOR_LABEL} — {title}` as its message.
 
 ## Step 8: Record and Loop
 

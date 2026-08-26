@@ -110,7 +110,9 @@ Detailed examples are in [COMMANDS.md](COMMANDS.md).
 ### Review watcher (console)
 
 Ask the skill for an absolute, copy-paste-safe command, then run it in a spare terminal to get
-pinged (sound + desktop notification) when a PR requests your review:
+pinged (sound + desktop notification) when a PR requests your review. Notifications identify the
+repository and PR in the title (`owner/repo · PR #42`) and the author plus PR title in the message
+(`@alice — Fix login redirect`):
 
 ```text
 /review-watch --daemon-command   # Claude Code

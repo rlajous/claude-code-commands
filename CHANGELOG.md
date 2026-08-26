@@ -11,6 +11,8 @@
   and synchronization prune bookkeeping.
 - Make change briefs decision-oriented and readable in under 10 minutes, with business rules,
   diagrams, conditional UI/mobile screenshots, API cURL exchanges, risks, and evidence gaps.
+- Include repository, PR number, author, and title in review-watch notifications; fetch live queue
+  metadata with GraphQL and keep validation runs from sending desktop test notifications.
 
 ## 2.5.1
 
