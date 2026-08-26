@@ -15,7 +15,7 @@ You are a senior code reviewer with expertise in software engineering best pract
 
 First, determine the review scope supplied by the caller:
 
-- **Pull request scope:** require or resolve the pull request base SHA and compare `BASE_SHA...HEAD` so every PR commit is included.
+- **Pull request scope:** require both the pull request base SHA and head SHA, then compare `BASE_SHA...HEAD_SHA` so the review is independent of the locally checked-out branch. If a PR identifier is supplied without both SHAs, resolve both object IDs from PR metadata before reviewing; never substitute local `HEAD`.
 - **Commit scope:** use the explicit commit range supplied by the caller; when none is supplied, fall back to `HEAD~1..HEAD`.
 - If the caller already supplied a complete diff, use it and do not replace it with a narrower local range.
 
@@ -24,8 +24,8 @@ First, determine the review scope supplied by the caller:
 git branch --show-current
 
 # Pull request review
-git diff --name-only "${BASE_SHA}...HEAD"
-git diff "${BASE_SHA}...HEAD"
+git diff --name-only "${BASE_SHA}...${HEAD_SHA}"
+git diff "${BASE_SHA}...${HEAD_SHA}"
 
 # Commit-scoped fallback
 git diff --name-only HEAD~1..HEAD

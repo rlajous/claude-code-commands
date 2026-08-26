@@ -35,4 +35,26 @@ printf '%s' "$CANONICAL_HTML" | grep -q '"developmentBranch":"canonical-dev"' ||
 printf '%s' "$CANONICAL_HTML" | grep -q '"id":"CANON-2"' || fail "canonical PR context did not win"
 if printf '%s' "$CANONICAL_HTML" | grep -q 'LEGACY-1'; then fail "legacy state overrode canonical state"; fi
 
+printf 'workflow:\n  developmentBranch: [broken\n' > "$TEST_DIR/.git-workflow/config.yaml"
+printf '{broken json\n' > "$TEST_DIR/.git-workflow/pr-context.json"
+CORRUPT_HTML="$(cd "$TEST_DIR" && node "$ROOT_DIR/scripts/status-report.mjs")"
+printf '%s' "$CORRUPT_HTML" | grep -q '"developmentBranch":"staging"' || fail "malformed canonical config did not use safe default"
+printf '%s' "$CORRUPT_HTML" | grep -q '"ticket":null' || fail "malformed canonical context was not ignored"
+printf '%s' "$CORRUPT_HTML" | grep -q 'Could not parse developmentBranch' || fail "malformed canonical config emitted no warning"
+printf '%s' "$CORRUPT_HTML" | grep -q 'Could not read .git-workflow/pr-context.json' || fail "malformed canonical context emitted no warning"
+if printf '%s' "$CORRUPT_HTML" | grep -q 'LEGACY-1'; then fail "corrupt canonical context silently fell back to legacy"; fi
+
+CURRENT_BRANCH="$(git -C "$TEST_DIR" branch --show-current)"
+printf 'workflow:\n  developmentBranch: canonical-dev\n' > "$TEST_DIR/.git-workflow/config.yaml"
+printf '{"ticket_id":"STALE-3","branch":"another-branch"}\n' > "$TEST_DIR/.git-workflow/pr-context.json"
+STALE_HTML="$(cd "$TEST_DIR" && node "$ROOT_DIR/scripts/status-report.mjs")"
+printf '%s' "$STALE_HTML" | grep -q 'Ignored stale .git-workflow/pr-context.json' || fail "stale branch context emitted no warning"
+printf '%s' "$STALE_HTML" | grep -q '"ticket":null' || fail "stale branch context was used"
+
+rm -f "$TEST_DIR/.git-workflow/config.yaml"
+mkdir "$TEST_DIR/.git-workflow/config.yaml"
+UNREADABLE_HTML="$(cd "$TEST_DIR" && node "$ROOT_DIR/scripts/status-report.mjs")"
+printf '%s' "$UNREADABLE_HTML" | grep -q 'Could not read .git-workflow/config.yaml' || fail "unreadable canonical config emitted no warning"
+if printf '%s' "$UNREADABLE_HTML" | grep -q 'legacy-dev'; then fail "unreadable canonical config silently fell back to legacy"; fi
+
 printf 'ok: runtime state precedence\n'

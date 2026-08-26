@@ -64,6 +64,8 @@ If context file is missing or incomplete:
 - Inform the user they should run `/start` and `/commit` first
 - Ask for missing information (ticket ID, branch name)
 
+If the context contains a `branch` value that does not match the current branch, treat it as stale, explain which file was ignored, and gather fresh context. Do not silently reuse context from another branch.
+
 ## Step 2: Verify State
 
 Check current git state:
@@ -360,14 +362,14 @@ PR is ready for review!
 
 ### Optional Cleanup
 
-Ask if user wants to clean up context:
+Ask if the user wants to clean up canonical context:
 
 ```bash
 # Remove context file (optional)
 rm .git-workflow/pr-context.json
 ```
 
-Or keep for reference until PR is merged.
+Or keep it for reference until the PR is merged. Legacy `.claude/.pr-context.json` is a read-only fallback and must never be deleted or modified by this workflow. If the active context came from that legacy path, warn that cleanup cannot remove it, leave it in place, and recommend `/setup` or `$setup` to migrate it.
 
 ## Configuration Reference
 

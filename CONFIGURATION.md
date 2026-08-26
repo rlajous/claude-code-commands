@@ -6,6 +6,8 @@ Complete reference for `.git-workflow/config.yaml` configuration options.
 
 Create `.git-workflow/config.yaml` in your project root. All settings are optional - commands use sensible defaults.
 
+Matching `.claude/` files are read-only fallbacks only when the canonical file is absent. Status reports include a `warnings` array when canonical configuration or PR context cannot be read or parsed, or when saved context belongs to another branch; malformed canonical state never silently falls back to legacy data.
+
 ## Full Configuration Example
 
 ```yaml

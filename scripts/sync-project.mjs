@@ -19,6 +19,8 @@ const options = {
   initializeConfig: false,
 };
 
+const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-+][0-9A-Za-z.-]+)?$/;
+
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
   if (arg === "--target" || arg === "--source" || arg === "--host") {
@@ -38,18 +40,84 @@ for (let index = 0; index < args.length; index += 1) {
 if (!options.source) throw new Error("source is required (--source, PLUGIN_ROOT, or CLAUDE_PLUGIN_ROOT)");
 if (!["codex", "claude", "both"].includes(options.host)) throw new Error("--host must be codex, claude, or both");
 
-const sourceRoot = path.resolve(options.source);
+const requestedSource = options.source;
+let temporarySource = "";
+if (/^(?:file|https?|ssh|git):\/\//.test(requestedSource) || /^[^/\s]+@[^:]+:.+/.test(requestedSource)) {
+  temporarySource = fs.mkdtempSync(path.join(os.tmpdir(), "git-workflow-source-"));
+  const clone = spawnSync("git", ["clone", "--depth", "1", requestedSource, temporarySource], {
+    encoding: "utf8",
+  });
+  if (clone.error || clone.signal || clone.status !== 0) {
+    fs.rmSync(temporarySource, { recursive: true, force: true });
+    const detail = clone.error?.message || clone.stderr?.trim() || `exit ${clone.status ?? "unknown"}`;
+    throw new Error(`failed to clone source ${requestedSource}: ${detail}`);
+  }
+  process.on("exit", () => fs.rmSync(temporarySource, { recursive: true, force: true }));
+}
+
+const sourceRoot = path.resolve(temporarySource || requestedSource);
 const targetRoot = path.resolve(options.target);
 const ledgerPath = path.join(targetRoot, ".git-workflow", "version.json");
 const manifestPath = path.join(sourceRoot, ".codex-plugin", "plugin.json");
 
-for (const required of ["skills", "agents", path.join(".codex", "agents")]) {
+for (const required of ["skills", "agents", path.join(".codex", "agents"), path.join(".codex-plugin", "plugin.json")]) {
   if (!fs.existsSync(path.join(sourceRoot, required))) throw new Error(`incomplete source: missing ${required}`);
 }
 
-const version = fs.existsSync(manifestPath)
-  ? JSON.parse(fs.readFileSync(manifestPath, "utf8")).version
-  : "unknown";
+let manifest;
+try {
+  manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+} catch (error) {
+  throw new Error(`invalid source manifest ${manifestPath}: ${error.message}`);
+}
+if (!manifest || typeof manifest !== "object" || Array.isArray(manifest) || typeof manifest.version !== "string" || !SEMVER.test(manifest.version)) {
+  throw new Error(`invalid source manifest ${manifestPath}: version must be strict semver`);
+}
+const version = manifest.version;
+
+function hostForManagedPath(relative) {
+  if (relative.startsWith(".claude/")) return "claude";
+  if (relative.startsWith(".codex/")) return "codex";
+  return null;
+}
+
+function validateManagedPath(value) {
+  if (typeof value !== "string" || !value || path.isAbsolute(value) || value.includes("\\")) return false;
+  const segments = value.split("/");
+  return !segments.some((segment) => !segment || segment === "." || segment === "..") && hostForManagedPath(value) !== null;
+}
+
+function readLedger() {
+  if (!fs.existsSync(ledgerPath)) return {};
+  let value;
+  try {
+    value = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
+  } catch (error) {
+    throw new Error(`invalid version ledger ${ledgerPath}: ${error.message}`);
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`invalid version ledger ${ledgerPath}: expected an object`);
+  }
+  for (const field of ["version", "source", "installed_at"]) {
+    if (value[field] !== undefined && typeof value[field] !== "string") {
+      throw new Error(`invalid version ledger ${ledgerPath}: ${field} must be a string`);
+    }
+  }
+  if (value.hosts !== undefined && (!Array.isArray(value.hosts) || value.hosts.some((host) => !["claude", "codex"].includes(host)))) {
+    throw new Error(`invalid version ledger ${ledgerPath}: hosts must contain only claude or codex`);
+  }
+  if (value.managed_files !== undefined && (!Array.isArray(value.managed_files) || value.managed_files.some((item) => !validateManagedPath(item)))) {
+    throw new Error(`invalid version ledger ${ledgerPath}: managed_files must contain safe .claude/ or .codex/ relative paths`);
+  }
+  return {
+    ...value,
+    hosts: [...new Set(value.hosts || [])],
+    managed_files: [...new Set(value.managed_files || [])],
+  };
+}
+
+// Validate all externally controlled state before copying, pruning, or migrating anything.
+const priorLedger = readLedger();
 
 function listFiles(root, suffix) {
   if (!fs.existsSync(root)) return [];
@@ -92,6 +160,10 @@ function sameFile(left, right) {
 function showDiff(source, target) {
   const result = spawnSync("diff", ["-u", target, source], { encoding: "utf8" });
   if (result.stdout) process.stdout.write(result.stdout);
+  if (result.error || result.signal || ![0, 1].includes(result.status)) {
+    const detail = result.error?.message || result.stderr?.trim() || `exit ${result.status ?? "unknown"}`;
+    throw new Error(`failed to preview diff for ${relativeTarget(target)}: ${detail}`);
+  }
 }
 
 function atomicCopy(source, target) {
@@ -101,42 +173,33 @@ function atomicCopy(source, target) {
   fs.renameSync(temporary, target);
 }
 
+const priorManaged = new Set(priorLedger.managed_files || []);
+const ownedSelected = new Set();
 for (const mapping of mappings) {
   const relative = relativeTarget(mapping.target);
   if (!fs.existsSync(mapping.target)) {
     report.installed.push(relative);
+    ownedSelected.add(relative);
     if (!options.dryRun) atomicCopy(mapping.source, mapping.target);
   } else if (sameFile(mapping.source, mapping.target)) {
     report.unchanged.push(relative);
+    ownedSelected.add(relative);
   } else {
     showDiff(mapping.source, mapping.target);
     if (options.force) {
       report.updated.push(relative);
+      ownedSelected.add(relative);
       if (!options.dryRun) atomicCopy(mapping.source, mapping.target);
     } else {
       report.preserved.push(relative);
+      if (priorManaged.has(relative)) ownedSelected.add(relative);
     }
   }
 }
 
-let priorLedger = {};
-if (fs.existsSync(ledgerPath)) {
-  try {
-    priorLedger = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
-  } catch (error) {
-    throw new Error(`invalid version ledger ${ledgerPath}: ${error.message}`);
-  }
-}
-
 const selectedHosts = new Set(options.host === "both" ? ["claude", "codex"] : [options.host]);
-const hostForManagedPath = (relative) => {
-  if (relative.startsWith(".claude/")) return "claude";
-  if (relative.startsWith(".codex/")) return "codex";
-  return null;
-};
-const priorManaged = [...new Set(priorLedger.managed_files || [])];
 const expected = new Set(mappings.map(({ target }) => relativeTarget(target)));
-const pruneCandidates = priorManaged.filter((relative) => {
+const pruneCandidates = [...priorManaged].filter((relative) => {
   const owner = hostForManagedPath(relative);
   return owner && selectedHosts.has(owner) && !expected.has(relative);
 });
@@ -174,14 +237,14 @@ if (options.migrateConfig || options.initializeConfig) {
 }
 
 const managedFiles = [...new Set([
-  ...priorManaged.filter((relative) => !confirmedPruned.has(relative)),
-  ...expected,
+  ...[...priorManaged].filter((relative) => !confirmedPruned.has(relative)),
+  ...ownedSelected,
 ])].sort();
 if (!options.dryRun) {
   fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
   const ledger = {
     version,
-    source: sourceRoot,
+    source: requestedSource,
     installed_at: new Date().toISOString(),
     hosts: [...new Set([...(priorLedger.hosts || []), ...selectedHosts])].sort(),
     managed_files: managedFiles,

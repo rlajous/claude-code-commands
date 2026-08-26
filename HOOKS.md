@@ -1,6 +1,6 @@
 # Git Workflow hooks
 
-Git Workflow ships one opt-in asynchronous hook that notices successful `git commit` and `git push` commands and provides the resulting diff to the active host for review.
+Git Workflow ships one opt-in hook that notices successful `git commit` and `git push` commands and provides the resulting diff to the active host for review.
 
 ## Host registration
 
@@ -9,9 +9,9 @@ The shared implementation is `hooks/review-commit.sh`.
 | Host | Registration | Output |
 | --- | --- | --- |
 | Claude Code | `hooks/claude-hooks.json`, selected by the Claude manifest | Plain review context with Claude's asynchronous re-wake behavior |
-| Codex | `hooks/hooks.json`, discovered by the Codex plugin | JSON containing `hookSpecificOutput.additionalContext` |
+| Codex | `hooks/hooks.json`, discovered by the Codex plugin | Synchronous JSON containing `hookSpecificOutput.additionalContext` |
 
-Both registrations use `PostToolUse`, match Bash execution, and run asynchronously. The script parses the hook payload and exits without output unless the executed command contains `git commit` or `git push`.
+Both registrations use `PostToolUse` and match Bash execution. Claude uses asynchronous re-wake behavior; Codex runs synchronously for compatibility with supported Codex clients. The script parses the hook payload and exits without output unless the executed command contains `git commit` or `git push`.
 
 ## Enable it
 
@@ -35,8 +35,8 @@ After an eligible command, the script:
 3. Resolves the current commit SHA.
 4. Checks `.git-workflow/.git-workflow-reviewed-shas` to avoid reviewing the same SHA twice.
 5. Builds a bounded diff for the new commit or push state.
-6. Records the SHA only when it has useful review context to emit.
-7. Produces the host-specific output format.
+6. Produces the host-specific output format successfully.
+7. Records the SHA only after useful review context was delivered, keeping failures retryable.
 
 The reviewed-SHA ledger is local generated state and should be git-ignored. A legacy `.claude/.git-workflow-reviewed-shas` ledger is read for duplicate suppression, but new entries are written only to `.git-workflow/`.
 
@@ -53,7 +53,7 @@ Large diffs are truncated deliberately so a background hook cannot flood the nex
 - Does not execute the detected commit or push command itself
 - Does not modify tracked source files
 - Suppresses duplicate SHAs, including those present in the legacy ledger
-- Treats malformed hook input and non-Git directories as no-op paths
+- Reports malformed hook input and missing runtime dependencies as actionable errors; non-Git directories remain no-op paths
 - Keeps hook stdout machine-readable under Codex
 
 ## Manual testing
@@ -84,6 +84,7 @@ bash scripts/test-review-hook.sh
 - Confirm the host loaded the correct registration file.
 - Verify `.git-workflow/git-workflow.local.md` contains `review-on-commit: true`.
 - Verify the Bash payload actually contains `git commit` or `git push`.
+- Verify Python 3 is available; the hook uses it for input parsing and Codex JSON output.
 
 ### Codex reports invalid hook output
 

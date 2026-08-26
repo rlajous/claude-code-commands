@@ -8,7 +8,6 @@
           {
             "type": "command",
             "command": "bash \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/review-commit.sh\" --host codex",
-            "async": true,
             "timeout": 120,
             "statusMessage": "Checking whether the new commit needs review"
           }

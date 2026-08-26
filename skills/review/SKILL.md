@@ -160,7 +160,7 @@ Instead of reviewing every dimension inline, fan out to focused subagents throug
 | Test files added/changed, or new behavior lacking tests | `pr-test-analyzer` |
 | Comments/docstrings added or changed | `comment-analyzer` |
 
-**Launch in parallel:** start every applicable named agent before waiting so the agents run concurrently. Give each agent the PR number/repo, `baseRefOid` as the pull request base SHA, `headRefOid`, changed-file list, and diff (or file paths for large PRs). The `pr-reviewer` must use `baseRefOid...HEAD` when it needs to reconstruct the PR diff. Wait for every agent and collect all findings before continuing.
+**Launch in parallel:** start every applicable named agent before waiting so the agents run concurrently. Give each agent the PR number/repo, `baseRefOid` as `BASE_SHA`, `headRefOid` as `HEAD_SHA`, changed-file list, and diff (or file paths for large PRs). The `pr-reviewer` must use `BASE_SHA...HEAD_SHA` when it needs to reconstruct the PR diff; it must not substitute the locally checked-out `HEAD`. Wait for every agent and collect all findings before continuing.
 
 > **Review lenses** the general `pr-reviewer` pass (and your own synthesis) applies — architecture, business logic, data integrity, error handling, security, performance, testing, code quality. Use them to fill gaps the specialized agents don't cover. Full checklist: see `references/review-lenses.md`.
 

@@ -11,6 +11,7 @@ const outputDir = path.join(root, ".codex", "agents");
 const checkOnly = process.argv.includes("--check");
 
 const workspaceWriteAgents = new Set(["qa-executor", "release-validator"]);
+const AGENT_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function parseAgent(filePath) {
   const source = fs.readFileSync(filePath, "utf8");
@@ -25,11 +26,20 @@ function parseAgent(filePath) {
   if (!metadata.name || !metadata.description) {
     throw new Error(`${filePath}: name and description are required`);
   }
+  const expectedName = path.basename(filePath, ".md");
+  if (!AGENT_NAME.test(metadata.name) || metadata.name.length > 64) {
+    throw new Error(`${filePath}: name must be a lowercase hyphenated slug of at most 64 characters`);
+  }
+  if (metadata.name !== expectedName) {
+    throw new Error(`${filePath}: frontmatter name must match filename (${expectedName})`);
+  }
+  const instructions = match[2].trimEnd();
+  if (!instructions.trim()) throw new Error(`${filePath}: developer instructions must not be empty`);
 
   return {
     name: metadata.name,
     description: metadata.description,
-    instructions: match[2].trimEnd(),
+    instructions,
   };
 }
 
@@ -47,13 +57,23 @@ function render(agent) {
 }
 
 const files = fs.readdirSync(sourceDir).filter((name) => name.endsWith(".md")).sort();
+// Parse and validate every canonical definition before creating, replacing, or removing output.
+const agents = files.map((filename) => parseAgent(path.join(sourceDir, filename)));
+const names = new Set();
+for (const agent of agents) {
+  if (names.has(agent.name)) throw new Error(`duplicate agent name: ${agent.name}`);
+  names.add(agent.name);
+  const candidate = path.resolve(outputDir, `${agent.name}.toml`);
+  if (path.dirname(candidate) !== path.resolve(outputDir)) {
+    throw new Error(`agent output escapes .codex/agents: ${agent.name}`);
+  }
+}
 const expected = new Set();
 let failed = false;
 
 if (!checkOnly) fs.mkdirSync(outputDir, { recursive: true });
 
-for (const filename of files) {
-  const agent = parseAgent(path.join(sourceDir, filename));
+for (const agent of agents) {
   const outputName = `${agent.name}.toml`;
   const outputPath = path.join(outputDir, outputName);
   const content = render(agent);

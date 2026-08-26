@@ -107,7 +107,7 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 |---------|-------------|-----------|
 | `/setup` | Interactive setup for MCP servers and project configuration | - |
 | `/status` | Show where you are in the workflow and the recommended next step | `[--html]` |
-| `/update` | Update commands and agents from the source repository | `[--dry-run] [--prune] [--force] [--source <path>]` |
+| `/update` | Update commands and agents from the source repository | `[--host <claude|codex|both>] [--dry-run] [--prune] [--force] [--source <path-or-git-url>]` |
 | `/clean-gone` | Delete local branches whose upstream is gone on the remote, and remove their worktrees | `[--dry-run]` |
 
 ### PR Workflow

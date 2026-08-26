@@ -1,7 +1,7 @@
 ---
 name: setup
 description: Configure Git Workflow for Claude Code or Codex, migrate legacy configuration, install Codex project agents, and optionally configure issue-tracker MCP servers. Use when the user asks to set up, install, configure, or migrate Git Workflow.
-argument-hint: ""
+argument-hint: "[--host <claude|codex|both>] [--dry-run] [--force]"
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash(mkdir:*), Bash(cp:*), Bash(diff:*), Bash(git rev-parse:*), AskUserQuestion, Glob
 user-invocable: true
@@ -12,6 +12,13 @@ user-invocable: true
 Follow [runtime compatibility](../../references/runtime-compatibility.md). Claude Code users invoke this as `/setup`; Codex users invoke it as `$setup`.
 
 ## 1. Resolve roots and runtime
+
+Parse these options before resolving paths:
+
+- `--host <claude|codex|both>` selects exactly which project assets to synchronize. When omitted, detect the active host and ask only if the target remains ambiguous.
+- `--dry-run` previews migration and installation without creating directories, files, or ledgers.
+- `--force` is explicit approval to replace customized selected-host files, but differences must still be shown first.
+- Reject unknown options and missing option values without writing.
 
 Resolve the project root with `git rev-parse --show-toplevel`, falling back to the current directory. Resolve the plugin source in this order:
 
@@ -45,7 +52,7 @@ Use the package synchronizer so classification, atomic replacement, and ledger b
 node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/sync-project.mjs" --source "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}" --target <project> --host codex --migrate-config --initialize-config --dry-run
 ```
 
-After showing the result and receiving confirmation for customized files, rerun without `--dry-run` and add `--force` only for replacements the user approved. A source checkout may substitute its absolute root when neither package-root variable is set.
+After showing the result and receiving confirmation for customized files, rerun without `--dry-run` and add `--force` only for replacements the user approved. When the skill itself was invoked with `--dry-run`, do not perform the second run. A source checkout may substitute its absolute root when neither package-root variable is set.
 
 For each agent:
 

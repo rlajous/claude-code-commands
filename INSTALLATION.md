@@ -1,6 +1,6 @@
 # Git Workflow installation
 
-Git Workflow supports Claude Code and Codex from the same checkout. Git and the GitHub CLI are required for GitHub operations; issue trackers are optional and use the active host's MCP configuration.
+Git Workflow supports Claude Code and Codex from the same checkout. Git and Bash are required. GitHub operations use the GitHub CLI; setup, update, and HTML status generation use Node.js; hooks use Python 3; synchronization previews use `diff`. Issue trackers are optional and use the active host's MCP configuration.
 
 ## Claude Code
 
@@ -46,7 +46,7 @@ mkdir -p your-project/.codex/agents
 cp claude-code-commands/.codex/agents/*.toml your-project/.codex/agents/
 ```
 
-Do not copy over existing project agents without reviewing the diff. `$setup --force` and `$update --force` are the explicit replacement paths.
+Do not copy over existing project agents without reviewing the diff. `$setup --force` and `$update --force` are the explicit replacement paths. Use `--host codex`, `--host claude`, or `--host both` to select project assets, and use `--dry-run` for a write-free preview.
 
 ## Project configuration
 
@@ -96,7 +96,7 @@ Follow the host's authentication flow rather than placing access tokens in the r
 
 ## Commit-review hook
 
-The package registers an asynchronous Bash `PostToolUse` hook on each host. It is inert until the project opts in:
+The package registers an asynchronous re-wake hook for Claude and a synchronous Bash `PostToolUse` hook for Codex. Both are inert until the project opts in:
 
 ```yaml
 # .git-workflow/git-workflow.local.md
@@ -112,6 +112,8 @@ Run `/update` in Claude or `$update` in Codex:
 ```text
 $update --dry-run
 $update --source /path/to/checkout
+$update --source https://github.com/rlajous/claude-code-commands.git
+$update --host both
 $update --prune
 $update --force
 ```

@@ -47,6 +47,17 @@ grep -Po '(?<=version = ")[^"]*' pyproject.toml 2>/dev/null
 grep -Po '(?<=^version = ")[^"]*' Cargo.toml 2>/dev/null
 ```
 
+For a Git Workflow manifest-only package, read `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. Require the Claude version, Codex version, marketplace metadata version, and marketplace plugin version to be identical. Require every plugin identity to be `git-workflow`.
+
+```bash
+python3 scripts/validate-codex-plugin.py
+node scripts/generate-codex-agents.mjs --check
+bash scripts/validate.sh
+git diff --check
+```
+
+Run the official Codex plugin validator when it is installed. Treat a missing optional official validator as a documented skipped check, not as proof that validation passed.
+
 ### 3. Test Suite
 
 Run all tests:
@@ -131,6 +142,8 @@ Check for changelog updates:
 # Check if updated recently
 git log --oneline -1 -- CHANGELOG.md 2>/dev/null
 ```
+
+Require the changelog to contain a heading for the exact release version discovered above. A manifest-only package without a matching entry is not ready for release.
 
 ### 9. Git State Check
 

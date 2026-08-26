@@ -1,7 +1,7 @@
 ---
 name: update
 description: Update Git Workflow skills and Claude/Codex project agents from a source checkout or installed plugin, with dry-run, pruning, customization detection, and legacy migration support. Use when the user asks to update, refresh, or synchronize Git Workflow.
-argument-hint: "[--dry-run] [--prune] [--force] [--source <path>]"
+argument-hint: "[--host <claude|codex|both>] [--dry-run] [--prune] [--force] [--source <path-or-git-url>]"
 disable-model-invocation: false
 allowed-tools: Read, Bash, Write, Glob, Grep, AskUserQuestion
 user-invocable: true
@@ -16,7 +16,8 @@ Follow [runtime compatibility](../../references/runtime-compatibility.md). Claud
 - `--dry-run`: calculate and display changes without writing.
 - `--prune`: include previously managed files that no longer exist in the source as removal candidates.
 - `--force`: overwrite customized managed files after still showing their diffs.
-- `--source <path>`: use an explicit Git Workflow checkout or plugin directory.
+- `--host <claude|codex|both>`: synchronize only the selected host assets; otherwise infer installed hosts and ask if ambiguous.
+- `--source <path-or-git-url>`: use an explicit Git Workflow checkout, plugin directory, or Git URL.
 
 Unknown options are errors. Destructive pruning is never implied by `--force` alone.
 
@@ -29,7 +30,7 @@ Resolve the project root from Git, then accept either `.git-workflow/`, `.claude
 3. `CLAUDE_PLUGIN_ROOT`
 4. `source` recorded in `.git-workflow/version.json`
 
-Validate that the source contains `skills/`, `agents/`, and `.codex/agents/`. Stop without writing if it is incomplete.
+For an explicit Git URL, clone it shallowly into a newly created temporary directory, validate it, and remove the temporary clone on success or failure. Do not perform a default network clone when an installed package root or ledger source is available. Validate that the source contains `skills/`, `agents/`, `.codex/agents/`, and a valid `.codex-plugin/plugin.json`. Stop without writing if it is incomplete.
 
 ## 3. Build the synchronization set
 

@@ -32,37 +32,44 @@ function safe(fn, fallback = null) {
   }
 }
 
-function getDevelopmentBranch() {
-  const configPath = firstExistingPath([
-    path.join(process.cwd(), ".git-workflow", "config.yaml"),
-    path.join(process.cwd(), ".claude", "config.yaml"),
-  ]);
+function getDevelopmentBranch(warnings) {
+  const canonical = path.join(process.cwd(), ".git-workflow", "config.yaml");
+  const legacy = path.join(process.cwd(), ".claude", "config.yaml");
+  const configPath = existsSync(canonical) ? canonical : existsSync(legacy) ? legacy : null;
   if (!configPath) return "staging";
   try {
     const raw = readFileSync(configPath, "utf8");
     const match = raw.match(/developmentBranch:\s*["']?([\w./-]+)["']?/);
+    if (!match && /developmentBranch\s*:/.test(raw)) {
+      warnings.push(`Could not parse developmentBranch from ${path.relative(process.cwd(), configPath)}; using staging.`);
+    }
     return match ? match[1] : "staging";
-  } catch {
+  } catch (error) {
+    warnings.push(`Could not read ${path.relative(process.cwd(), configPath)}: ${error.message}; using staging.`);
     return "staging";
   }
 }
 
-function getPrContext() {
-  const contextPath = firstExistingPath([
-    path.join(process.cwd(), ".git-workflow", "pr-context.json"),
-    path.join(process.cwd(), ".claude", ".pr-context.json"),
-  ]);
+function getPrContext(warnings, currentBranch) {
+  const canonical = path.join(process.cwd(), ".git-workflow", "pr-context.json");
+  const legacy = path.join(process.cwd(), ".claude", ".pr-context.json");
+  const contextPath = existsSync(canonical) ? canonical : existsSync(legacy) ? legacy : null;
   if (!contextPath) return null;
   try {
     const raw = readFileSync(contextPath, "utf8");
-    return JSON.parse(raw);
-  } catch {
+    const context = JSON.parse(raw);
+    if (!context || typeof context !== "object" || Array.isArray(context)) {
+      throw new TypeError("expected a JSON object");
+    }
+    if (context.branch && currentBranch && context.branch !== currentBranch) {
+      warnings.push(`Ignored stale ${path.relative(process.cwd(), contextPath)} for branch ${context.branch}; current branch is ${currentBranch}.`);
+      return null;
+    }
+    return context;
+  } catch (error) {
+    warnings.push(`Could not read ${path.relative(process.cwd(), contextPath)}: ${error.message}; ignoring PR context.`);
     return null;
   }
-}
-
-function firstExistingPath(paths) {
-  return paths.find((candidate) => existsSync(candidate)) ?? null;
 }
 
 function getCommitsAhead(devBranch) {
@@ -110,17 +117,19 @@ function getLatestRelease() {
 }
 
 function buildState() {
+  const warnings = [];
   const branch = safe(() => run("git", ["rev-parse", "--abbrev-ref", "HEAD"]));
   const porcelain = safe(() => run("git", ["status", "--porcelain"]));
   const dirty = porcelain === null ? null : porcelain.length > 0;
-  const developmentBranch = getDevelopmentBranch();
+  const developmentBranch = getDevelopmentBranch(warnings);
   const commitsAhead = branch ? getCommitsAhead(developmentBranch) : null;
   const pr = getPrInfo();
   const latestRelease = getLatestRelease();
-  const prContext = getPrContext();
+  const prContext = getPrContext(warnings, branch);
 
   return {
     generatedAt: new Date().toISOString(),
+    warnings,
     branch,
     developmentBranch,
     dirty,

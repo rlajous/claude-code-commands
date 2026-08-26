@@ -10,7 +10,7 @@ An agent-neutral package of 17 skills, eight specialized agents, and an opt-in c
 - Eight review, release, version-research, and QA agents
 - Canonical runtime-neutral configuration and state in `.git-workflow/`
 - Backward-compatible reads from legacy `.claude/` state
-- An opt-in asynchronous review hook for new commits and pushes
+- An opt-in review hook for new commits and pushes, with host-specific delivery
 
 ## Install for Claude Code
 
@@ -40,6 +40,8 @@ $setup
 ```
 
 Codex plugins distribute skills and hooks, while named project agents are discovered from `.codex/agents/`. `$setup` installs the eight generated agent definitions there. It shows a diff and asks before replacing a customized file; pass `--force` only when replacement is intentional.
+
+Use `$setup --host codex`, `$setup --host both`, or `$setup --dry-run` to make host selection and preview behavior explicit.
 
 During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
@@ -128,6 +130,8 @@ Use `/update` or `$update`. By default it previews differences and requires conf
 ```text
 $update --dry-run
 $update --source ../git-workflow
+$update --source https://github.com/rlajous/claude-code-commands.git
+$update --host both
 $update --prune
 $update --force
 ```

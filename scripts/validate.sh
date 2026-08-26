@@ -27,15 +27,20 @@ claude = json.loads(Path(".claude-plugin/plugin.json").read_text())
 market = json.loads(Path(".claude-plugin/marketplace.json").read_text())
 codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
+versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
 assert versions == {"2.4.0"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
+assert len(market["plugins"]) == 1
+assert market["plugins"][0]["name"] == "git-workflow"
 assert codex["skills"] == "./skills/"
 assert claude["hooks"] == "./hooks/claude-hooks.json"
 assert "hooks" not in codex, "Codex hooks are discovered from hooks/hooks.json"
 
 codex_hooks = json.loads(Path("hooks/hooks.json").read_text())["hooks"]["PostToolUse"]
-assert any(entry.get("matcher") == "Bash" and any(hook.get("async") is True for hook in entry.get("hooks", [])) for entry in codex_hooks)
+assert any(entry.get("matcher") == "Bash" and all("async" not in hook and "--host codex" in hook["command"] for hook in entry.get("hooks", [])) for entry in codex_hooks)
+claude_hooks = json.loads(Path("hooks/claude-hooks.json").read_text())["hooks"]["PostToolUse"]
+assert all(hook.get("asyncRewake") is True and "--host claude" in hook["command"] for entry in claude_hooks for hook in entry["hooks"])
 PY
 then ok "manifest versions, paths, and Codex hook registration aligned"
 else err "manifest versions, paths, or hook registration are inconsistent"
@@ -123,10 +128,22 @@ assert "Redact `Authorization`" in qa
 assert "full bodies only after explicit user approval" in qa
 
 reviewer = read("agents/pr-reviewer.md")
-assert "BASE_SHA...HEAD" in reviewer
+assert "BASE_SHA...HEAD_SHA" in reviewer
 assert "HEAD~1..HEAD" in reviewer
 review = read("skills/review/SKILL.md")
-assert "baseRefOid" in review and "baseRefOid...HEAD" in review
+assert "baseRefOid" in review and "BASE_SHA...HEAD_SHA" in review
+assert "locally checked-out `HEAD`" in review
+
+setup = read("skills/setup/SKILL.md")
+assert "--host <claude|codex|both>" in setup and "--dry-run" in setup and "--force" in setup
+update = read("skills/update/SKILL.md")
+assert "--source <path-or-git-url>" in update and "clone it shallowly" in update
+finish = read("skills/finish/SKILL.md")
+assert "read-only fallback" in finish and "must never be deleted or modified" in finish
+status = read("scripts/status-report.mjs")
+assert "warnings" in status and "Ignored stale" in status
+changelog = read("CHANGELOG.md")
+assert "## 2.4.0" in changelog and "2.3.0" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -166,13 +183,15 @@ then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh; do
+for script in hooks/review-commit.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
 if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; else err "review hook behavior"; fi
 if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
+if bash scripts/test-generate-codex-agents.sh >/dev/null; then ok "Codex agent generator safety"; else err "Codex agent generator safety"; fi
+if python3 scripts/test-codex-plugin-validator.py >/dev/null; then ok "Codex manifest negative fixtures"; else err "Codex manifest negative fixtures"; fi
 
 if node scripts/status-report.mjs | grep -q '<!doctype html>'; then
   ok "status report smoke test"
