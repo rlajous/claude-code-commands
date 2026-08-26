@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.5.0"}, versions
+assert versions == {"2.5.1"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
@@ -133,6 +133,14 @@ assert "HEAD~1..HEAD" in reviewer
 review = read("skills/review/SKILL.md")
 assert "baseRefOid" in review and "BASE_SHA...HEAD_SHA" in review
 assert "locally checked-out `HEAD`" in review
+assert "scripts/review-event.sh" in review
+
+review_watch = read("skills/review-watch/SKILL.md")
+assert "reviewWatch.enabled=false" in review_watch
+assert "scripts/review-event.sh" in review_watch
+
+change_brief = read("skills/change-brief/SKILL.md")
+assert "validate-self-contained-html.py" in change_brief
 
 setup = read("skills/setup/SKILL.md")
 assert "--host <claude|codex|both>" in setup and "--dry-run" in setup and "--force" in setup
@@ -145,7 +153,7 @@ assert "warnings" in status and "Ignored stale" in status
 release_validator = read("agents/release-validator.md")
 assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
-assert "## 2.5.0" in changelog and "2.4.0" in changelog
+assert "## 2.5.1" in changelog and "2.5.0" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -180,16 +188,20 @@ template = read("templates/config.yaml.template")
 assert '"mcpServers"' in template
 assert "[mcp_servers.linear]" in template
 assert "[mcp_servers.jira]" in template
+assert "changeBrief:\n" in template
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/review-watch.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
 if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; else err "review hook behavior"; fi
+if bash scripts/test-review-watch.sh >/dev/null; then ok "review watcher configuration and queue behavior"; else err "review watcher configuration and queue behavior"; fi
+if bash scripts/test-review-event.sh >/dev/null; then ok "review event configuration modes"; else err "review event configuration modes"; fi
+if bash scripts/test-self-contained-html.sh >/dev/null; then ok "self-contained HTML network guard"; else err "self-contained HTML network guard"; fi
 if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
 if bash scripts/test-generate-codex-agents.sh >/dev/null; then ok "Codex agent generator safety"; else err "Codex agent generator safety"; fi

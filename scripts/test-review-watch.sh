@@ -37,6 +37,55 @@ run_once() {
   XDG_STATE_HOME="$STATE_HOME" REVIEW_WATCH_PRS_JSON="$json" bash "$SCRIPT" --once
 }
 
+run_in_project() {
+  local project="$1"
+  shift
+  (cd "$project" && XDG_STATE_HOME="$STATE_HOME" bash "$SCRIPT" "$@")
+}
+
+# 0. Configuration defaults are safe: absent config is disabled, and values
+# resolve to the documented interval and sound.
+NO_CONFIG_PROJECT="$STATE_HOME/no-config-project"
+mkdir -p "$NO_CONFIG_PROJECT"
+CONFIG_DEFAULTS="$(run_in_project "$NO_CONFIG_PROJECT" --show-config)"
+printf '%s\n' "$CONFIG_DEFAULTS" | grep -qx 'enabled=false'
+check "absent config defaults to disabled" $?
+printf '%s\n' "$CONFIG_DEFAULTS" | grep -qx 'intervalSeconds=60'
+check "absent config uses 60-second interval" $?
+printf '%s\n' "$CONFIG_DEFAULTS" | grep -qx 'sound=Glass'
+check "absent config uses Glass sound" $?
+
+DISABLED_OUTPUT="$(run_in_project "$NO_CONFIG_PROJECT" --once 2>&1)"
+printf '%s\n' "$DISABLED_OUTPUT" | grep -q 'review-watch: disabled'
+check "absent config does not poll" $?
+
+# Explicit canonical config overrides every daemon setting. The CLI interval
+# remains highest precedence.
+CONFIG_PROJECT="$STATE_HOME/config-project"
+mkdir -p "$CONFIG_PROJECT/.git-workflow"
+printf 'reviewWatch:\n  enabled: true\n  intervalSeconds: "17"\n  sound: '\''Ping'\''\n' > "$CONFIG_PROJECT/.git-workflow/config.yaml"
+CONFIG_OVERRIDES="$(run_in_project "$CONFIG_PROJECT" --show-config)"
+printf '%s\n' "$CONFIG_OVERRIDES" | grep -qx 'enabled=true'
+check "canonical config enables polling" $?
+printf '%s\n' "$CONFIG_OVERRIDES" | grep -qx 'intervalSeconds=17'
+check "canonical config overrides interval" $?
+printf '%s\n' "$CONFIG_OVERRIDES" | grep -qx 'sound=Ping'
+check "canonical config overrides sound" $?
+
+CLI_OVERRIDE="$(run_in_project "$CONFIG_PROJECT" --interval 9 --show-config)"
+printf '%s\n' "$CLI_OVERRIDE" | grep -qx 'intervalSeconds=9'
+check "CLI interval overrides config" $?
+
+bash "$SCRIPT" --interval >/dev/null 2>&1
+[ $? -eq 2 ]
+check "missing interval value exits with usage error" $?
+bash "$SCRIPT" --interval 0 >/dev/null 2>&1
+[ $? -eq 2 ]
+check "zero interval exits with usage error" $?
+bash "$SCRIPT" --repo >/dev/null 2>&1
+[ $? -eq 2 ]
+check "missing repo value exits with usage error" $?
+
 # 1. A NEW PR json fires: output mentions the PR and the queue gets a line.
 OUTPUT_1="$(run_once "$(pr_json "aaa111")")"
 printf '%s' "$OUTPUT_1" | grep -q 'review requested on #42'

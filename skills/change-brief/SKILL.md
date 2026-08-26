@@ -118,13 +118,23 @@ Add a minimal light/dark toggle so the page is readable either way:
 ```
 
 **Zero external requests.** No CDN links, no external fonts, no analytics, no remote images — the
-whole page is one `<style>` and one small inline `<script>`. Before finishing, verify with:
+whole page is one `<style>` and one small inline `<script>`. Add this defense-in-depth policy in
+`<head>` (the page's PR and issue links still work when the user chooses to open them):
 
-```bash
-grep -inE '<link|<script[^>]*src|@import|url\(https?|cdn\.' index.html
+```html
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 ```
 
-This MUST return nothing. If it finds a match, remove the offending reference and re-check.
+Before finishing, run the parser-based validator against the generated file:
+
+```bash
+python3 "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/validate-self-contained-html.py" {outputDir}/pr-<n>/index.html
+```
+
+This MUST exit successfully. It inspects resource-bearing attributes plus CSS and JavaScript
+network primitives while ignoring escaped PR prose in ordinary text nodes. If it reports a finding,
+remove the offending reference and re-check.
 
 ## Step 5 — Write the output
 
