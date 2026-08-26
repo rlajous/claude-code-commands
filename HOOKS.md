@@ -1,6 +1,8 @@
 # Git Workflow hooks
 
-Git Workflow ships one opt-in hook that notices successful `git commit` and `git push` commands and provides the resulting diff to the active host for review.
+Git Workflow ships opt-in hooks for commit review and main-agent completion. Successful `git commit`
+and `git push` commands can provide a bounded diff to the active host for review. A `Stop` hook can
+send a local completion notification without re-entering the model.
 
 ## Host registration
 
@@ -11,7 +13,7 @@ The shared implementation is `hooks/review-commit.sh`.
 | Claude Code | `hooks/claude-hooks.json`, selected by the Claude manifest | Plain review context with Claude's asynchronous re-wake behavior |
 | Codex | `hooks/hooks.json`, discovered by the Codex plugin | Synchronous JSON containing `hookSpecificOutput.additionalContext` |
 
-Both registrations use `PostToolUse` and match Bash execution. Claude uses asynchronous re-wake behavior; Codex runs synchronously for compatibility with supported Codex clients. The script parses the hook payload and exits without output unless the executed command contains `git commit` or `git push`.
+Both registrations use `PostToolUse` for commit review and `Stop` for completion alerts. Claude uses asynchronous re-wake behavior for commit review; Codex runs that path synchronously for compatibility with supported Codex clients. The commit script parses the hook payload and exits without output unless the executed command contains `git commit` or `git push`.
 
 ## Enable it
 
@@ -69,6 +71,11 @@ printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git commit -m test"}}'
 ```
 
 The first call emits nothing. The second also emits nothing until `.git-workflow/git-workflow.local.md` enables the feature. With opt-in enabled, Codex output must be valid JSON and include `hookSpecificOutput.additionalContext`.
+
+Completion alerts are independently disabled until `.git-workflow/config.yaml` sets
+`notifications.agentComplete: true`. They apply only to the main turn; no `SubagentStop` hook is
+registered. The adapter stores a bounded deduplication digest rather than the full assistant
+message. See [Notifications](docs/NOTIFICATIONS.md) for formats, privacy, and troubleshooting.
 
 Run the repository's automated hook checks with:
 

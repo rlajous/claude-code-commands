@@ -1,5 +1,5 @@
 {
-  "description": "Git Workflow — optional background review of new commits and pushes (opt in via .git-workflow/git-workflow.local.md)",
+  "description": "Git Workflow — optional background review and desktop notifications",
   "hooks": {
     "PostToolUse": [
       {
@@ -10,6 +10,17 @@
             "command": "bash \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/review-commit.sh\" --host codex",
             "timeout": 120,
             "statusMessage": "Checking whether the new commit needs review"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/notifications/scripts/agent-complete.py\" --host codex",
+            "timeout": 10
           }
         ]
       }

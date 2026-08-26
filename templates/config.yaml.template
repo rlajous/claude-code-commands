@@ -268,6 +268,21 @@ review:
   postEvent: auto
 
 # ==============================================================================
+# NOTIFICATION SETTINGS
+# ==============================================================================
+# Opt-in local desktop notifications (see /notifications in Claude or
+# $notifications in Codex). GitHub activity also requires the shared daemon.
+notifications:
+  # Notify when the main Claude Code or Codex turn finishes
+  agentComplete: false
+
+  # Notify for APPROVED, CHANGES_REQUESTED, and COMMENTED reviews on your PRs
+  prActivity: false
+
+  # macOS notification sound name; Linux uses the desktop's native sound
+  sound: Glass
+
+# ==============================================================================
 # REVIEW-WATCH SETTINGS
 # ==============================================================================
 # Review-watch auto-reviewer (see /review-watch in Claude or $review-watch in Codex)
@@ -277,9 +292,6 @@ reviewWatch:
 
   # Daemon poll interval (seconds)
   intervalSeconds: 60
-
-  # macOS notification sound name
-  sound: Glass
 
   # Auto-detect project linters, or an explicit command
   linters: auto

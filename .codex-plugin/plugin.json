@@ -1,7 +1,7 @@
 {
   "name": "git-workflow",
-  "version": "2.5.2",
-  "description": "Production-ready Git workflow automation for pull requests, releases, QA, and code review",
+  "version": "2.6.0",
+  "description": "Production-ready Git workflow automation for pull requests, releases, QA, code review, and local notifications",
   "author": {
     "name": "rlajous",
     "url": "https://github.com/rlajous"
@@ -15,13 +15,14 @@
     "pull-requests",
     "release",
     "qa",
-    "code-review"
+    "code-review",
+    "notifications"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Git Workflow",
-    "shortDescription": "Automate Git, PR, release, QA, and review workflows",
-    "longDescription": "A cross-agent Git workflow toolkit with reusable skills for starting work, committing, opening and reviewing pull requests, releasing software, and executing QA plans.",
+    "shortDescription": "Automate Git, PR, release, QA, review, and notifications",
+    "longDescription": "A cross-agent Git workflow toolkit with reusable skills for starting work, committing, opening and reviewing pull requests, releasing software, executing QA plans, and receiving opt-in local notifications.",
     "developerName": "rlajous",
     "category": "Productivity",
     "capabilities": [

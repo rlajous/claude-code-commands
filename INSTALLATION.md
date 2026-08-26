@@ -133,7 +133,6 @@ until the project opts in:
 reviewWatch:
   enabled: true
   intervalSeconds: 60
-  sound: Glass
   linters: auto
   knownIssues: references/known-issues.md
 ```
@@ -162,6 +161,34 @@ Read the [Review Watch guide](docs/REVIEW_WATCH.md) for repository filters, queu
 decisions, notification examples, and troubleshooting. Clean reviews generate the self-contained
 HTML described in the [Change Brief guide](docs/CHANGE_BRIEF.md).
 
+## Notifications setup
+
+Desktop notifications require Bash and Python 3. PR activity also requires an authenticated `gh`
+CLI and the shared daemon. Opt into either channel explicitly:
+
+```yaml
+notifications:
+  agentComplete: true
+  prActivity: true
+  sound: Glass
+```
+
+Installed Claude and Codex plugins load their packaged `Stop` registration. A Codex session opened
+directly in this checkout uses `.codex/hooks.json`. Git Workflow does not modify global user
+settings. Manual skill copies do not automatically install hooks; copy the matching project-level
+`Stop` registration with an absolute adapter path when using that installation mode.
+
+```text
+/notifications --doctor          # Claude Code
+/notifications --daemon-command
+$notifications --doctor          # Codex
+$notifications --daemon-command
+```
+
+Paste the daemon command into another terminal for PR activity. The first run records existing
+reviews as a baseline without notifying. See the complete [Notifications guide](docs/NOTIFICATIONS.md)
+for event formats, privacy, state files, manual hook registration, and troubleshooting.
+
 ## Verify
 
 Check the expected skills and agents in the host, then try the non-destructive status workflow:
@@ -187,5 +214,7 @@ bash scripts/validate.sh
 - If GitHub actions fail, run `gh auth status` and authenticate with `gh auth login`.
 - If Review Watch is silent, run the host-correct `review-watch --doctor`, confirm
   `reviewWatch.enabled: true`, and verify OS notification permissions.
+- If agent or authored-PR alerts are silent, run the host-correct `notifications --doctor`, confirm
+  the corresponding opt-in flag, and start the daemon for PR activity.
 - If issue lookup fails, inspect the active host's MCP connection and OAuth state.
 - If the hook does nothing, confirm `review-on-commit: true`, start a new host session, and verify the invoked command is `git commit` or `git push`.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Notifications"
+  short_description: "Desktop alerts for agent and PR activity"
+  default_prompt: "Use $notifications to diagnose or start Git Workflow desktop notifications."
