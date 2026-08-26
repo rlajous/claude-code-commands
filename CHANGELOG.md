@@ -9,6 +9,8 @@
 - Add checkout-local Codex discovery plus `review-watch --doctor` and `--daemon-command`.
 - Harden notification arguments, embedded status JSON, HTML/CSP validation, watcher ledger order,
   and synchronization prune bookkeeping.
+- Make change briefs decision-oriented and readable in under 10 minutes, with business rules,
+  diagrams, conditional UI/mobile screenshots, API cURL exchanges, risks, and evidence gaps.
 
 ## 2.5.1
 

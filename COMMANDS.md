@@ -121,7 +121,7 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 | `/review` | Comprehensive code review on a PR | `[pr-number-or-url] [--sarif]` |
 | `/review-request` | Draft a paste-ready PR review request | `[pr-number-or-url]` |
 | `/review-watch` | Auto-review PRs that request your review in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) | `[pr-url-or-number] [--drain] [--comment-only] [--doctor] [--daemon-command]` |
-| `/change-brief` | Generate a self-contained HTML explainer of a change | `[pr-url-or-number]` |
+| `/change-brief` | Generate a sub-10-minute HTML decision brief with contextual evidence | `[pr-url-or-number]` |
 
 ### Release Management
 

@@ -22,6 +22,9 @@ write_page() {
 write_page '<pre>PR text may say fetch(https://example.com) or &lt;link href="//example.com"&gt;</pre>'
 python3 "$VALIDATOR" "$TEST_ROOT/index.html" || fail "escaped PR text caused a false positive"
 
+write_page '<img src="data:image/png;base64,iVBORw0KGgo=" alt="Embedded before screenshot">'
+python3 "$VALIDATOR" "$TEST_ROOT/index.html" || fail "embedded screenshot data URI was rejected"
+
 for unsafe in \
   '<link rel="stylesheet" href="https://example.com/a.css">' \
   '<style>.x{background:url(//example.com/a.png)}</style>' \

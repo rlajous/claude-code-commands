@@ -235,6 +235,29 @@ assert "changeBrief:\n" in template
 known_issues = read("skills/review-watch/references/known-issues.md")
 assert "| `TODO|FIXME` |" not in known_issues
 assert "| `TODO` |" in known_issues and "| `FIXME` |" in known_issues
+
+change_brief = read("skills/change-brief/SKILL.md")
+for requirement in (
+    "less than\n10 minutes",
+    "**Business logic**",
+    "accessible inline SVG",
+    "real before/after screenshots",
+    "copyable cURL request",
+    "`Observed` only when it was executed",
+    "**Risk and delivery**",
+    "references/evidence-playbook.md",
+):
+    assert requirement in change_brief, requirement
+
+evidence_playbook = read("skills/change-brief/references/evidence-playbook.md")
+for requirement in (
+    "Never mutate production",
+    "decision table",
+    "temporary worktrees",
+    "Expected — not executed",
+    "6–8 minutes",
+):
+    assert requirement in evidence_playbook, requirement
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"

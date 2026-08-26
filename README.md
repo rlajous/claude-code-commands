@@ -93,7 +93,7 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `finish` | Push and open a pull request |
 | `review` | Fan out a comprehensive PR review |
 | `review-watch` | Auto-review PRs that request your review, in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) |
-| `change-brief` | Generate a self-contained HTML explainer of a change |
+| `change-brief` | Generate a sub-10-minute HTML decision brief with business logic and contextual evidence |
 | `release` | Prepare and validate a release |
 | `release-notes` | Generate release notes |
 | `sync` | Back-merge production into development |
@@ -122,7 +122,8 @@ dependencies, configuration, and GitHub authentication without publishing a revi
 daemon beeps, use `/review-watch <pr-url>` in Claude or `$review-watch <pr-url>` in Codex (or the
 matching `--drain` form). It runs the project linters and its bundled known-issues ruleset first,
 escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and
-on a clean PR posts `APPROVE`, generates a `change-brief` HTML explainer, and pings you. Opt in with
+on a clean PR posts `APPROVE`, generates a `change-brief` with diagrams, UI/mobile screenshots, or
+API cURL evidence when relevant, and pings you. Opt in with
 `reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
 
 ## Agents and delegation
