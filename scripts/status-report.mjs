@@ -39,11 +39,18 @@ function getDevelopmentBranch(warnings) {
   if (!configPath) return "staging";
   try {
     const raw = readFileSync(configPath, "utf8");
-    const match = raw.match(/developmentBranch:\s*["']?([\w./-]+)["']?/);
-    if (!match && /developmentBranch\s*:/.test(raw)) {
+    const match = raw.match(/^\s*developmentBranch:\s*(.*?)\s*$/m);
+    let value = null;
+    if (match) {
+      const scalar = match[1].replace(/\s+#.*$/, "").trim();
+      const quoted = scalar.match(/^(["'])(.*)\1$/);
+      if (quoted) value = quoted[2];
+      else if (scalar && !/^[\[{|>]/.test(scalar) && !/^["']/.test(scalar)) value = scalar;
+    }
+    if (!value && /developmentBranch\s*:/.test(raw)) {
       warnings.push(`Could not parse developmentBranch from ${path.relative(process.cwd(), configPath)}; using staging.`);
     }
-    return match ? match[1] : "staging";
+    return value || "staging";
   } catch (error) {
     warnings.push(`Could not read ${path.relative(process.cwd(), configPath)}: ${error.message}; using staging.`);
     return "staging";

@@ -153,10 +153,12 @@ Verify clean git state:
 # Check for uncommitted changes
 git status --porcelain
 
-# Check branch is up-to-date
-git fetch origin
+# Inspect the currently known upstream state without changing refs or contacting a remote
+git branch -vv
 git status -uno
 ```
+
+If release confidence requires fresh remote refs, explain why and obtain explicit user confirmation immediately before running `git fetch origin`. Do not fetch as an automatic part of validation.
 
 ### 10. Migration Check
 

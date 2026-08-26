@@ -142,6 +142,8 @@ finish = read("skills/finish/SKILL.md")
 assert "read-only fallback" in finish and "must never be deleted or modified" in finish
 status = read("scripts/status-report.mjs")
 assert "warnings" in status and "Ignored stale" in status
+release_validator = read("agents/release-validator.md")
+assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
 assert "## 2.4.0" in changelog and "2.3.0" in changelog
 
