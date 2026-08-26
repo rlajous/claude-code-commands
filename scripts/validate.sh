@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.4.0"}, versions
+assert versions == {"2.5.0"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
@@ -97,7 +97,7 @@ import re
 from pathlib import Path
 
 skills = sorted(Path("skills").glob("*/SKILL.md"))
-assert len(skills) == 17, len(skills)
+assert len(skills) == 19, len(skills)
 for path in skills:
     text = path.read_text()
     match = re.match(r"^---\n(.*?)\n---\n+(.*)$", text, re.S)
@@ -113,7 +113,7 @@ for path in skills:
     if lines > 500:
         print(f"WARN {path} has {lines} lines")
 PY
-then ok "17 shared skills have valid neutral instructions"
+then ok "19 shared skills have valid neutral instructions"
 else err "skill count, frontmatter, or runtime-neutral wording failed validation"
 fi
 
@@ -145,7 +145,7 @@ assert "warnings" in status and "Ignored stale" in status
 release_validator = read("agents/release-validator.md")
 assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
-assert "## 2.4.0" in changelog and "2.3.0" in changelog
+assert "## 2.5.0" in changelog and "2.4.0" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -185,7 +185,7 @@ then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 

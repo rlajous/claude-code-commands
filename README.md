@@ -1,6 +1,6 @@
 # Git Workflow
 
-An agent-neutral package of 17 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
+An agent-neutral package of 19 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
 ## What it includes
 
@@ -33,7 +33,7 @@ For unprefixed project skills, copy `skills/` to `.claude/skills/`, `agents/` to
 
 ## Install for Codex
 
-Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 17 directories under `skills/`. Then run the setup skill in the target project:
+Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 19 directories under `skills/`. Then run the setup skill in the target project:
 
 ```text
 $setup
@@ -88,6 +88,8 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `commit` | Create a formatted commit |
 | `finish` | Push and open a pull request |
 | `review` | Fan out a comprehensive PR review |
+| `review-watch` | Auto-review PRs that request your review, in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) |
+| `change-brief` | Generate a self-contained HTML explainer of a change |
 | `release` | Prepare and validate a release |
 | `release-notes` | Generate release notes |
 | `sync` | Back-merge production into development |
@@ -100,6 +102,16 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `clean-gone` | Remove gone branches and linked worktrees safely |
 
 Detailed examples are in [COMMANDS.md](COMMANDS.md).
+
+### Review watcher (console)
+
+Run the watcher in a spare terminal to get pinged (sound + desktop notification) when a PR requests your review:
+
+```bash
+bash "${PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/scripts/review-watch.sh"   # polls every 60s; Ctrl-C to stop
+```
+
+When it beeps, run `/review-watch <pr-url>` (or `/review-watch --drain`) in your Claude Code / Codex session. It runs the project linters and a `references/known-issues.md` ruleset first, escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and on a clean PR posts `APPROVE`, generates a `change-brief` HTML explainer, and pings you. Opt in with `reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
 
 ## Agents and delegation
 

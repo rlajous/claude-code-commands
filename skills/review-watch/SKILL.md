@@ -1,0 +1,128 @@
+---
+name: review-watch
+description: Review pull requests that requested your review, in a loop until clean. Runs cheap deterministic checks (linters + a known-issues ruleset) first, then the full review fan-out, posts REQUEST_CHANGES when it finds problems, and APPROVE plus a human-readable change brief when the PR is clean. Use when the user asks to "review the PRs waiting on me", "auto-review", "watch for review requests", "drain the review queue", or passes a PR URL to review-and-decide.
+argument-hint: "[pr-url-or-number] [--drain] [--comment-only]"
+disable-model-invocation: false
+allowed-tools: Read, Grep, Glob, Bash
+user-invocable: true
+---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
+
+You are the worker side of the review-watch tool. The `scripts/review-watch.sh` daemon listens for PRs where your review was requested and pings you; this skill does the actual review and decides whether to request changes or approve. Goal: **loop a PR until it is clean**, cheaply. Follow each step in order.
+
+## Step 1: Parse Arguments and Pick Targets
+
+- A PR URL or number → review just that PR.
+- `--drain` (or no argument) → process every queued PR in the daemon queue file
+  `${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow/review-watch-queue.jsonl` (dedupe by `repo#number@headRefOid`; newest entry per PR wins). Remove entries as you finish them.
+- `--comment-only` → never post REQUEST_CHANGES/APPROVE, only a COMMENT review (safe mode).
+
+For each target resolve `{owner}/{repo}` and PR number (parse from the URL, or use the current repo for a bare number).
+
+## Step 2: Skip Already-Reviewed Head SHAs
+
+Read the reviewed-SHA ledger `.git-workflow/.review-watch-reviewed` (legacy fallback `.claude/.review-watch-reviewed`). Each line is `repo#number@headRefOid`. Fetch the PR head SHA:
+
+```bash
+gh pr view {PR} --repo {owner}/{repo} --json number,title,url,author,isDraft,baseRefOid,headRefOid,files,additions,deletions
+```
+
+If `repo#number@headRefOid` is already in the ledger, skip this PR (nothing new since the last review). If the PR `isDraft`, skip and note it.
+
+**Self-review guard:** GitHub forbids REQUEST_CHANGES/APPROVE on your own PR. If the PR author is you (`gh api user --jq .login`), operate in `--comment-only` mode for this PR.
+
+## Step 3: Get the Diff
+
+```bash
+gh pr diff {PR} --repo {owner}/{repo}
+```
+
+Note the changed file list and languages. If the diff exceeds `review.maxDiffLines` (default 3000), work from the file list and read files individually.
+
+## Step 4: Tier 1 — Deterministic Checks (cheap, no model reasoning)
+
+Run the fast, mechanical checks first so obvious problems cost nothing.
+
+First read the review-watch config (`.git-workflow/config.yaml`, legacy `.claude/config.yaml`): `reviewWatch.linters` (default `auto`), `reviewWatch.knownIssues` (default `references/known-issues.md`), and `reviewWatch.enabled` (only act when true). Honor these values in the checks below.
+
+**a) Project linters (only if the repo is checked out locally with deps).** When `reviewWatch.linters` is `auto`, auto-detect and run against the changed files; when it is an explicit command, run that:
+
+- JS/TS: `npx eslint <changed>` , `npx tsc --noEmit`
+- CSS/SCSS: `npx stylelint <changed css>`
+- Python: `ruff check <changed>` / `flake8`
+- Others: the project's configured lint command (`.git-workflow/config.yaml` → `testing.lint`).
+
+If the repo is not available locally (a PR on someone else's repo you have not cloned), skip the linters and note it — Tier 2 still covers logic from the diff.
+
+**b) Known-issues ruleset.** Read the grep-style patterns in `references/known-issues.md` (path is under the resolved plugin dir; also honor a project-level `.git-workflow/known-issues.md` if present) and scan the changed lines of the diff for each. These are the "errors we already know": stray `console.log`, `debugger`, CSS `!important` abuse, inline styles, shipped `TODO/FIXME`, hard-coded colors, TS `any`, etc.
+
+Collect all Tier-1 findings with file, line, and the rule that fired. Anything at severity `error`/BLOCKING/HIGH is a **blocker**.
+
+**If Tier 1 found blockers → go straight to Step 6 and post REQUEST_CHANGES with those findings. Skip Tier 2** (do not spend the expensive review when there are already known errors to fix). This is the cost gate.
+
+## Step 5: Tier 2 — Full Review Fan-out (only when Tier 1 is clean)
+
+Run the standard review: delegate, through the active host's subagent mechanism, to the specialized reviewers used by the `review` skill (`pr-reviewer` always; `silent-failure-hunter`, `type-design-analyzer`, `pr-test-analyzer`, `comment-analyzer` by changed-file type), in parallel. Hand each the PR number/repo, `baseRefOid` as `BASE_SHA`, `headRefOid` as `HEAD_SHA`, the changed-file list, and the diff.
+
+Aggregate and de-duplicate their findings. Keep only findings with **confidence ≥ 80** and drop the false-positive classes (pre-existing, linter-catchable, intentionally-silenced, formatter-style, speculative) — the same bar as the `review` skill. Assign each survivor a severity (BLOCKING / HIGH / MEDIUM / LOW).
+
+## Step 6: Decide and Post
+
+Combine Tier-1 blockers and Tier-2 findings.
+
+- **Any BLOCKING or HIGH finding → REQUEST_CHANGES.** Build the review body: a one-line verdict, then each finding as `severity — file permalink — what is wrong — suggested fix`, using SHA permalinks (`https://github.com/{owner}/{repo}/blob/{headRefOid}/{path}#L{line}`, literal). Post:
+
+  ```bash
+  gh api "repos/{owner}/{repo}/pulls/{PR}/reviews" --method POST \
+    -f body="$(cat <<'REVIEW_EOF'
+  {REVIEW_BODY}
+  REVIEW_EOF
+  )" -f event="REQUEST_CHANGES"
+  ```
+
+- **No BLOCKING/HIGH (clean) → APPROVE** (unless `--comment-only`/self-review, then `COMMENT`). Post the same way with `-f event="APPROVE"`, a short "looks good" body plus any remaining LOW/MEDIUM notes. Then generate the human-readable change brief (Step 7) and ping.
+
+Respect `review.postToGitHub` (`ask` | `always` | `never`, default `ask`): when `ask`, show the drafted review and confirm through the host's user-input mechanism before posting. Truncate bodies over ~65,000 characters.
+
+## Step 7: On Clean — Generate the Change Brief and Ping
+
+When a PR passes (APPROVE):
+
+- Generate the human-facing HTML explainer for the change by following the `change-brief` skill for this PR (Problem / Root cause / Fix / Verification + before/after). Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
+- Ping the human that it is ready:
+
+  ```bash
+  bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/notify.sh" "PR #{PR} ready for merge" "Review passed. Change brief generated."
+  ```
+
+## Step 8: Record and Loop
+
+Append `repo#number@headRefOid` to `.git-workflow/.review-watch-reviewed` so this exact head SHA is not reviewed again. Remove the PR from the daemon queue file if you were draining it.
+
+The **loop is head-SHA driven**: when the author pushes a fix, the daemon detects the new head SHA and re-queues the PR; running this skill again reviews only the new SHA. Repeat REQUEST_CHANGES → author fixes → re-review until a round posts APPROVE. Never re-review an unchanged SHA (the ledger prevents it).
+
+## Step 9: Report
+
+Print a compact summary per PR: verdict (REQUEST_CHANGES / APPROVED / COMMENTED), Tier-1 vs Tier-2 finding counts, whether a change brief was written, and the PR URL.
+
+## Configuration Reference
+
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `reviewWatch.intervalSeconds` | `60` | Daemon poll interval |
+| `reviewWatch.sound` | `Glass` | Notification sound name |
+| `reviewWatch.linters` | `auto` | `auto`-detect, or an explicit lint command |
+| `reviewWatch.knownIssues` | `references/known-issues.md` | Deterministic ruleset path |
+| `review.postToGitHub` | `ask` | `ask` \| `always` \| `never` |
+| `review.postEvent` | `auto` | `auto` (derive REQUEST_CHANGES/APPROVE) \| `comment` |
+
+## Error Handling
+
+| Scenario | Action |
+| -------- | ------ |
+| `gh` unauthenticated | Stop with a hint to run `gh auth login` |
+| Repo not available locally | Skip Tier-1 linters, run Tier-2 from the diff, note it |
+| PR authored by you | Fall back to COMMENT (cannot self-approve/request-changes) |
+| Head SHA already reviewed | Skip; nothing new |
+| Node unavailable (change brief) | Post the approval, skip the HTML, note it |

@@ -263,6 +263,30 @@ review:
   # Maximum diff lines before switching to file-by-file reading
   maxDiffLines: 3000
 
+  # How to choose the posted review event
+  # auto = derive REQUEST_CHANGES/APPROVE from findings; comment = always COMMENT
+  postEvent: auto
+
+# ==============================================================================
+# REVIEW-WATCH SETTINGS
+# ==============================================================================
+# Review-watch auto-reviewer (see /review-watch and scripts/review-watch.sh)
+reviewWatch:
+  # Opt-in; the daemon + skill only act when true
+  enabled: false
+
+  # Daemon poll interval (seconds)
+  intervalSeconds: 60
+
+  # macOS notification sound name
+  sound: Glass
+
+  # Auto-detect project linters, or an explicit command
+  linters: auto
+
+  # Path to a known-issues reference file
+  knownIssues: references/known-issues.md
+
 # ==============================================================================
 # RELEASE SETTINGS
 # ==============================================================================
