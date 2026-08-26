@@ -32,6 +32,22 @@ RESOURCE_ATTRIBUTES = {
     "image": {"href", "xlink:href"},
     "use": {"href", "xlink:href"},
 }
+VOID_ELEMENTS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
 
 
 def css_has_network(css: str) -> bool:
@@ -74,11 +90,17 @@ class SelfContainedParser(HTMLParser):
                 continue
             values[lower_name] = value or ""
         lower_tag = tag.lower()
-        self.context.append(lower_tag)
 
         if lower_tag == "meta" and values.get("http-equiv", "").lower() == "content-security-policy":
-            if csp_blocks_connections(values.get("content", "")):
+            if (
+                self.context
+                and self.context[-1] == "head"
+                and csp_blocks_connections(values.get("content", ""))
+            ):
                 self.has_csp = True
+
+        if lower_tag not in VOID_ELEMENTS:
+            self.context.append(lower_tag)
 
         for attribute in RESOURCE_ATTRIBUTES.get(lower_tag, set()):
             value = values.get(attribute, "").strip()

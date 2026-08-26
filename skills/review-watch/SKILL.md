@@ -130,8 +130,8 @@ Respect `review.postToGitHub` (`ask` | `always` | `never`, default `ask`): when 
 
 When the PR is clean (`HAS_BLOCKING=false`, whether the posted event is `APPROVE` or `COMMENT`):
 
-- Generate the human-facing HTML decision brief by following the `change-brief` skill for this PR.
-  Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
+- Generate the human-facing HTML decision brief by following `/change-brief {PR}` in Claude Code or
+  `$change-brief {PR}` in Codex. Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
 - Ping the human that it is ready:
 
   ```bash

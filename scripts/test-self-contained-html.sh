@@ -46,6 +46,13 @@ if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then
   fail "CSP with a broad connect-src override was accepted"
 fi
 
+printf '%s\n' '<!doctype html><html><head></head><body>' \
+  '<meta http-equiv="Content-Security-Policy" content="default-src '\''none'\''">' \
+  'policy is too late</body></html>' > "$TEST_ROOT/index.html"
+if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then
+  fail "CSP meta outside head was accepted"
+fi
+
 printf '%s\n' '<!doctype html><p>no policy</p>' > "$TEST_ROOT/index.html"
 if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then
   fail "page without a restrictive CSP was accepted"

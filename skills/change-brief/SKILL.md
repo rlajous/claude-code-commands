@@ -166,7 +166,7 @@ this defense-in-depth policy in `<head>`:
 Before finishing, run the parser-based validator against the generated file:
 
 ```bash
-python3 "{SKILL_DIR}/scripts/validate-self-contained-html.py" {outputDir}/pr-<n>/index.html
+python3 "{SKILL_DIR}/scripts/validate-self-contained-html.py" "{outputDir}/pr-<n>/index.html"
 ```
 
 This MUST exit successfully. It inspects resource-bearing attributes plus CSS and JavaScript

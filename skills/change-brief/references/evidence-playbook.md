@@ -46,9 +46,11 @@ outcomes; explain only surprising rows.
 
 ## UI, web, and mobile evidence
 
-Capture real before and after states from the base and head revisions. Use temporary worktrees or
-equivalent isolated checkouts so the active workspace and user changes remain untouched. Reuse the
-same seed data, route, locale, theme, viewport, scroll position, and interaction state.
+Capture real before and after states from the base and head revisions. Ask for explicit user
+approval before creating temporary worktrees or equivalent isolated checkouts because they modify
+repository state. Without approval, use existing evidence and leave the active workspace and
+repository unchanged. When approved, reuse the same seed data, route, locale, theme, viewport,
+scroll position, and interaction state.
 
 - Web: capture the smallest desktop viewport that shows the changed behavior; add a mobile viewport
   when responsiveness changed.
