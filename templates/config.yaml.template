@@ -288,6 +288,13 @@ reviewWatch:
   knownIssues: references/known-issues.md
 
 # ==============================================================================
+# CHANGE-BRIEF SETTINGS
+# ==============================================================================
+changeBrief:
+  # Base directory for generated self-contained HTML explainers
+  outputDir: .git-workflow/change-brief
+
+# ==============================================================================
 # RELEASE SETTINGS
 # ==============================================================================
 release:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.1
+
+- Enforce `reviewWatch.enabled`, daemon interval, notification sound, linter, known-issue, and safe review-event configuration.
+- Add tested review-event selection for blocking, clean, comment-only, and self-authored pull requests.
+- Harden change-brief HTML with a restrictive CSP and parser-based zero-network validation.
+
 ## 2.5.0
 
 - Added the `review-watch` auto-reviewer: a console daemon (`scripts/review-watch.sh`) that listens for pull requests requesting your review and pings you with a local sound and desktop notification (`scripts/notify.sh`), plus a `review-watch` skill that reviews each PR in a loop.

@@ -8,11 +8,13 @@
 # `review-watch` skill in your Claude Code / Codex session (run `/review-watch`).
 #
 # Usage:
-#   review-watch.sh [--interval N] [--once] [--repo owner/name]
+#   review-watch.sh [--interval N] [--once] [--repo owner/name] [--force]
 #
 #   --interval N   seconds between polls (default 60)
 #   --once         run a single poll and exit (used by tests / cron)
 #   --repo o/n     only watch this repository
+#   --force        run even when reviewWatch.enabled is not true
+#   --show-config  print the resolved daemon configuration and exit
 #
 # Needs: gh (authenticated), python3. Never needs the repo checked out.
 # Testing hook: set REVIEW_WATCH_PRS_JSON to a gh-search-prs JSON array to
@@ -21,9 +23,11 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-INTERVAL=60
+INTERVAL=""          # empty = fall back to config, then default 60
 ONCE=0
 REPO_FILTER=""
+FORCE=0
+SHOW_CONFIG=0
 
 need_value() { [ $# -ge 2 ] && [ -n "$2" ] || { echo "review-watch: $1 needs a value" >&2; exit 2; }; }
 
@@ -31,9 +35,11 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --interval)
       need_value "$@"
-      case "$2" in ''|*[!0-9]*) echo "review-watch: --interval must be a positive integer" >&2; exit 2 ;; esac
+      case "$2" in ''|*[!0-9]*|0) echo "review-watch: --interval must be a positive integer" >&2; exit 2 ;; esac
       INTERVAL="$2"; shift 2 ;;
     --once) ONCE=1; shift ;;
+    --force) FORCE=1; shift ;;
+    --show-config) SHOW_CONFIG=1; shift ;;
     --repo)
       need_value "$@"
       REPO_FILTER="$2"; shift 2 ;;
@@ -41,6 +47,61 @@ while [ $# -gt 0 ]; do
     *) echo "review-watch: unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# --- resolve reviewWatch.* from the project config (cwd) ---------------------
+# Reads a scalar under the top-level `reviewWatch:` block from
+# .git-workflow/config.yaml, or legacy .claude/config.yaml. Precedence for each
+# setting: CLI flag > config value > built-in default.
+_config_file() {
+  if [ -f .git-workflow/config.yaml ]; then echo .git-workflow/config.yaml
+  elif [ -f .claude/config.yaml ]; then echo .claude/config.yaml
+  fi
+}
+review_watch_setting() {  # $1 = key
+  local cf; cf="$(_config_file)"; [ -n "$cf" ] || return 0
+  awk -v key="$1" '
+    /^[^[:space:]#]/ { inblock = ($0 ~ /^reviewWatch:/) ? 1 : 0 }
+    inblock && $0 ~ "^[[:space:]]+" key ":" {
+      line=$0
+      sub("^[[:space:]]+" key ":[[:space:]]*", "", line)
+      sub(/[[:space:]]*#.*$/, "", line)
+      gsub(/[[:space:]]+$/, "", line)
+      first=substr(line, 1, 1); last=substr(line, length(line), 1)
+      if ((first == "\"" && last == "\"") || (first == sprintf("%c", 39) && last == sprintf("%c", 39)))
+        line=substr(line, 2, length(line) - 2)
+      print line; exit
+    }
+  ' "$cf"
+}
+
+CFG_ENABLED="$(review_watch_setting enabled)"
+CFG_INTERVAL="$(review_watch_setting intervalSeconds)"
+CFG_SOUND="$(review_watch_setting sound)"
+
+[ -n "$CFG_ENABLED" ] || CFG_ENABLED=false
+[ -n "$CFG_SOUND" ] || CFG_SOUND=Glass
+
+# Interval: CLI flag wins, else config, else 60.
+if [ -z "$INTERVAL" ]; then
+  case "$CFG_INTERVAL" in ''|*[!0-9]*|0) INTERVAL=60 ;; *) INTERVAL="$CFG_INTERVAL" ;; esac
+fi
+
+if [ "$SHOW_CONFIG" -eq 1 ]; then
+  printf 'enabled=%s\nintervalSeconds=%s\nsound=%s\n' "$CFG_ENABLED" "$INTERVAL" "$CFG_SOUND"
+  exit 0
+fi
+
+# Opt-in gate: only act when reviewWatch.enabled is true, unless --force or a test
+# injection (REVIEW_WATCH_PRS_JSON) is used.
+if [ "$FORCE" -ne 1 ] && [ -z "${REVIEW_WATCH_PRS_JSON:-}" ] && [ "$CFG_ENABLED" != "true" ]; then
+  echo "review-watch: disabled. Set 'reviewWatch.enabled: true' in .git-workflow/config.yaml (or pass --force)." >&2
+  exit 0
+fi
+
+# Sound: config value feeds notify.sh via GIT_WORKFLOW_SOUND (unless already set).
+if [ -z "${GIT_WORKFLOW_SOUND:-}" ]; then
+  export GIT_WORKFLOW_SOUND="$CFG_SOUND"
+fi
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow"
 mkdir -p "$STATE_DIR" 2>/dev/null || true

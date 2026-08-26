@@ -44,9 +44,16 @@ Note the changed file list and languages. If the diff exceeds `review.maxDiffLin
 
 Run the fast, mechanical checks first so obvious problems cost nothing.
 
-First read the review-watch config (`.git-workflow/config.yaml`, legacy `.claude/config.yaml`): `reviewWatch.linters` (default `auto`), `reviewWatch.knownIssues` (default `references/known-issues.md`), and `reviewWatch.enabled` (only act when true). Honor these values in the checks below.
+Resolve configuration once from `.git-workflow/config.yaml`, then the legacy
+`.claude/config.yaml` fallback. If neither exists, use these defaults:
+`reviewWatch.enabled=false`, `reviewWatch.linters=auto`,
+`reviewWatch.knownIssues=references/known-issues.md`, and `review.postEvent=auto`.
+Stop without reviewing unless `reviewWatch.enabled` is exactly `true`; an explicit
+`--comment-only` changes posting behavior but does not bypass this opt-in gate.
 
-**a) Project linters (only if the repo is checked out locally with deps).** When `reviewWatch.linters` is `auto`, auto-detect and run against the changed files; when it is an explicit command, run that:
+**a) Project linters (only if the repo is checked out locally with deps).** Use the resolved
+`reviewWatch.linters`. When it is `auto`, auto-detect and run against the changed files; when it is
+an explicit command, run that exact project-owned command:
 
 - JS/TS: `npx eslint <changed>` , `npx tsc --noEmit`
 - CSS/SCSS: `npx stylelint <changed css>`
@@ -55,7 +62,13 @@ First read the review-watch config (`.git-workflow/config.yaml`, legacy `.claude
 
 If the repo is not available locally (a PR on someone else's repo you have not cloned), skip the linters and note it — Tier 2 still covers logic from the diff.
 
-**b) Known-issues ruleset.** Read the grep-style patterns in `references/known-issues.md` (path is under the resolved plugin dir; also honor a project-level `.git-workflow/known-issues.md` if present) and scan the changed lines of the diff for each. These are the "errors we already know": stray `console.log`, `debugger`, CSS `!important` abuse, inline styles, shipped `TODO/FIXME`, hard-coded colors, TS `any`, etc.
+**b) Known-issues ruleset.** Resolve `reviewWatch.knownIssues` as follows: an absolute path is used
+as-is; for a relative path, prefer a matching project-root file, otherwise resolve it under
+`${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}`. If the setting is absent, this resolves to the bundled
+`references/known-issues.md`. Read its grep-style patterns and scan only changed diff lines. These
+are the "errors we already know": stray `console.log`, `debugger`, CSS `!important` abuse, inline
+styles, shipped `TODO/FIXME`, hard-coded colors, TS `any`, etc. If the configured file is missing,
+stop with the resolved path instead of silently dropping the deterministic checks.
 
 Collect all Tier-1 findings with file, line, and the rule that fired. Anything at severity `error`/BLOCKING/HIGH is a **blocker**.
 
@@ -69,25 +82,39 @@ Aggregate and de-duplicate their findings. Keep only findings with **confidence 
 
 ## Step 6: Decide and Post
 
-Combine Tier-1 blockers and Tier-2 findings.
+Combine Tier-1 blockers and Tier-2 findings. Resolve `review.postEvent` from the same config
+(`auto` by default). Set `{HAS_BLOCKING}` to `true` when any BLOCKING/HIGH finding survived and set
+`{SELF_AUTHORED_FLAG}` to `--self-authored` only for the self-review case. Determine the event with
+the package's tested resolver:
 
-- **Any BLOCKING or HIGH finding → REQUEST_CHANGES.** Build the review body: a one-line verdict, then each finding as `severity — file permalink — what is wrong — suggested fix`, using SHA permalinks (`https://github.com/{owner}/{repo}/blob/{headRefOid}/{path}#L{line}`, literal). Post:
+```bash
+REVIEW_EVENT="$(bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/review-event.sh" \
+  --has-blocking {HAS_BLOCKING} {SELF_AUTHORED_FLAG})"
+```
+
+If `--comment-only` was passed, force `REVIEW_EVENT=COMMENT` after resolution. Never infer a more
+permissive event when the resolver reports invalid configuration.
+
+- **`REVIEW_EVENT=REQUEST_CHANGES`.** Build the review body: a one-line verdict, then each finding as `severity — file permalink — what is wrong — suggested fix`, using SHA permalinks (`https://github.com/{owner}/{repo}/blob/{headRefOid}/{path}#L{line}`, literal). Post:
 
   ```bash
   gh api "repos/{owner}/{repo}/pulls/{PR}/reviews" --method POST \
     -f body="$(cat <<'REVIEW_EOF'
   {REVIEW_BODY}
   REVIEW_EOF
-  )" -f event="REQUEST_CHANGES"
+  )" -f event="$REVIEW_EVENT"
   ```
 
-- **No BLOCKING/HIGH (clean) → APPROVE** (unless `--comment-only`/self-review, then `COMMENT`). Post the same way with `-f event="APPROVE"`, a short "looks good" body plus any remaining LOW/MEDIUM notes. Then generate the human-readable change brief (Step 7) and ping.
+- **No BLOCKING/HIGH (clean) → `APPROVE` or `COMMENT` as resolved.** Post the same way with
+  `-f event="$REVIEW_EVENT"`, a short "looks good" body plus any remaining LOW/MEDIUM notes. A clean
+  result triggers the human-readable change brief (Step 7) and ping even when safe mode or
+  self-authorship forces the GitHub event to `COMMENT`.
 
 Respect `review.postToGitHub` (`ask` | `always` | `never`, default `ask`): when `ask`, show the drafted review and confirm through the host's user-input mechanism before posting. Truncate bodies over ~65,000 characters.
 
 ## Step 7: On Clean — Generate the Change Brief and Ping
 
-When a PR passes (APPROVE):
+When the PR is clean (`HAS_BLOCKING=false`, whether the posted event is `APPROVE` or `COMMENT`):
 
 - Generate the human-facing HTML explainer for the change by following the `change-brief` skill for this PR (Problem / Root cause / Fix / Verification + before/after). Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
 - Ping the human that it is ready:

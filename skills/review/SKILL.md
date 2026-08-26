@@ -369,12 +369,15 @@ https://github.com/{owner}/{repo}/blob/{HEAD_SHA}/{file_path}#L{start}-L{end}
 
 Build the URL with the resolved SHA already substituted (a literal 40-char hash in the Markdown) — never leave a `$(...)` command substitution or a branch name in the posted text.
 
-**Choose `REVIEW_EVENT` before posting.** Load `review.postEvent` from `CONFIG_PATH` (default `auto`). If the PR author is you (compare `gh pr view {PR_NUMBER} {REPO_FLAG} --json author` against `gh api user --jq .login`) OR `review.postEvent` is `comment`, set `REVIEW_EVENT=COMMENT` — GitHub forbids approving or requesting changes on your own PR. Otherwise derive it from Step 9's findings: any surviving `BLOCKING` or `HIGH` finding → `REVIEW_EVENT=REQUEST_CHANGES`; none → `REVIEW_EVENT=APPROVE`. This still only runs when `review.postToGitHub` gates posting as described in Step 13.
-
+**Choose `REVIEW_EVENT` before posting.** Compare the PR author from Step 2 with
+`gh api user --jq .login`. Set `{HAS_BLOCKING}` from Step 9 and add
+`{SELF_AUTHORED_FLAG}=--self-authored` only when the logins match. The tested resolver loads
+`review.postEvent` using the canonical/legacy precedence (default `auto`) and enforces the self-review restriction:
 ```bash
-# Determine REVIEW_EVENT: REQUEST_CHANGES | APPROVE | COMMENT (see rules above)
-REVIEW_EVENT="REQUEST_CHANGES"  # or APPROVE / COMMENT, per the rules above
-
+REVIEW_EVENT="$(bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/review-event.sh" --has-blocking {HAS_BLOCKING} {SELF_AUTHORED_FLAG})"
+```
+Run this only after `review.postToGitHub` gates posting in Step 13; stop on invalid configuration.
+```bash
 # Post review as a PR review comment
 gh api "repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews" \
   --method POST \
