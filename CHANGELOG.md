@@ -7,6 +7,8 @@
 - Keep root helper commands as compatibility wrappers while colocating watcher, review, HTML,
   status, SARIF, and synchronization implementations with their owning skills.
 - Add checkout-local Codex discovery plus `review-watch --doctor` and `--daemon-command`.
+- Harden notification arguments, embedded status JSON, HTML/CSP validation, watcher ledger order,
+  and synchronization prune bookkeeping.
 
 ## 2.5.1
 

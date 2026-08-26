@@ -169,7 +169,12 @@ function main() {
       "<!doctype html><html><body><pre id=\"status-data-fallback\">__STATUS_DATA__</pre></body></html>";
   }
 
-  const html = template.replace("__STATUS_DATA__", JSON.stringify(state));
+  const statusData = JSON.stringify(state).replace(/[<>&]/g, (character) => ({
+    "<": "\\u003c",
+    ">": "\\u003e",
+    "&": "\\u0026",
+  })[character]);
+  const html = template.replace("__STATUS_DATA__", () => statusData);
   process.stdout.write(html);
 }
 

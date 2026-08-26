@@ -150,8 +150,15 @@ if not isinstance(prs, list):
 
 try:
     with open(seen_path) as f:
-        seen = set(line.strip() for line in f if line.strip())
+        seen_order = []
+        seen = set()
+        for line in f:
+            key = line.strip()
+            if key and key not in seen:
+                seen_order.append(key)
+                seen.add(key)
 except FileNotFoundError:
+    seen_order = []
     seen = set()
 
 new_keys = []
@@ -166,6 +173,8 @@ for pr in prs:
     key = f"{repo}#{num}@{sha}"
     if key in seen:
         continue
+    seen.add(key)
+    seen_order.append(key)
     new_keys.append(key)
     title = (pr.get("title") or "").replace("\t", " ").replace("\n", " ")
     url = pr.get("url") or ""
@@ -177,9 +186,8 @@ for pr in prs:
         }) + "\n")
 
 if new_keys:
-    seen |= set(new_keys)
     # Cap the ledger to the most recent 500 keys.
-    trimmed = list(seen)[-500:]
+    trimmed = seen_order[-500:]
     with open(seen_path, "w") as f:
         f.write("\n".join(trimmed) + "\n")
 PY

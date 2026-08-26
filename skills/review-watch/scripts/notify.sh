@@ -31,11 +31,13 @@ case "$(uname -s)" in
       [ -f "$snd" ] || snd="/System/Library/Sounds/Glass.aiff"
       [ -f "$snd" ] && afplay "$snd" >/dev/null 2>&1 &
     fi
-    # Notification. Escape double quotes for AppleScript string literals.
+    # Pass untrusted notification text as argv, never as AppleScript source.
     if have osascript; then
-      esc_title=${title//\"/\\\"}
-      esc_msg=${message//\"/\\\"}
-      osascript -e "display notification \"${esc_msg}\" with title \"${esc_title}\"" >/dev/null 2>&1 && notified=1
+      osascript - "$title" "$message" >/dev/null 2>&1 <<'APPLESCRIPT' && notified=1
+on run argv
+  display notification (item 2 of argv) with title (item 1 of argv)
+end run
+APPLESCRIPT
     fi
     ;;
   Linux)

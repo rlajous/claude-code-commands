@@ -231,6 +231,10 @@ assert '"mcpServers"' in template
 assert "[mcp_servers.linear]" in template
 assert "[mcp_servers.jira]" in template
 assert "changeBrief:\n" in template
+
+known_issues = read("skills/review-watch/references/known-issues.md")
+assert "| `TODO|FIXME` |" not in known_issues
+assert "| `TODO` |" in known_issues and "| `FIXME` |" in known_issues
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"

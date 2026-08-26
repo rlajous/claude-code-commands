@@ -44,6 +44,18 @@ def css_has_network(css: str) -> bool:
     return False
 
 
+def csp_blocks_connections(content: str) -> bool:
+    """Require default-src 'none' and no broader connect-src override."""
+    directives: dict[str, list[str]] = {}
+    for raw_directive in content.lower().split(";"):
+        parts = raw_directive.split()
+        if parts and parts[0] not in directives:
+            directives[parts[0]] = parts[1:]
+    default_sources = directives.get("default-src")
+    connect_sources = directives.get("connect-src")
+    return default_sources == ["'none'"] and connect_sources in (None, ["'none'"])
+
+
 class SelfContainedParser(HTMLParser):
     """Inspect markup and executable content without scanning escaped PR text."""
 
@@ -54,13 +66,18 @@ class SelfContainedParser(HTMLParser):
         self.has_csp = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        values = {name.lower(): value or "" for name, value in attrs}
+        values: dict[str, str] = {}
+        for name, value in attrs:
+            lower_name = name.lower()
+            if lower_name in values:
+                self.violations.append(f"<{tag.lower()}> has duplicate attribute {lower_name!r}")
+                continue
+            values[lower_name] = value or ""
         lower_tag = tag.lower()
         self.context.append(lower_tag)
 
         if lower_tag == "meta" and values.get("http-equiv", "").lower() == "content-security-policy":
-            content = values.get("content", "").lower()
-            if "default-src 'none'" in content:
+            if csp_blocks_connections(values.get("content", "")):
                 self.has_csp = True
 
         for attribute in RESOURCE_ATTRIBUTES.get(lower_tag, set()):
@@ -107,7 +124,9 @@ def validate(path: Path) -> list[str]:
     parser.feed(path.read_text(encoding="utf-8"))
     parser.close()
     if not parser.has_csp:
-        parser.violations.append("missing Content-Security-Policy with default-src 'none'")
+        parser.violations.append(
+            "missing restrictive Content-Security-Policy with default-src 'none' and connect-src 'none' or omitted"
+        )
     return parser.violations
 
 

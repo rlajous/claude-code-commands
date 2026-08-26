@@ -28,12 +28,20 @@ for unsafe in \
   '<style>.x{background:url(/local-still-fetches.png)}</style>' \
   '<script>fetch("/api")</script>' \
   '<button onclick="fetch('\''/api'\'')">go</button>' \
+  '<img src="https://example.com/pixel" src="data:,ok">' \
   '<img src="https://example.com/a.png">'; do
   write_page "$unsafe"
   if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then
     fail "unsafe network-capable HTML was accepted: $unsafe"
   fi
 done
+
+printf '%s\n' '<!doctype html><html><head>' \
+  '<meta http-equiv="Content-Security-Policy" content="default-src '\''none'\''; connect-src *">' \
+  '</head><body>unsafe policy</body></html>' > "$TEST_ROOT/index.html"
+if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then
+  fail "CSP with a broad connect-src override was accepted"
+fi
 
 printf '%s\n' '<!doctype html><p>no policy</p>' > "$TEST_ROOT/index.html"
 if python3 "$VALIDATOR" "$TEST_ROOT/index.html" >/dev/null 2>&1; then

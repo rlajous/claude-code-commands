@@ -16,7 +16,8 @@ there instead of editing this one.
 | `debugger;` | JS/TS | error | Breakpoint statement left in committed code |
 | `!important` | CSS/SCSS | warning | Overrides cascade rather than fixing specificity; hard to undo later |
 | `style=` | HTML/JSX/TSX | warning | Inline styles bypass the shared stylesheet/design tokens |
-| `TODO|FIXME` | any | note | Marks known-incomplete work; should be tracked, not shipped silently |
+| `TODO` | any | note | Marks known-incomplete work; should be tracked, not shipped silently |
+| `FIXME` | any | note | Marks known-incomplete work; should be tracked, not shipped silently |
 | `#[0-9a-fA-F]{3,6}\b` | CSS/JSX/TSX (components) | note | Hard-coded hex color instead of a design token/variable |
 | `:\s*any\b` | TS/TSX | warning | Disables type checking for that value |
 | `[^=!<>]==[^=]` | JS | warning | Loose equality (`==`) instead of `===`; coercion surprises |

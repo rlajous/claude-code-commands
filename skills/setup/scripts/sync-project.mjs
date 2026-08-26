@@ -162,7 +162,7 @@ if (options.host === "claude" || options.host === "both") {
   mapTree(path.join(sourceRoot, "references"), path.join(targetRoot, ".claude", "references"), ".md");
 }
 
-const report = { installed: [], updated: [], unchanged: [], preserved: [], pruned: [], migrated: [] };
+const report = { installed: [], updated: [], unchanged: [], preserved: [], pruned: [], migrated: [], notes: [] };
 const relativeTarget = (file) => path.relative(targetRoot, file).split(path.sep).join("/");
 
 function sameFile(left, right) {
@@ -223,9 +223,21 @@ if (options.prune) {
     throw new Error("prune candidates require --confirm-prune after review");
   }
   for (const relative of pruneCandidates) {
-    confirmedPruned.add(relative);
     const candidate = path.resolve(targetRoot, relative);
-    if (candidate !== targetRoot && candidate.startsWith(`${targetRoot}${path.sep}`) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+    const contained = candidate !== targetRoot && candidate.startsWith(`${targetRoot}${path.sep}`);
+    if (!contained) continue;
+    let candidateStat;
+    try {
+      candidateStat = fs.lstatSync(candidate);
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        confirmedPruned.add(relative);
+        continue;
+      }
+      throw error;
+    }
+    if (candidateStat.isFile()) {
+      confirmedPruned.add(relative);
       report.pruned.push(relative);
       if (!options.dryRun) fs.unlinkSync(candidate);
     }
@@ -244,7 +256,7 @@ if (options.migrateConfig || options.initializeConfig) {
     if (!options.dryRun) atomicCopy(template, canonical);
   } else if (fs.existsSync(canonical) && fs.existsSync(legacy) && !sameFile(canonical, legacy)) {
     showDiff(legacy, canonical);
-    report.preserved.push(".git-workflow/config.yaml (differs from legacy fallback)");
+    report.notes.push(".git-workflow/config.yaml differs from the legacy .claude/config.yaml fallback");
   }
 }
 

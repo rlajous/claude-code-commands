@@ -50,7 +50,11 @@ EXPECTED_DAEMON_COMMAND="$(printf 'bash %q' "$PACKAGE/skills/review-watch/script
 FAKE_BIN="$TEST_ROOT/fake bin"
 mkdir -p "$FAKE_BIN"
 printf '%s\n' '#!/usr/bin/env bash' '[ "${1:-}" = auth ] && [ "${2:-}" = status ]' > "$FAKE_BIN/gh"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "Darwin\\n"' > "$FAKE_BIN/uname"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$FAKE_BIN/afplay"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\\n" "$@" > "$NOTIFY_ARGS_FILE"' > "$FAKE_BIN/osascript"
 chmod +x "$FAKE_BIN/gh"
+chmod +x "$FAKE_BIN/uname" "$FAKE_BIN/afplay" "$FAKE_BIN/osascript"
 PROJECT="$TEST_ROOT/project with spaces"
 mkdir -p "$PROJECT/.git-workflow"
 printf 'reviewWatch:\n  enabled: true\n' > "$PROJECT/.git-workflow/config.yaml"
@@ -58,6 +62,19 @@ DOCTOR_OUTPUT="$(cd "$PROJECT" && PATH="$FAKE_BIN:$PATH" env -u PLUGIN_ROOT -u C
   bash "$PACKAGE/skills/review-watch/scripts/review-watch-tools.sh" --doctor)"
 printf '%s\n' "$DOCTOR_OUTPUT" | grep -q 'RESULT: ready' || fail "doctor did not pass with isolated dependencies"
 [ ! -e "$PROJECT/.git-workflow/review-watch-queue.jsonl" ] || fail "doctor mutated review state"
+
+NOTIFY_ARGS_FILE="$TEST_ROOT/notification arguments"
+NOTIFY_TITLE='dangerous\" & do shell script "touch /tmp/never" & "'
+NOTIFY_MESSAGE='message with \ backslashes and "quotes"'
+PATH="$FAKE_BIN:$PATH" NOTIFY_ARGS_FILE="$NOTIFY_ARGS_FILE" \
+  bash "$PACKAGE/scripts/notify.sh" "$NOTIFY_TITLE" "$NOTIFY_MESSAGE"
+python3 - "$NOTIFY_ARGS_FILE" "$NOTIFY_TITLE" "$NOTIFY_MESSAGE" <<'PY'
+import sys
+
+with open(sys.argv[1]) as file:
+    arguments = file.read().splitlines()
+assert arguments == ["-", sys.argv[2], sys.argv[3]], arguments
+PY
 
 STATE_HOME="$TEST_ROOT/state with spaces"
 PR_JSON='[{"number":42,"title":"test","url":"https://github.com/acme/app/pull/42","repository":{"nameWithOwner":"acme/app"},"headRefOid":"abc123"}]'

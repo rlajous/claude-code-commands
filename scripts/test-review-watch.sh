@@ -13,6 +13,7 @@ STATE_HOME="$(mktemp -d)"
 trap 'rm -rf "$STATE_HOME"' EXIT
 
 QUEUE_FILE="$STATE_HOME/git-workflow/review-watch-queue.jsonl"
+SEEN_FILE="$STATE_HOME/git-workflow/review-watch-seen"
 
 FAILURES=0
 
@@ -108,6 +109,30 @@ check "new headRefOid fires again" $?
 OUTPUT_4="$(run_once '[]')"
 [ -z "$OUTPUT_4" ]
 check "empty array produces no output" $?
+
+# 5. The 500-key cap preserves observation order: the oldest entry is evicted,
+# while the newest prior entry and the newly observed head remain.
+python3 - "$SEEN_FILE" <<'PY'
+import sys
+
+with open(sys.argv[1], "w") as ledger:
+    for index in range(500):
+        ledger.write(f"acme/app#7@old-{index:03d}\n")
+PY
+OUTPUT_5="$(run_once "$(pr_json "ccc333")")"
+printf '%s' "$OUTPUT_5" | grep -q 'review requested on #42'
+check "new PR still fires when the seen ledger is full" $?
+[ "$(wc -l < "$SEEN_FILE" | tr -d ' ')" = "500" ]
+check "seen ledger remains capped at 500 ordered keys" $?
+grep -qx 'acme/app#7@old-499' "$SEEN_FILE"
+check "most recent prior key remains after trimming" $?
+grep -qx 'acme/app#42@ccc333' "$SEEN_FILE"
+check "new key remains after trimming" $?
+if grep -qx 'acme/app#7@old-000' "$SEEN_FILE"; then
+  check "oldest key is evicted after trimming" 1
+else
+  check "oldest key is evicted after trimming" 0
+fi
 
 if [ "$FAILURES" -gt 0 ]; then
   printf '%d assertion(s) failed\n' "$FAILURES" >&2
