@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.2
+
+- Resolve deterministic resources from each loaded skill directory so installed and checkout-local
+  Codex skills work without `PLUGIN_ROOT` or `CLAUDE_PLUGIN_ROOT`.
+- Keep root helper commands as compatibility wrappers while colocating watcher, review, HTML,
+  status, SARIF, and synchronization implementations with their owning skills.
+- Add checkout-local Codex discovery plus `review-watch --doctor` and `--daemon-command`.
+
 ## 2.5.1
 
 - Enforce `reviewWatch.enabled`, daemon interval, notification sound, linter, known-issue, and safe review-event configuration.

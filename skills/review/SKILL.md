@@ -369,14 +369,13 @@ https://github.com/{owner}/{repo}/blob/{HEAD_SHA}/{file_path}#L{start}-L{end}
 
 Build the URL with the resolved SHA already substituted (a literal 40-char hash in the Markdown) — never leave a `$(...)` command substitution or a branch name in the posted text.
 
-**Choose `REVIEW_EVENT` before posting.** Compare the PR author from Step 2 with
-`gh api user --jq .login`. Set `{HAS_BLOCKING}` from Step 9 and add
-`{SELF_AUTHORED_FLAG}=--self-authored` only when the logins match. The tested resolver loads
+**Choose `REVIEW_EVENT` before posting.** Compare the PR author from Step 2 with `gh api user --jq .login`. Set `{HAS_BLOCKING}` from Step 9 and add
+`{SELF_AUTHORED_FLAG}=--self-authored` only when the logins match. Resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`; the tested resolver loads
 `review.postEvent` using the canonical/legacy precedence (default `auto`) and enforces the self-review restriction:
 ```bash
-REVIEW_EVENT="$(bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/review-event.sh" --has-blocking {HAS_BLOCKING} {SELF_AUTHORED_FLAG})"
+REVIEW_EVENT="$(bash "{SKILL_DIR}/scripts/review-event.sh" --has-blocking {HAS_BLOCKING} {SELF_AUTHORED_FLAG})"
 ```
-Run this only after `review.postToGitHub` gates posting in Step 13; stop on invalid configuration.
+If unavailable, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only to locate `skills/review/SKILL.md`; verify each helper exists and never fall back to `/scripts`. Run this only after `review.postToGitHub` gates posting in Step 13; stop on invalid configuration.
 ```bash
 # Post review as a PR review comment
 gh api "repos/{owner}/{repo}/pulls/{PR_NUMBER}/reviews" \
@@ -445,7 +444,7 @@ Review posted: {pr_url}
 If `--sarif` was passed as an argument, also export the findings from Step 9 as a SARIF 2.1.0 log for CI / code-scanning ingestion. Serialize the findings to the JSON array shape `[{ file, line, severity, confidence, message, rule }]` and pipe it through the converter script:
 
 ```bash
-echo '{FINDINGS_JSON}' | node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/to-sarif.mjs" > review.sarif
+echo '{FINDINGS_JSON}' | node "{SKILL_DIR}/scripts/to-sarif.mjs" > review.sarif
 ```
 
 Tell the user the SARIF file was written to `review.sarif` (e.g. for `github/codeql-action/upload-sarif`).

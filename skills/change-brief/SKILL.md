@@ -129,12 +129,16 @@ whole page is one `<style>` and one small inline `<script>`. Add this defense-in
 Before finishing, run the parser-based validator against the generated file:
 
 ```bash
-python3 "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/validate-self-contained-html.py" {outputDir}/pr-<n>/index.html
+python3 "{SKILL_DIR}/scripts/validate-self-contained-html.py" {outputDir}/pr-<n>/index.html
 ```
 
 This MUST exit successfully. It inspects resource-bearing attributes plus CSS and JavaScript
 network primitives while ignoring escaped PR prose in ordinary text nodes. If it reports a finding,
 remove the offending reference and re-check.
+
+Resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`. If the
+host cannot expose that path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only to locate
+`skills/change-brief/SKILL.md`; verify the validator exists and never fall back to `/scripts`.
 
 ## Step 5 — Write the output
 

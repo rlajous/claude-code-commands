@@ -45,6 +45,10 @@ Use `$setup --host codex`, `$setup --host both`, or `$setup --dry-run` to make h
 
 During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
+For checkout-local development, Codex also discovers the same 19 skills through the committed
+`.agents/skills -> ../skills` symlink. Use either the installed plugin or checkout-local discovery
+in a session, not both, because duplicate skill names appear as separate entries.
+
 ## Configure
 
 Run `/git-workflow:setup` for a Claude marketplace install, `/setup` for a manual Claude project copy, or `$setup` in Codex. New projects use:
@@ -105,13 +109,21 @@ Detailed examples are in [COMMANDS.md](COMMANDS.md).
 
 ### Review watcher (console)
 
-Run the watcher in a spare terminal to get pinged (sound + desktop notification) when a PR requests your review:
+Ask the skill for an absolute, copy-paste-safe command, then run it in a spare terminal to get
+pinged (sound + desktop notification) when a PR requests your review:
 
-```bash
-bash "${PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/scripts/review-watch.sh"   # polls every 60s; Ctrl-C to stop
+```text
+/review-watch --daemon-command   # Claude Code
+$review-watch --daemon-command   # Codex
 ```
 
-When it beeps, run `/review-watch <pr-url>` (or `/review-watch --drain`) in your Claude Code / Codex session. It runs the project linters and a `references/known-issues.md` ruleset first, escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and on a clean PR posts `APPROVE`, generates a `change-brief` HTML explainer, and pings you. Opt in with `reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
+Run `/review-watch --doctor` in Claude or `$review-watch --doctor` in Codex to check paths,
+dependencies, configuration, and GitHub authentication without publishing a review. When the
+daemon beeps, use `/review-watch <pr-url>` in Claude or `$review-watch <pr-url>` in Codex (or the
+matching `--drain` form). It runs the project linters and its bundled known-issues ruleset first,
+escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and
+on a clean PR posts `APPROVE`, generates a `change-brief` HTML explainer, and pings you. Opt in with
+`reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
 
 ## Agents and delegation
 

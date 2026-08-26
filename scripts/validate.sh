@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.5.1"}, versions
+assert versions == {"2.5.2"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
@@ -120,6 +120,46 @@ fi
 if python3 - <<'PY'
 from pathlib import Path
 
+root = Path.cwd()
+link = root / ".agents" / "skills"
+assert link.is_symlink() and link.readlink() == Path("../skills")
+assert len(list(link.resolve().glob("*/SKILL.md"))) == 19
+
+resources = (
+    "skills/review-watch/scripts/review-watch.sh",
+    "skills/review-watch/scripts/notify.sh",
+    "skills/review-watch/scripts/review-watch-tools.sh",
+    "skills/review-watch/references/known-issues.md",
+    "skills/review/scripts/review-event.sh",
+    "skills/review/scripts/to-sarif.mjs",
+    "skills/change-brief/scripts/validate-self-contained-html.py",
+    "skills/status/scripts/status-report.mjs",
+    "skills/status/assets/status-template.html",
+    "skills/setup/scripts/sync-project.mjs",
+)
+for relative in resources:
+    assert (root / relative).is_file(), relative
+
+affected = (
+    "skills/setup/SKILL.md",
+    "skills/update/SKILL.md",
+    "skills/status/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/review-watch/SKILL.md",
+    "skills/change-brief/SKILL.md",
+)
+for relative in affected:
+    text = (root / relative).read_text()
+    assert "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts" not in text, relative
+    assert "{SKILL_DIR}" in text, relative
+PY
+then ok "skill-local resources and Codex checkout discovery contract"
+else err "skill-local resource or Codex checkout discovery contract failed"
+fi
+
+if python3 - <<'PY'
+from pathlib import Path
+
 def read(path):
     return Path(path).read_text()
 
@@ -133,11 +173,13 @@ assert "HEAD~1..HEAD" in reviewer
 review = read("skills/review/SKILL.md")
 assert "baseRefOid" in review and "BASE_SHA...HEAD_SHA" in review
 assert "locally checked-out `HEAD`" in review
-assert "scripts/review-event.sh" in review
+assert "{SKILL_DIR}/scripts/review-event.sh" in review
+assert "{SKILL_DIR}/scripts/to-sarif.mjs" in review
 
 review_watch = read("skills/review-watch/SKILL.md")
 assert "reviewWatch.enabled=false" in review_watch
-assert "scripts/review-event.sh" in review_watch
+assert "{SKILL_DIR}/../review/scripts/review-event.sh" in review_watch
+assert "--doctor" in review_watch and "--daemon-command" in review_watch
 
 change_brief = read("skills/change-brief/SKILL.md")
 assert "validate-self-contained-html.py" in change_brief
@@ -148,12 +190,12 @@ update = read("skills/update/SKILL.md")
 assert "--source <path-or-git-url>" in update and "clone it shallowly" in update
 finish = read("skills/finish/SKILL.md")
 assert "read-only fallback" in finish and "must never be deleted or modified" in finish
-status = read("scripts/status-report.mjs")
+status = read("skills/status/scripts/status-report.mjs")
 assert "warnings" in status and "Ignored stale" in status
 release_validator = read("agents/release-validator.md")
 assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
-assert "## 2.5.1" in changelog and "2.5.0" in changelog
+assert "## 2.5.2" in changelog and "2.5.1" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -194,7 +236,7 @@ then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
@@ -204,6 +246,7 @@ if bash scripts/test-review-event.sh >/dev/null; then ok "review event configura
 if bash scripts/test-self-contained-html.sh >/dev/null; then ok "self-contained HTML network guard"; else err "self-contained HTML network guard"; fi
 if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
+if bash scripts/test-skill-resource-paths.sh >/dev/null; then ok "skill-local resources and compatibility wrappers"; else err "skill-local resource paths or wrappers"; fi
 if bash scripts/test-generate-codex-agents.sh >/dev/null; then ok "Codex agent generator safety"; else err "Codex agent generator safety"; fi
 if python3 scripts/test-codex-plugin-validator.py >/dev/null; then ok "Codex manifest negative fixtures"; else err "Codex manifest negative fixtures"; fi
 

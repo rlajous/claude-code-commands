@@ -31,6 +31,10 @@ Claude-specific plugin and contributor behavior remains documented in [CLAUDE.md
 
 Install or load this checkout using Codex's plugin workflow. The root `.codex-plugin/plugin.json` exposes the shared `skills/` directory, and `hooks/hooks.json` contains the Codex-native hook registration.
 
+When developing directly in this checkout, Codex discovers the same skills through
+`.agents/skills -> ../skills`. Plugin installation and checkout-local discovery are alternative
+modes: do not enable both in the same session, because Codex does not merge duplicate skill names.
+
 After the plugin is available, run this inside the target repository:
 
 ```text
@@ -139,6 +143,8 @@ bash scripts/validate.sh
 
 - If a Claude skill is missing, verify the plugin is enabled or `.claude/skills/<name>/SKILL.md` exists.
 - If a Codex skill is missing, verify the plugin is installed/enabled and restart the session after changing its manifest.
+- For checkout-local development, verify `.agents/skills` resolves to `../skills`; disable the
+  installed plugin for that session to avoid duplicate skill entries.
 - If a Codex agent is missing, rerun `$setup` and verify `.codex/agents/<name>.toml` exists and parses.
 - If GitHub actions fail, run `gh auth status` and authenticate with `gh auth login`.
 - If issue lookup fails, inspect the active host's MCP connection and OAuth state.

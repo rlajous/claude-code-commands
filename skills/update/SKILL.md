@@ -26,18 +26,27 @@ Unknown options are errors. Destructive pruning is never implied by `--force` al
 Resolve the project root from Git, then accept either `.git-workflow/`, `.claude/`, or `.codex/` as evidence of an existing installation. Resolve the source in this order:
 
 1. `--source`
-2. `PLUGIN_ROOT`
-3. `CLAUDE_PLUGIN_ROOT`
+2. `{PACKAGE_ROOT}`, derived from the absolute physical directory containing this loaded
+   `SKILL.md` as `{SKILL_DIR}/../..`, when it contains `.codex-plugin/plugin.json`
+3. `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, as compatibility fallbacks only when the host cannot
+   expose the loaded skill path; verify the manifest before accepting either value
 4. `source` recorded in `.git-workflow/version.json`
+
+Never substitute an empty package variable or silently fall back to `/scripts`. If no complete
+source resolves, stop before writing and report every candidate checked.
 
 For an explicit Git URL, clone it shallowly into a newly created temporary directory, validate it, and remove the temporary clone on success or failure. Do not perform a default network clone when an installed package root or ledger source is available. Validate that the source contains `skills/`, `agents/`, `.codex/agents/`, and a valid `.codex-plugin/plugin.json`. Stop without writing if it is incomplete.
 
 ## 3. Build the synchronization set
 
-Use `scripts/sync-project.mjs` from the resolved source to calculate and apply this set. Always run it first with `--dry-run`; after the user reviews changes, rerun without `--dry-run`. Add `--force` only when changed files were approved, and add `--confirm-prune` only after separate confirmation of listed prune candidates.
+Use the synchronizer bundled with `setup`, resolved relative to this skill as
+`{SKILL_DIR}/../setup/scripts/sync-project.mjs`, to calculate and apply this set. Always run it
+first with `--dry-run`; after the user reviews changes, rerun without `--dry-run`. Add `--force`
+only when changed files were approved, and add `--confirm-prune` only after separate confirmation
+of listed prune candidates.
 
 ```bash
-node <source>/scripts/sync-project.mjs --source <source> --target <project> --host <codex|claude|both> --dry-run
+node "{SKILL_DIR}/../setup/scripts/sync-project.mjs" --source <source> --target <project> --host <codex|claude|both> --dry-run
 ```
 
 Synchronize only components relevant to the installation:
@@ -67,7 +76,7 @@ Use atomic per-file replacement where practical. A failure must not truncate the
 
 If `.git-workflow/config.yaml` is absent and `.claude/config.yaml` exists, offer the same non-destructive copy used by `$setup`; do not make migration a prerequisite for updating agents.
 
-After a successful non-dry-run update, the synchronizer rewrites `.git-workflow/version.json` with version `2.4.0`, the resolved source, timestamp, hosts, and the exact relative paths managed by this run. Preserve the user's workflow configuration, local hook opt-in, PR context, status report, and reviewed-SHA ledger.
+After a successful non-dry-run update, the synchronizer rewrites `.git-workflow/version.json` with version `2.5.2`, the resolved source, timestamp, hosts, and the exact relative paths managed by this run. Preserve the user's workflow configuration, local hook opt-in, PR context, status report, and reviewed-SHA ledger.
 
 ## Output
 

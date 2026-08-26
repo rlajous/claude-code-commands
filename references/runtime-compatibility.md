@@ -7,7 +7,14 @@ Use these rules in every Git Workflow skill.
 - Claude Code users invoke a skill as `/skill-name`; Codex users invoke it as `$skill-name`. Plain-language requests work when the skill description matches.
 - Ask the user through the active host's user-input mechanism. Do not depend on a tool being named `AskUserQuestion`.
 - Delegate through the active host's subagent mechanism. In Codex, use the named project agents installed under `.codex/agents/`; in Claude Code, use the plugin agents under `agents/`.
-- Resolve the installed plugin directory from `PLUGIN_ROOT` first, then use `CLAUDE_PLUGIN_ROOT` as a compatibility fallback.
+- Resolve `{SKILL_DIR}` from the absolute path of the loaded `SKILL.md`; Codex includes that path
+  in its skill metadata. Resolve scripts, references, and assets relative to `{SKILL_DIR}`.
+- Derive `{PACKAGE_ROOT}` as the physical `{SKILL_DIR}/../..` path only for package-wide files, and
+  verify `.codex-plugin/plugin.json` before using it.
+- If a host cannot expose the loaded skill path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only
+  as compatibility fallbacks to locate and verify the expected `skills/<name>/SKILL.md`.
+- Stop with the unresolved or missing path when validation fails. Never turn an empty variable
+  into `/scripts/...`, and never silently fall back from a skill-local helper to a root wrapper.
 
 ## Configuration and state
 
