@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.5.1"}, versions
+assert versions == {"2.5.2"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
@@ -120,6 +120,46 @@ fi
 if python3 - <<'PY'
 from pathlib import Path
 
+root = Path.cwd()
+link = root / ".agents" / "skills"
+assert link.is_symlink() and link.readlink() == Path("../skills")
+assert len(list(link.resolve().glob("*/SKILL.md"))) == 19
+
+resources = (
+    "skills/review-watch/scripts/review-watch.sh",
+    "skills/review-watch/scripts/notify.sh",
+    "skills/review-watch/scripts/review-watch-tools.sh",
+    "skills/review-watch/references/known-issues.md",
+    "skills/review/scripts/review-event.sh",
+    "skills/review/scripts/to-sarif.mjs",
+    "skills/change-brief/scripts/validate-self-contained-html.py",
+    "skills/status/scripts/status-report.mjs",
+    "skills/status/assets/status-template.html",
+    "skills/setup/scripts/sync-project.mjs",
+)
+for relative in resources:
+    assert (root / relative).is_file(), relative
+
+affected = (
+    "skills/setup/SKILL.md",
+    "skills/update/SKILL.md",
+    "skills/status/SKILL.md",
+    "skills/review/SKILL.md",
+    "skills/review-watch/SKILL.md",
+    "skills/change-brief/SKILL.md",
+)
+for relative in affected:
+    text = (root / relative).read_text()
+    assert "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts" not in text, relative
+    assert "{SKILL_DIR}" in text, relative
+PY
+then ok "skill-local resources and Codex checkout discovery contract"
+else err "skill-local resource or Codex checkout discovery contract failed"
+fi
+
+if python3 - <<'PY'
+from pathlib import Path
+
 def read(path):
     return Path(path).read_text()
 
@@ -133,14 +173,25 @@ assert "HEAD~1..HEAD" in reviewer
 review = read("skills/review/SKILL.md")
 assert "baseRefOid" in review and "BASE_SHA...HEAD_SHA" in review
 assert "locally checked-out `HEAD`" in review
-assert "scripts/review-event.sh" in review
+assert "{SKILL_DIR}/scripts/review-event.sh" in review
+assert "{SKILL_DIR}/scripts/to-sarif.mjs" in review
 
 review_watch = read("skills/review-watch/SKILL.md")
 assert "reviewWatch.enabled=false" in review_watch
-assert "scripts/review-event.sh" in review_watch
+assert "{SKILL_DIR}/../review/scripts/review-event.sh" in review_watch
+assert "--doctor" in review_watch and "--daemon-command" in review_watch
+assert '"{owner}/{repo} · PR #{PR}"' in review_watch
+assert '"{AUTHOR_LABEL} — Ready for merge: {title}"' in review_watch
+assert "/change-brief {PR}" in review_watch and "$change-brief {PR}" in review_watch
+
+watcher_script = read("skills/review-watch/scripts/review-watch.sh")
+assert "gh api graphql" in watcher_script
+assert "author { login }" in watcher_script
+assert "REVIEW_WATCH_NOTIFY_SCRIPT" in watcher_script
 
 change_brief = read("skills/change-brief/SKILL.md")
 assert "validate-self-contained-html.py" in change_brief
+assert '"{outputDir}/pr-<n>/index.html"' in change_brief
 
 setup = read("skills/setup/SKILL.md")
 assert "--host <claude|codex|both>" in setup and "--dry-run" in setup and "--force" in setup
@@ -148,12 +199,12 @@ update = read("skills/update/SKILL.md")
 assert "--source <path-or-git-url>" in update and "clone it shallowly" in update
 finish = read("skills/finish/SKILL.md")
 assert "read-only fallback" in finish and "must never be deleted or modified" in finish
-status = read("scripts/status-report.mjs")
+status = read("skills/status/scripts/status-report.mjs")
 assert "warnings" in status and "Ignored stale" in status
 release_validator = read("agents/release-validator.md")
 assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
-assert "## 2.5.1" in changelog and "2.5.0" in changelog
+assert "## 2.5.2" in changelog and "2.5.1" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -189,12 +240,64 @@ assert '"mcpServers"' in template
 assert "[mcp_servers.linear]" in template
 assert "[mcp_servers.jira]" in template
 assert "changeBrief:\n" in template
+
+known_issues = read("skills/review-watch/references/known-issues.md")
+assert "| `TODO|FIXME` |" not in known_issues
+assert "| `TODO` |" in known_issues and "| `FIXME` |" in known_issues
+
+change_brief = read("skills/change-brief/SKILL.md")
+for requirement in (
+    "less than\n10 minutes",
+    "**Business logic**",
+    "accessible inline SVG",
+    "real before/after screenshots",
+    "copyable cURL request",
+    "`Observed` only when it was executed",
+    "**Risk and delivery**",
+    "references/evidence-playbook.md",
+):
+    assert requirement in change_brief, requirement
+
+evidence_playbook = read("skills/change-brief/references/evidence-playbook.md")
+for requirement in (
+    "Never mutate production",
+    "decision table",
+    "temporary worktrees",
+    "Expected — not executed",
+    "6–8 minutes",
+):
+    assert requirement in evidence_playbook, requirement
+
+documentation_assets = (
+    "docs/assets/review-watch-requested-macos.png",
+    "docs/assets/review-watch-ready-macos.png",
+    "docs/assets/change-brief-pr-23.png",
+)
+for path in documentation_assets:
+    assert Path(path).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path
+
+example = read("docs/examples/change-brief-pr-23.html")
+assert "Snapshot: e49c47b" in example
+assert example.count("data:image/png;base64,") == 2
+assert "__REQUESTED_IMAGE_DATA__" not in example and "__READY_IMAGE_DATA__" not in example
+
+readme = read("README.md")
+for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md"):
+    assert path in readme, path
+
+review_watch_docs = read("docs/REVIEW_WATCH.md")
+assert "up to 50 open PRs" in review_watch_docs
+assert "unknown author" in review_watch_docs
+assert "REVIEW_WATCH_NOTIFY_SCRIPT" in review_watch_docs
+change_brief_docs = read("docs/CHANGE_BRIEF.md")
+assert "less than 10 minutes" in change_brief_docs
+assert "zero\nautomatic external requests" in change_brief_docs
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-generate-codex-agents.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
@@ -202,8 +305,14 @@ if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; 
 if bash scripts/test-review-watch.sh >/dev/null; then ok "review watcher configuration and queue behavior"; else err "review watcher configuration and queue behavior"; fi
 if bash scripts/test-review-event.sh >/dev/null; then ok "review event configuration modes"; else err "review event configuration modes"; fi
 if bash scripts/test-self-contained-html.sh >/dev/null; then ok "self-contained HTML network guard"; else err "self-contained HTML network guard"; fi
+if python3 skills/change-brief/scripts/validate-self-contained-html.py docs/examples/change-brief-pr-23.html >/dev/null; then
+  ok "documented change brief is self-contained"
+else
+  err "documented change brief is self-contained"
+fi
 if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
+if bash scripts/test-skill-resource-paths.sh >/dev/null; then ok "skill-local resources and compatibility wrappers"; else err "skill-local resource paths or wrappers"; fi
 if bash scripts/test-generate-codex-agents.sh >/dev/null; then ok "Codex agent generator safety"; else err "Codex agent generator safety"; fi
 if python3 scripts/test-codex-plugin-validator.py >/dev/null; then ok "Codex manifest negative fixtures"; else err "Codex manifest negative fixtures"; fi
 

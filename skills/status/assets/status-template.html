@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>git-workflow status</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f8;
+    --panel: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --border: #e2e2e6;
+    --accent: #2563eb;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --panel: #181b21;
+      --text: #e5e7eb;
+      --muted: #9aa0ab;
+      --border: #2a2e37;
+      --accent: #60a5fa;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .card {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  h1 {
+    font-size: 1.25rem;
+    margin: 0 0 0.25rem;
+  }
+  .generated {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  dl {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    row-gap: 0.75rem;
+    column-gap: 1rem;
+    margin: 0 0 1.5rem;
+  }
+  dt {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    align-self: start;
+    padding-top: 0.1rem;
+  }
+  dd {
+    margin: 0;
+    word-break: break-word;
+  }
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); }
+  .badge.bad { color: var(--bad); border-color: var(--bad); }
+  .badge.neutral { color: var(--muted); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .next {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  .next .stage {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .next .next-step {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .warnings {
+    display: none;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    color: var(--warn);
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>git-workflow status</h1>
+    <div class="generated" id="generated-at">—</div>
+
+    <dl>
+      <dt>Branch</dt>
+      <dd id="branch" class="mono">—</dd>
+
+      <dt>Ticket</dt>
+      <dd id="ticket">—</dd>
+
+      <dt>Changes</dt>
+      <dd id="dirty">—</dd>
+
+      <dt>Commits ahead</dt>
+      <dd id="commits-ahead">—</dd>
+
+      <dt>Pull request</dt>
+      <dd id="pr">—</dd>
+
+      <dt>Latest release</dt>
+      <dd id="release">—</dd>
+    </dl>
+
+    <div class="warnings" id="warnings"></div>
+
+    <div class="next">
+      <div class="stage" id="stage">—</div>
+      <div class="next-step" id="next-step">—</div>
+    </div>
+  </div>
+
+  <script id="status-data" type="application/json">__STATUS_DATA__</script>
+  <script>
+    (function () {
+      function text(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
+
+      function html(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = value;
+      }
+
+      function dash(value) {
+        return value === null || value === undefined || value === "" ? "—" : value;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      var raw = document.getElementById("status-data").textContent;
+      var state = {};
+      try {
+        state = JSON.parse(raw);
+      } catch (e) {
+        state = {};
+      }
+
+      // Generated timestamp
+      if (state.generatedAt) {
+        try {
+          text("generated-at", "Generated " + new Date(state.generatedAt).toLocaleString());
+        } catch (e) {
+          text("generated-at", "Generated " + state.generatedAt);
+        }
+      } else {
+        text("generated-at", "Generated —");
+      }
+
+      // Branch
+      text("branch", dash(state.branch));
+
+      if (Array.isArray(state.warnings) && state.warnings.length) {
+        var warnings = document.getElementById("warnings");
+        warnings.style.display = "block";
+        warnings.textContent = state.warnings.map(function (warning) { return "⚠ " + warning; }).join("\n");
+      }
+
+      // Ticket
+      if (state.ticket && (state.ticket.id || state.ticket.title)) {
+        var ticketLabel = [state.ticket.id, state.ticket.title].filter(Boolean).join(" — ");
+        if (state.ticket.url) {
+          html(
+            "ticket",
+            '<a href="' + escapeHtml(state.ticket.url) + '" target="_blank" rel="noopener">' +
+              escapeHtml(ticketLabel) +
+              "</a>"
+          );
+        } else {
+          text("ticket", ticketLabel);
+        }
+      } else {
+        text("ticket", "—");
+      }
+
+      // Dirty / clean
+      if (state.dirty === null || state.dirty === undefined) {
+        html("dirty", '<span class="badge neutral">unknown</span>');
+      } else if (state.dirty) {
+        html("dirty", '<span class="badge warn">dirty working tree</span>');
+      } else {
+        html("dirty", '<span class="badge ok">clean</span>');
+      }
+
+      // Commits ahead
+      if (state.commitsAhead === null || state.commitsAhead === undefined) {
+        text("commits-ahead", "—");
+      } else {
+        var devBranch = state.developmentBranch ? state.developmentBranch : "dev";
+        text(
+          "commits-ahead",
+          state.commitsAhead + (state.commitsAhead === 1 ? " commit" : " commits") + " ahead of " + devBranch
+        );
+      }
+
+      // PR
+      if (state.pr) {
+        var pr = state.pr;
+        var stateBadgeClass = "neutral";
+        if (pr.state === "OPEN") stateBadgeClass = pr.reviewDecision === "APPROVED" ? "ok" : "warn";
+        if (pr.state === "MERGED") stateBadgeClass = "ok";
+        if (pr.state === "CLOSED") stateBadgeClass = "bad";
+
+        var prParts = [];
+        prParts.push('<span class="badge ' + stateBadgeClass + '">' + escapeHtml(pr.state || "UNKNOWN") + "</span>");
+        if (pr.reviewDecision) {
+          prParts.push(escapeHtml(pr.reviewDecision));
+        }
+        var prLine =
+          "#" +
+          escapeHtml(pr.number) +
+          " " +
+          escapeHtml(pr.title || "") +
+          " " +
+          prParts.join(" ");
+        if (pr.url) {
+          prLine =
+            '<a href="' + escapeHtml(pr.url) + '" target="_blank" rel="noopener">' + prLine + "</a>";
+        }
+        html("pr", prLine);
+      } else {
+        text("pr", "—");
+      }
+
+      // Latest release
+      if (state.latestRelease && (state.latestRelease.tagName || state.latestRelease.title)) {
+        var rel = state.latestRelease;
+        text("release", [rel.tagName, rel.title].filter(Boolean).join(" — "));
+      } else {
+        text("release", "—");
+      }
+
+      // Infer stage + next step
+      function inferStage(s) {
+        var devBranch = s.developmentBranch;
+        var onDevOrProd =
+          s.branch && (s.branch === devBranch || s.branch === "main" || s.branch === "master");
+
+        if (onDevOrProd && !s.dirty) {
+          return { stage: "Idle — no active feature", next: "Run /start to begin a feature." };
+        }
+        if (s.dirty) {
+          return { stage: "In progress — changes not yet committed", next: "Make changes, then run /commit." };
+        }
+        if (!s.commitsAhead) {
+          return { stage: "Started — branch created, nothing committed", next: "Make changes, then run /commit." };
+        }
+        if (!s.pr) {
+          return { stage: "Committed — ready to open a PR", next: "Run /finish to open a PR." };
+        }
+        if (s.pr.state === "OPEN" && s.pr.reviewDecision === "CHANGES_REQUESTED") {
+          return { stage: "In review — changes requested", next: "Address feedback, then push updates." };
+        }
+        if (s.pr.state === "OPEN" && s.pr.reviewDecision === "APPROVED") {
+          return { stage: "Approved — ready to merge", next: "Merge the PR, then run /release when ready." };
+        }
+        if (s.pr.state === "OPEN") {
+          return { stage: "In review", next: "Run /review " + s.pr.number + " to self-review, or wait for review." };
+        }
+        if (s.pr.state === "MERGED") {
+          return { stage: "Merged", next: "Run /release-notes then /sync." };
+        }
+        if (s.branch && s.branch.indexOf("release/") === 0) {
+          return { stage: "Releasing", next: "After merge, run /release-notes then /sync." };
+        }
+        return { stage: "Unknown", next: "Run /status for a text summary." };
+      }
+
+      var inferred = inferStage(state);
+      text("stage", inferred.stage);
+      text("next-step", "Next: " + inferred.next);
+    })();
+  </script>
+</body>
+</html>

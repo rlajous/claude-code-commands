@@ -45,6 +45,10 @@ Use `$setup --host codex`, `$setup --host both`, or `$setup --dry-run` to make h
 
 During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
+For checkout-local development, Codex also discovers the same 19 skills through the committed
+`.agents/skills -> ../skills` symlink. Use either the installed plugin or checkout-local discovery
+in a session, not both, because duplicate skill names appear as separate entries.
+
 ## Configure
 
 Run `/git-workflow:setup` for a Claude marketplace install, `/setup` for a manual Claude project copy, or `$setup` in Codex. New projects use:
@@ -89,7 +93,7 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `finish` | Push and open a pull request |
 | `review` | Fan out a comprehensive PR review |
 | `review-watch` | Auto-review PRs that request your review, in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) |
-| `change-brief` | Generate a self-contained HTML explainer of a change |
+| `change-brief` | Generate a sub-10-minute HTML decision brief with business logic and contextual evidence |
 | `release` | Prepare and validate a release |
 | `release-notes` | Generate release notes |
 | `sync` | Back-merge production into development |
@@ -105,13 +109,44 @@ Detailed examples are in [COMMANDS.md](COMMANDS.md).
 
 ### Review watcher (console)
 
-Run the watcher in a spare terminal to get pinged (sound + desktop notification) when a PR requests your review:
+Ask the skill for an absolute, copy-paste-safe command, then run it in a spare terminal to get
+pinged (sound + desktop notification) when a PR requests your review. Notifications identify the
+repository and PR in the title (`owner/repo · PR #42`) and the author plus PR title in the message
+(`@alice — Fix login redirect`):
 
-```bash
-bash "${PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/scripts/review-watch.sh"   # polls every 60s; Ctrl-C to stop
+```text
+/review-watch --daemon-command   # Claude Code
+$review-watch --daemon-command   # Codex
 ```
 
-When it beeps, run `/review-watch <pr-url>` (or `/review-watch --drain`) in your Claude Code / Codex session. It runs the project linters and a `references/known-issues.md` ruleset first, escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and on a clean PR posts `APPROVE`, generates a `change-brief` HTML explainer, and pings you. Opt in with `reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
+Run `/review-watch --doctor` in Claude or `$review-watch --doctor` in Codex to check paths,
+dependencies, configuration, and GitHub authentication without publishing a review. When the
+daemon beeps, use `/review-watch <pr-url>` in Claude or `$review-watch <pr-url>` in Codex (or the
+matching `--drain` form). It runs the project linters and its bundled known-issues ruleset first,
+escalates to the full review fan-out only if those pass, posts `REQUEST_CHANGES` on problems, and
+on a clean PR posts `APPROVE`, generates a `change-brief` with diagrams, UI/mobile screenshots, or
+API cURL evidence when relevant, and pings you. Opt in with
+`reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
+
+### What it looks like
+
+Review Watch uses the same identity at both points in the lifecycle:
+
+| Review requested | Ready for merge |
+| --- | --- |
+| ![A real macOS notification showing the repository, PR, author, and title.](docs/assets/review-watch-requested-macos.png) | ![A real macOS notification showing that the same PR is ready for merge.](docs/assets/review-watch-ready-macos.png) |
+
+Linux uses the active desktop's native `notify-send` appearance. The daemon only discovers,
+de-duplicates, queues, and notifies; the active Claude or Codex session performs the review.
+
+A clean result produces one self-contained HTML decision brief designed for a 6–8 minute read. It
+combines business rules, a diagram when the flow benefits from one, contextual screenshots or API
+cURL evidence, focused before/after code, risks, rollout, rollback, and verification.
+
+[![Example PR #23 change brief with summary, business rules, workflow diagram, and notification evidence.](docs/assets/change-brief-pr-23.png)](docs/examples/change-brief-pr-23.html)
+
+[Open the HTML example](docs/examples/change-brief-pr-23.html), read the complete
+[Review Watch guide](docs/REVIEW_WATCH.md), or see the [Change Brief guide](docs/CHANGE_BRIEF.md).
 
 ## Agents and delegation
 

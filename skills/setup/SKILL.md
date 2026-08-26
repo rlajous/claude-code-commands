@@ -20,11 +20,15 @@ Parse these options before resolving paths:
 - `--force` is explicit approval to replace customized selected-host files, but differences must still be shown first.
 - Reject unknown options and missing option values without writing.
 
-Resolve the project root with `git rev-parse --show-toplevel`, falling back to the current directory. Resolve the plugin source in this order:
+Resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`.
+Codex includes that path in its skill metadata; Claude Code can resolve the loaded skill path too.
+Only when the host does not expose the path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, to locate
+`skills/setup/SKILL.md` and verify that it exists. Never substitute an empty variable or silently
+fall back to `/scripts`.
 
-1. `PLUGIN_ROOT`
-2. `CLAUDE_PLUGIN_ROOT`
-3. the Git Workflow repository root when running from a source checkout
+Derive `{PACKAGE_ROOT}` as the physical `{SKILL_DIR}/../..` directory and require
+`{PACKAGE_ROOT}/.codex-plugin/plugin.json`. Resolve the project root with
+`git rev-parse --show-toplevel`, falling back to the current directory.
 
 Detect the active host from available environment and configuration. If both Claude and Codex appear active and the requested target is unclear, ask which host or hosts to configure.
 
@@ -49,10 +53,10 @@ For Codex, copy every source `<plugin>/.codex/agents/*.toml` to `<project>/.code
 Use the package synchronizer so classification, atomic replacement, and ledger behavior stay consistent:
 
 ```bash
-node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/sync-project.mjs" --source "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}" --target <project> --host codex --migrate-config --initialize-config --dry-run
+node "{SKILL_DIR}/scripts/sync-project.mjs" --source "{PACKAGE_ROOT}" --target <project> --host codex --migrate-config --initialize-config --dry-run
 ```
 
-After showing the result and receiving confirmation for customized files, rerun without `--dry-run` and add `--force` only for replacements the user approved. When the skill itself was invoked with `--dry-run`, do not perform the second run. A source checkout may substitute its absolute root when neither package-root variable is set.
+After showing the result and receiving confirmation for customized files, rerun without `--dry-run` and add `--force` only for replacements the user approved. When the skill itself was invoked with `--dry-run`, do not perform the second run.
 
 For each agent:
 
@@ -80,7 +84,7 @@ The synchronizer writes `.git-workflow/version.json` with:
 
 ```json
 {
-  "version": "2.4.0",
+  "version": "2.5.2",
   "source": "<resolved-plugin-source>",
   "installed_at": "<ISO-8601 timestamp>",
   "hosts": ["codex"],

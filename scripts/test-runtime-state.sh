@@ -35,6 +35,11 @@ printf '%s' "$CANONICAL_HTML" | grep -q '"developmentBranch":"release@2026+blue"
 printf '%s' "$CANONICAL_HTML" | grep -q '"id":"CANON-2"' || fail "canonical PR context did not win"
 if printf '%s' "$CANONICAL_HTML" | grep -q 'LEGACY-1'; then fail "legacy state overrode canonical state"; fi
 
+printf '%s\n' '{"ticket_id":"INJECT-3","ticket_title":"</script><img src=x onerror=alert(1)>"}' > "$TEST_DIR/.git-workflow/pr-context.json"
+INJECTION_HTML="$(cd "$TEST_DIR" && node "$ROOT_DIR/scripts/status-report.mjs")"
+printf '%s' "$INJECTION_HTML" | grep -Fq '\u003c/script\u003e\u003cimg' || fail "status JSON was not escaped for script embedding"
+if printf '%s' "$INJECTION_HTML" | grep -Fq '</script><img src=x'; then fail "status JSON allowed script-element termination"; fi
+
 printf 'workflow:\n  developmentBranch: [broken\n' > "$TEST_DIR/.git-workflow/config.yaml"
 printf '{broken json\n' > "$TEST_DIR/.git-workflow/pr-context.json"
 CORRUPT_HTML="$(cd "$TEST_DIR" && node "$ROOT_DIR/scripts/status-report.mjs")"

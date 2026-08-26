@@ -80,14 +80,20 @@ Map the stage to the recommended next command:
 
 ## Step 6: HTML Report (only with `--html`)
 
-If `--html` was passed, generate a self-contained HTML status page:
+If `--html` was passed, resolve `{SKILL_DIR}` to the absolute, physical directory containing this
+loaded `SKILL.md`, then generate a self-contained HTML status page with its bundled helper:
 
 ```bash
 mkdir -p .git-workflow
-node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/status-report.mjs" > .git-workflow/status.html
+node "{SKILL_DIR}/scripts/status-report.mjs" > .git-workflow/status.html
 ```
 
-The script gathers the same `git`/`gh` state as JSON and injects it into `assets/status-template.html`. Tell the user the file path (`.git-workflow/status.html`) and that it is a single self-contained file they can open in a browser. If Node is unavailable, skip the HTML and print the text report only.
+The script gathers the same `git`/`gh` state as JSON and injects it into the skill-local
+`assets/status-template.html`. If the loaded skill path is unavailable, use `PLUGIN_ROOT`, then
+`CLAUDE_PLUGIN_ROOT`, only to locate `skills/status/SKILL.md`; verify the helper exists and never
+fall back to `/scripts`. Tell the user the file path (`.git-workflow/status.html`) and that it is a
+single self-contained file they can open in a browser. If Node is unavailable, skip the HTML and
+print the text report only.
 
 ## Error Handling
 

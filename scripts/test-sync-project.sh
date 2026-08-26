@@ -21,7 +21,7 @@ node "$SYNC" --source "$SOURCE_DIR" --target "$EMPTY_TARGET" --host codex --migr
 node "$SYNC" --source "$SOURCE_DIR" --target "$EMPTY_TARGET" --host codex --migrate-config --initialize-config >/dev/null
 [ "$(find "$EMPTY_TARGET/.codex/agents" -name '*.toml' | wc -l | tr -d ' ')" = "8" ] || fail "empty install did not create eight agents"
 [ -f "$EMPTY_TARGET/.git-workflow/config.yaml" ] || fail "empty setup did not create canonical config"
-python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["version"] == "2.5.1"; assert len(d["managed_files"]) == 8' "$EMPTY_TARGET/.git-workflow/version.json" || fail "invalid version ledger"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["version"] == "2.5.2"; assert len(d["managed_files"]) == 8' "$EMPTY_TARGET/.git-workflow/version.json" || fail "invalid version ledger"
 
 LEGACY_TARGET="$TEST_ROOT/legacy"
 mkdir -p "$LEGACY_TARGET/.claude"
@@ -99,6 +99,47 @@ assert ".claude/agents/removed-claude.md" in d["managed_files"]
 assert ".codex/agents/removed-codex.toml" not in d["managed_files"]
 assert d["hosts"] == ["claude", "codex"]
 ' "$BOTH_LEDGER" || fail "single-host update discarded unselected ledger state"
+
+PRUNE_EDGE_TARGET="$TEST_ROOT/prune-edge"
+mkdir -p "$PRUNE_EDGE_TARGET"
+node "$SYNC" --source "$SOURCE_DIR" --target "$PRUNE_EDGE_TARGET" --host codex >/dev/null
+PRUNE_EDGE_LEDGER="$PRUNE_EDGE_TARGET/.git-workflow/version.json"
+mkdir "$PRUNE_EDGE_TARGET/.codex/agents/managed-directory"
+ln -s pr-reviewer.toml "$PRUNE_EDGE_TARGET/.codex/agents/managed-link"
+PRUNE_EDGE_LEDGER="$PRUNE_EDGE_LEDGER" python3 - <<'PY'
+import json
+import os
+
+path = os.environ["PRUNE_EDGE_LEDGER"]
+with open(path) as file:
+    data = json.load(file)
+data["managed_files"].extend([
+    ".codex/agents/already-missing.toml",
+    ".codex/agents/managed-directory",
+    ".codex/agents/managed-link",
+])
+with open(path, "w") as file:
+    json.dump(data, file)
+PY
+node "$SYNC" --source "$SOURCE_DIR" --target "$PRUNE_EDGE_TARGET" --host codex --prune --confirm-prune >/dev/null
+[ -d "$PRUNE_EDGE_TARGET/.codex/agents/managed-directory" ] || fail "prune removed a managed directory"
+[ -L "$PRUNE_EDGE_TARGET/.codex/agents/managed-link" ] || fail "prune removed a managed symlink"
+python3 -c '
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert ".codex/agents/already-missing.toml" not in d["managed_files"]
+assert ".codex/agents/managed-directory" in d["managed_files"]
+assert ".codex/agents/managed-link" in d["managed_files"]
+' "$PRUNE_EDGE_LEDGER" || fail "prune ledger forgot an object it did not remove"
+
+CONFIG_DIVERGENCE_TARGET="$TEST_ROOT/config-divergence"
+mkdir -p "$CONFIG_DIVERGENCE_TARGET/.git-workflow" "$CONFIG_DIVERGENCE_TARGET/.claude"
+printf 'workflow:\n  developmentBranch: canonical\n' > "$CONFIG_DIVERGENCE_TARGET/.git-workflow/config.yaml"
+printf 'workflow:\n  developmentBranch: legacy\n' > "$CONFIG_DIVERGENCE_TARGET/.claude/config.yaml"
+CONFIG_DIVERGENCE_OUTPUT="$(node "$SYNC" --source "$SOURCE_DIR" --target "$CONFIG_DIVERGENCE_TARGET" --host codex --migrate-config --dry-run)" \
+  || fail "differing canonical and legacy configs caused a synchronization failure"
+printf '%s\n' "$CONFIG_DIVERGENCE_OUTPUT" | grep -q '^notes: .git-workflow/config.yaml differs' \
+  || fail "config divergence was not reported as a non-blocking note"
 
 UNOWNED_TARGET="$TEST_ROOT/unowned"
 mkdir -p "$UNOWNED_TARGET/.codex/agents"

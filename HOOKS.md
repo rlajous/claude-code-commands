@@ -96,4 +96,6 @@ Inspect `.git-workflow/.git-workflow-reviewed-shas` and the legacy fallback ledg
 
 ### Package root is unresolved
 
-Plugin instructions resolve their package from `PLUGIN_ROOT`, with `CLAUDE_PLUGIN_ROOT` retained as a compatibility fallback. Installed host registrations supply the relevant package context.
+Skill instructions resolve bundled resources from the loaded `SKILL.md` path. Hook registration is
+host-specific and still receives its package context from the host. If a hook command cannot resolve
+its package, reload the installed plugin and inspect the matching registration JSON.

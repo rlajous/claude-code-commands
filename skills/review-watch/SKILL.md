@@ -1,7 +1,7 @@
 ---
 name: review-watch
 description: Review pull requests that requested your review, in a loop until clean. Runs cheap deterministic checks (linters + a known-issues ruleset) first, then the full review fan-out, posts REQUEST_CHANGES when it finds problems, and APPROVE plus a human-readable change brief when the PR is clean. Use when the user asks to "review the PRs waiting on me", "auto-review", "watch for review requests", "drain the review queue", or passes a PR URL to review-and-decide.
-argument-hint: "[pr-url-or-number] [--drain] [--comment-only]"
+argument-hint: "[pr-url-or-number] [--drain] [--comment-only] [--doctor] [--daemon-command]"
 disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash
 user-invocable: true
@@ -9,13 +9,27 @@ user-invocable: true
 
 > Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
-You are the worker side of the review-watch tool. The `scripts/review-watch.sh` daemon listens for PRs where your review was requested and pings you; this skill does the actual review and decides whether to request changes or approve. Goal: **loop a PR until it is clean**, cheaply. Follow each step in order.
+You are the worker side of the review-watch tool. The skill-local `scripts/review-watch.sh` daemon listens for PRs where your review was requested and pings you; this skill does the actual review and decides whether to request changes or approve. Goal: **loop a PR until it is clean**, cheaply. Follow each step in order.
 
 ## Step 1: Parse Arguments and Pick Targets
+
+First resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`.
+If the host cannot expose the loaded path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only to
+locate `skills/review-watch/SKILL.md`. Verify requested resources exist. Never substitute an empty
+variable or silently fall back to `/scripts`.
+
+- `--doctor` → run `bash "{SKILL_DIR}/scripts/review-watch-tools.sh" --doctor`, report its output,
+  and exit. This checks paths, dependencies, configuration, and `gh` authentication without
+  querying PRs, publishing reviews, or changing GitHub state.
+- `--daemon-command` → run
+  `bash "{SKILL_DIR}/scripts/review-watch-tools.sh" --daemon-command`, print the absolute command
+  unchanged so the user can paste it into another terminal, and exit.
 
 - A PR URL or number → review just that PR.
 - `--drain` (or no argument) → process every queued PR in the daemon queue file
   `${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow/review-watch-queue.jsonl` (dedupe by `repo#number@headRefOid`; newest entry per PR wins). Remove entries as you finish them.
+  New entries include the nullable PR-author login as `author`; accept older entries where that field
+  is absent and fetch the author with the PR metadata below.
 - `--comment-only` → never post REQUEST_CHANGES/APPROVE, only a COMMENT review (safe mode).
 
 For each target resolve `{owner}/{repo}` and PR number (parse from the URL, or use the current repo for a bare number).
@@ -64,8 +78,8 @@ If the repo is not available locally (a PR on someone else's repo you have not c
 
 **b) Known-issues ruleset.** Resolve `reviewWatch.knownIssues` as follows: an absolute path is used
 as-is; for a relative path, prefer a matching project-root file, otherwise resolve it under
-`${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}`. If the setting is absent, this resolves to the bundled
-`references/known-issues.md`. Read its grep-style patterns and scan only changed diff lines. These
+`{SKILL_DIR}`. If the setting is absent, use the bundled
+`{SKILL_DIR}/references/known-issues.md`. Read its grep-style patterns and scan only changed diff lines. These
 are the "errors we already know": stray `console.log`, `debugger`, CSS `!important` abuse, inline
 styles, shipped `TODO/FIXME`, hard-coded colors, TS `any`, etc. If the configured file is missing,
 stop with the resolved path instead of silently dropping the deterministic checks.
@@ -88,7 +102,7 @@ Combine Tier-1 blockers and Tier-2 findings. Resolve `review.postEvent` from the
 the package's tested resolver:
 
 ```bash
-REVIEW_EVENT="$(bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/review-event.sh" \
+REVIEW_EVENT="$(bash "{SKILL_DIR}/../review/scripts/review-event.sh" \
   --has-blocking {HAS_BLOCKING} {SELF_AUTHORED_FLAG})"
 ```
 
@@ -116,12 +130,19 @@ Respect `review.postToGitHub` (`ask` | `always` | `never`, default `ask`): when 
 
 When the PR is clean (`HAS_BLOCKING=false`, whether the posted event is `APPROVE` or `COMMENT`):
 
-- Generate the human-facing HTML explainer for the change by following the `change-brief` skill for this PR (Problem / Root cause / Fix / Verification + before/after). Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
+- Generate the human-facing HTML decision brief by following `/change-brief {PR}` in Claude Code or
+  `$change-brief {PR}` in Codex. Output goes to `.git-workflow/change-brief/pr-{PR}/index.html`.
 - Ping the human that it is ready:
 
   ```bash
-  bash "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/notify.sh" "PR #{PR} ready for merge" "Review passed. Change brief generated."
+  bash "{SKILL_DIR}/scripts/notify.sh" \
+    "{owner}/{repo} · PR #{PR}" \
+    "{AUTHOR_LABEL} — Ready for merge: {title}"
   ```
+
+  Resolve `{AUTHOR_LABEL}` as `@{author.login}`, or `unknown author` when GitHub returns no author.
+  This matches the daemon's initial review-request notification, which uses the same title and
+  `{AUTHOR_LABEL} — {title}` as its message.
 
 ## Step 8: Record and Loop
 

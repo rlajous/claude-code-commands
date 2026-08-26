@@ -270,7 +270,7 @@ review:
 # ==============================================================================
 # REVIEW-WATCH SETTINGS
 # ==============================================================================
-# Review-watch auto-reviewer (see /review-watch and scripts/review-watch.sh)
+# Review-watch auto-reviewer (see /review-watch in Claude or $review-watch in Codex)
 reviewWatch:
   # Opt-in; the daemon + skill only act when true
   enabled: false

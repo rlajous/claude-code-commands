@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.5.2
+
+- Resolve deterministic resources from each loaded skill directory so installed and checkout-local
+  Codex skills work without `PLUGIN_ROOT` or `CLAUDE_PLUGIN_ROOT`.
+- Keep root helper commands as compatibility wrappers while colocating watcher, review, HTML,
+  status, SARIF, and synchronization implementations with their owning skills.
+- Add checkout-local Codex discovery plus `review-watch --doctor` and `--daemon-command`.
+- Harden notification arguments, embedded status JSON, HTML/CSP validation, watcher ledger order,
+  and synchronization prune bookkeeping.
+- Make change briefs decision-oriented and readable in under 10 minutes, with business rules,
+  diagrams, conditional UI/mobile screenshots, API cURL exchanges, risks, and evidence gaps.
+- Include repository, PR number, author, and title in review-watch notifications; fetch live queue
+  metadata with GraphQL and keep validation runs from sending desktop test notifications.
+- Add complete Review Watch and Change Brief guides, real macOS notification captures, and a
+  downloadable self-contained HTML example.
+
 ## 2.5.1
 
 - Enforce `reviewWatch.enabled`, daemon interval, notification sound, linter, known-issue, and safe review-event configuration.

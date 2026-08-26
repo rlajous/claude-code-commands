@@ -31,6 +31,10 @@ Claude-specific plugin and contributor behavior remains documented in [CLAUDE.md
 
 Install or load this checkout using Codex's plugin workflow. The root `.codex-plugin/plugin.json` exposes the shared `skills/` directory, and `hooks/hooks.json` contains the Codex-native hook registration.
 
+When developing directly in this checkout, Codex discovers the same skills through
+`.agents/skills -> ../skills`. Plugin installation and checkout-local discovery are alternative
+modes: do not enable both in the same session, because Codex does not merge duplicate skill names.
+
 After the plugin is available, run this inside the target repository:
 
 ```text
@@ -120,6 +124,44 @@ $update --force
 
 The workflow compares source and target files. Unmodified managed files can be synchronized normally; customized files require confirmation unless `--force` is present. `--prune` is explicit and does not remove configuration, generated state, or unrelated project files.
 
+## Review Watch setup
+
+Review Watch requires Bash, Python 3, Node.js, Git, and an authenticated GitHub CLI. It is disabled
+until the project opts in:
+
+```yaml
+reviewWatch:
+  enabled: true
+  intervalSeconds: 60
+  sound: Glass
+  linters: auto
+  knownIssues: references/known-issues.md
+```
+
+Verify the installed paths, dependencies, configuration, and authentication without querying PRs
+or publishing a review:
+
+```text
+/review-watch --doctor   # Claude Code
+$review-watch --doctor   # Codex
+```
+
+Then print an absolute, copy-paste-safe daemon command and run it in another terminal:
+
+```text
+/review-watch --daemon-command   # Claude Code
+$review-watch --daemon-command   # Codex
+```
+
+The daemon notifies once per repository, PR, and head SHA. macOS uses Notification Center and a
+system sound; Linux uses the active desktop's `notify-send` presentation and an available sound
+player. Grant notification permission to the terminal or AppleScript host if macOS suppresses the
+banner.
+
+Read the [Review Watch guide](docs/REVIEW_WATCH.md) for repository filters, queue state, review
+decisions, notification examples, and troubleshooting. Clean reviews generate the self-contained
+HTML described in the [Change Brief guide](docs/CHANGE_BRIEF.md).
+
 ## Verify
 
 Check the expected skills and agents in the host, then try the non-destructive status workflow:
@@ -139,7 +181,11 @@ bash scripts/validate.sh
 
 - If a Claude skill is missing, verify the plugin is enabled or `.claude/skills/<name>/SKILL.md` exists.
 - If a Codex skill is missing, verify the plugin is installed/enabled and restart the session after changing its manifest.
+- For checkout-local development, verify `.agents/skills` resolves to `../skills`; disable the
+  installed plugin for that session to avoid duplicate skill entries.
 - If a Codex agent is missing, rerun `$setup` and verify `.codex/agents/<name>.toml` exists and parses.
 - If GitHub actions fail, run `gh auth status` and authenticate with `gh auth login`.
+- If Review Watch is silent, run the host-correct `review-watch --doctor`, confirm
+  `reviewWatch.enabled: true`, and verify OS notification permissions.
 - If issue lookup fails, inspect the active host's MCP connection and OAuth state.
 - If the hook does nothing, confirm `review-on-commit: true`, start a new host session, and verify the invoked command is `git commit` or `git push`.
