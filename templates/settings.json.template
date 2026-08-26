@@ -1,5 +1,5 @@
 {
-  "// SETTINGS CONFIGURATION TEMPLATE": "Copy this to ~/.claude/settings.json or .claude/settings.json",
+  "// GIT WORKFLOW — CLAUDE SETTINGS TEMPLATE": "Copy this to ~/.claude/settings.json or .claude/settings.json; Codex users configure MCP in Codex instead",
   "// Documentation": "https://docs.anthropic.com/en/docs/claude-code",
   "// Quick Setup": "Run /setup command to configure interactively",
 

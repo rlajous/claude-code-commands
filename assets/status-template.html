@@ -109,6 +109,15 @@
     color: var(--muted);
     font-size: 0.9rem;
   }
+  .warnings {
+    display: none;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    color: var(--warn);
+    white-space: pre-line;
+  }
 </style>
 </head>
 <body>
@@ -135,6 +144,8 @@
       <dt>Latest release</dt>
       <dd id="release">—</dd>
     </dl>
+
+    <div class="warnings" id="warnings"></div>
 
     <div class="next">
       <div class="stage" id="stage">—</div>
@@ -188,6 +199,12 @@
 
       // Branch
       text("branch", dash(state.branch));
+
+      if (Array.isArray(state.warnings) && state.warnings.length) {
+        var warnings = document.getElementById("warnings");
+        warnings.style.display = "block";
+        warnings.textContent = state.warnings.map(function (warning) { return "⚠ " + warning; }).join("\n");
+      }
 
       // Ticket
       if (state.ticket && (state.ticket.id || state.ticket.title)) {

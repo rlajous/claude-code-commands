@@ -1,10 +1,12 @@
 ---
 name: sync
 description: Back-merge main to staging after a release to keep branches synchronized
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git pull:*), Bash(git fetch:*), Bash(git log:*), Bash(git checkout:*), Bash(git push:*), Bash(git rebase:*), Bash(git add:*), Bash(gh pr create:*)
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping sync the production branch changes back to the development branch. This command should be run AFTER a release has been merged to production and deployed to keep branches aligned.
 
@@ -13,10 +15,16 @@ You are helping sync the production branch changes back to the development branc
 Check for configuration:
 
 ```bash
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then
+  CONFIG_PATH=".git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  CONFIG_PATH=".claude/config.yaml" # legacy read-only fallback
+else
+  CONFIG_PATH=""
+fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 workflow:

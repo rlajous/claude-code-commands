@@ -1,10 +1,12 @@
 ---
 name: finish
 description: Create a pull request with comprehensive description following repo best practices
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git log:*), Bash(git status:*), Bash(git diff:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr edit:*), AskUserQuestion
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a pull request with a comprehensive description. Your task is to gather information, generate the PR description, push the branch, and create the PR using project conventions.
 
@@ -14,14 +16,14 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
+if [ -f ".git-workflow/pr-context.json" ]; then CONTEXT_PATH=".git-workflow/pr-context.json"; elif [ -f ".claude/.pr-context.json" ]; then CONTEXT_PATH=".claude/.pr-context.json"; else CONTEXT_PATH=""; fi
 
 # Get current branch
 git branch --show-current
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 workflow:
@@ -35,7 +37,7 @@ issueTracker:
   type: auto
 ```
 
-**Load from `.claude/.pr-context.json` (if exists):**
+**Load from the resolved `CONTEXT_PATH` (canonical first, legacy read-only fallback):**
 
 ```json
 {
@@ -61,6 +63,8 @@ If context file is missing or incomplete:
 
 - Inform the user they should run `/start` and `/commit` first
 - Ask for missing information (ticket ID, branch name)
+
+If the context contains a `branch` value that does not match the current branch, treat it as stale, explain which file was ignored, and gather fresh context. Do not silently reuse context from another branch.
 
 ## Step 2: Verify State
 
@@ -121,7 +125,7 @@ Commits:
 
 ## Step 4: Gather PR Information
 
-Ask the user for additional context (use AskUserQuestion tool):
+Ask the user for additional context (use the active host user-input mechanism):
 
 ### Question 1: Summary of Changes
 
@@ -358,14 +362,14 @@ PR is ready for review!
 
 ### Optional Cleanup
 
-Ask if user wants to clean up context:
+Ask if the user wants to clean up canonical context:
 
 ```bash
 # Remove context file (optional)
-rm .claude/.pr-context.json
+rm .git-workflow/pr-context.json
 ```
 
-Or keep for reference until PR is merged.
+Or keep it for reference until the PR is merged. Legacy `.claude/.pr-context.json` is a read-only fallback and must never be deleted or modified by this workflow. If the active context came from that legacy path, warn that cleanup cannot remove it, leave it in place, and recommend `/setup` or `$setup` to migrate it.
 
 ## Configuration Reference
 

@@ -1,0 +1,38 @@
+{
+  "name": "git-workflow",
+  "version": "2.4.0",
+  "description": "Production-ready Git workflow automation for pull requests, releases, QA, and code review",
+  "author": {
+    "name": "rlajous",
+    "url": "https://github.com/rlajous"
+  },
+  "homepage": "https://github.com/rlajous/claude-code-commands",
+  "repository": "https://github.com/rlajous/claude-code-commands",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "workflow",
+    "pull-requests",
+    "release",
+    "qa",
+    "code-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Git Workflow",
+    "shortDescription": "Automate Git, PR, release, QA, and review workflows",
+    "longDescription": "A cross-agent Git workflow toolkit with reusable skills for starting work, committing, opening and reviewing pull requests, releasing software, and executing QA plans.",
+    "developerName": "rlajous",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/rlajous/claude-code-commands",
+    "defaultPrompt": [
+      "Show the current Git workflow status and next step.",
+      "Review this pull request with specialized agents.",
+      "Prepare this repository for a release."
+    ]
+  }
+}

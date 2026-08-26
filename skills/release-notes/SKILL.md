@@ -1,10 +1,12 @@
 ---
 name: release-notes
 description: Enhance GitHub release with detailed notes after release PR is merged to main
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git branch:*), Bash(git pull:*), Bash(git tag:*), Bash(git rev-list:*), Bash(git log:*), Bash(gh release view:*), Bash(gh release create:*), Bash(gh release edit:*), Bash(gh pr view:*)
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping enhance a GitHub release with comprehensive release notes. This command should be run AFTER the release PR has been merged to the production branch.
 
@@ -13,10 +15,10 @@ You are helping enhance a GitHub release with comprehensive release notes. This 
 Check for configuration:
 
 ```bash
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 workflow:

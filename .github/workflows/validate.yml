@@ -1,9 +1,12 @@
-name: Validate plugin
+name: Validate Git Workflow package
 
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -17,5 +20,16 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Validate plugin structure, manifests, and frontmatter
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate Codex plugin contract
+        run: python3 scripts/validate-codex-plugin.py
+
+      - name: Check generated Codex agents
+        run: node scripts/generate-codex-agents.mjs --check
+
+      - name: Validate package, hooks, and synchronization
         run: bash scripts/validate.sh

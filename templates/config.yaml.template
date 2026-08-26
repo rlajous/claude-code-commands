@@ -1,5 +1,5 @@
-# Claude Code Commands Configuration
-# Copy this file to .claude/config.yaml in your project root
+# Git Workflow Configuration
+# Copy this file to .git-workflow/config.yaml in your project root
 # All settings have sensible defaults - configure only what you need
 
 # ==============================================================================
@@ -96,7 +96,7 @@ pullRequests:
 # ISSUE TRACKER INTEGRATION
 # ==============================================================================
 # Authentication is handled by MCP servers (recommended) which manage OAuth/tokens
-# automatically. Configure MCP servers in ~/.claude/settings.json:
+# automatically. Claude Code uses JSON in ~/.claude/settings.json:
 #
 # {
 #   "mcpServers": {
@@ -110,6 +110,16 @@ pullRequests:
 #     }
 #   }
 # }
+#
+# Codex uses TOML in ~/.codex/config.toml (or trusted project .codex/config.toml):
+#
+# [mcp_servers.linear]
+# command = "npx"
+# args = ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+#
+# [mcp_servers.jira]
+# command = "npx"
+# args = ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
 #
 # See INSTALLATION.md for detailed MCP setup instructions.
 # ==============================================================================
@@ -168,12 +178,13 @@ versioning:
 # AI ATTRIBUTION
 # ==============================================================================
 attribution:
-  # Add AI co-author to commits
+  # Add an AI assistance note to the commit body
   # Default: false (opt-in)
   enabled: false
 
-  # Attribution format in commit message
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  # Optional prose note, subject to repository commit rules. Example:
+  # format: "This commit was created with assistance from an AI coding agent."
+  format: ""
 
 # ==============================================================================
 # TESTING COMMANDS

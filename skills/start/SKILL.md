@@ -2,31 +2,35 @@
 name: start
 description: Start a new PR by creating a feature branch following repo conventions
 argument-hint: "[ticket-id]"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git checkout:*), Bash(git pull:*), Bash(gh issue view:*), AskUserQuestion, Write
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a new pull request. Your task is to create a properly named feature branch, optionally fetch ticket details, and store context for subsequent commands.
 
 ## Step 1: Load Configuration
 
-Check for `.claude/config.yaml` to load project-specific settings:
+Resolve project configuration with canonical-first precedence:
 
 ```bash
-# Check if config exists
-if [ -f ".claude/config.yaml" ]; then
-  echo "CONFIG_EXISTS=true"
+if [ -f ".git-workflow/config.yaml" ]; then
+  CONFIG_PATH=".git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  CONFIG_PATH=".claude/config.yaml" # legacy read-only fallback
 else
-  echo "CONFIG_EXISTS=false"
+  CONFIG_PATH=""
 fi
 ```
 
 **Configuration Priority:**
 
-1. `.claude/config.yaml` (if exists)
-2. Auto-detection (package.json, pyproject.toml, etc.)
-3. Sensible defaults
+1. `.git-workflow/config.yaml` (if exists)
+2. `.claude/config.yaml` (legacy read-only fallback)
+3. Auto-detection (package.json, pyproject.toml, etc.)
+4. Sensible defaults
 
 **Default Values (when no config):**
 
@@ -47,7 +51,7 @@ issueTracker:
 
 ## Step 2: Gather Information
 
-Ask the user for the following information (use AskUserQuestion tool):
+Ask the user for the following information (use the active host user-input mechanism):
 
 ### Question 1: Ticket ID
 
@@ -179,6 +183,8 @@ Result: fix/proj-1234-add-user-auth
 
 ### Create and Checkout Branch
 
+Immediately before running any command below, show the resolved base branch, pull target, new branch name, and canonical context destination. Ask for explicit confirmation to create and check out the branch. Do not treat automatic skill invocation or earlier information-gathering answers as approval.
+
 ```bash
 # Ensure we're on the development branch and up-to-date
 git checkout {workflow.developmentBranch} 2>/dev/null || git checkout main
@@ -195,7 +201,11 @@ git checkout -b {branch_name}
 
 ## Step 5: Store Context
 
-Create `.claude/.pr-context.json` with collected information:
+Create `.git-workflow/pr-context.json` with collected information:
+
+```bash
+mkdir -p .git-workflow
+```
 
 ```json
 {
@@ -216,8 +226,9 @@ Create `.claude/.pr-context.json` with collected information:
 
 **Important:**
 
-- Create `.claude/` directory if it doesn't exist
-- If `.pr-context.json` exists, ask before overwriting
+- Create `.git-workflow/` before writing.
+- If `.git-workflow/pr-context.json` exists, ask before overwriting.
+- Never overwrite or delete the legacy `.claude/.pr-context.json` fallback.
 
 ## Step 6: Confirm
 
@@ -244,7 +255,7 @@ Ticket Details:
 
 ## Configuration Reference
 
-All configurable options from `.claude/config.yaml`:
+All configurable options from `.git-workflow/config.yaml`:
 
 | Setting                     | Default                          | Description                       |
 | --------------------------- | -------------------------------- | --------------------------------- |

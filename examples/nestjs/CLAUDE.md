@@ -67,7 +67,7 @@ tests/
 
 ## Git Workflow
 
-Uses Claude Code slash commands with staging-based workflow:
+Uses Git Workflow through Claude Code's slash-command syntax with a staging-based workflow:
 
 - `/start` → Create feature branch from Linear ticket
 - `/commit` → Commit with `[Type] Message (TICKET-ID)` format

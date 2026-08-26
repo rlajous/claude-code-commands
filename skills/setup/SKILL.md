@@ -1,297 +1,98 @@
 ---
 name: setup
-description: Interactive setup for MCP servers and project configuration
-argument-hint: ""
-disable-model-invocation: true
-allowed-tools: Read, Write, Bash(mkdir:*), AskUserQuestion, Glob
+description: Configure Git Workflow for Claude Code or Codex, migrate legacy configuration, install Codex project agents, and optionally configure issue-tracker MCP servers. Use when the user asks to set up, install, configure, or migrate Git Workflow.
+argument-hint: "[--host <claude|codex|both>] [--dry-run] [--force]"
+disable-model-invocation: false
+allowed-tools: Read, Write, Bash(mkdir:*), Bash(cp:*), Bash(diff:*), Bash(git rev-parse:*), AskUserQuestion, Glob
 user-invocable: true
 ---
 
-You are helping set up Claude Code commands for this project. Your task is to interactively configure MCP servers for issue tracker integration and optionally set up the workflow configuration.
+# Set up Git Workflow
 
-## Step 1: Welcome and Context
+Follow [runtime compatibility](../../references/runtime-compatibility.md). Claude Code users invoke this as `/setup`; Codex users invoke it as `$setup`.
 
-Display a welcome message:
+## 1. Resolve roots and runtime
 
-```
-Welcome to Claude Code Commands Setup!
+Parse these options before resolving paths:
 
-This will help you configure:
-- Issue tracker integration (Linear, Jira, GitHub Issues)
-- MCP server configuration
-- Workflow settings (optional)
-```
+- `--host <claude|codex|both>` selects exactly which project assets to synchronize. When omitted, detect the active host and ask only if the target remains ambiguous.
+- `--dry-run` previews migration and installation without creating directories, files, or ledgers.
+- `--force` is explicit approval to replace customized selected-host files, but differences must still be shown first.
+- Reject unknown options and missing option values without writing.
 
-Check for existing configuration:
+Resolve the project root with `git rev-parse --show-toplevel`, falling back to the current directory. Resolve the plugin source in this order:
 
-```bash
-# Check for existing settings
-if [ -f ".claude/settings.json" ]; then
-  echo "PROJECT_SETTINGS=exists"
-fi
-if [ -f "$HOME/.claude/settings.json" ]; then
-  echo "GLOBAL_SETTINGS=exists"
-fi
-if [ -f ".claude/config.yaml" ]; then
-  echo "CONFIG_YAML=exists"
-fi
-```
+1. `PLUGIN_ROOT`
+2. `CLAUDE_PLUGIN_ROOT`
+3. the Git Workflow repository root when running from a source checkout
 
-## Step 2: Issue Tracker Selection
+Detect the active host from available environment and configuration. If both Claude and Codex appear active and the requested target is unclear, ask which host or hosts to configure.
 
-Ask the user which issue tracker(s) they use (use AskUserQuestion tool with multiSelect: true):
+Never edit a user-global configuration unless the user explicitly selects global scope.
 
-**Question**: "Which issue tracker(s) do you use?"
+## 2. Migrate workflow configuration
 
-**Options**:
-- `Linear` - Linear.app for issue tracking
-- `Jira` - Atlassian Jira
-- `GitHub Issues` - GitHub's built-in issue tracking
-- `None` - No issue tracker integration needed
+Canonical configuration is `<project>/.git-workflow/config.yaml`.
 
-**Note**: Users can select multiple options (e.g., Linear + GitHub Issues).
+- If only `.claude/config.yaml` exists, explain that it is the legacy location and offer to copy it to the canonical path.
+- Create `.git-workflow/` before copying.
+- Never delete or modify the legacy file automatically.
+- If both files exist, use the canonical file. Show a diff when they differ and do not merge or overwrite without an explicit user decision.
+- If neither exists, ask only for values that differ from the documented defaults, then write the canonical file from `templates/config.yaml.template`.
 
-## Step 3: Jira Configuration (Conditional)
+Default commit attribution is disabled. Preserve an existing explicit `attribution.enabled` or `attribution.format` value during migration.
 
-If user selected Jira, ask for the instance URL:
+## 3. Install Codex project agents
 
-**Question**: "What is your Jira instance URL?"
+For Codex, copy every source `<plugin>/.codex/agents/*.toml` to `<project>/.codex/agents/`.
 
-**Header**: "Jira URL"
-
-**Options**:
-- Provide a text input example: `https://your-company.atlassian.net`
-
-Validate the URL format:
-- Must start with `https://`
-- Must end with `.atlassian.net` (for cloud) or be a valid domain
-
-## Step 4: Settings Location
-
-Ask where to save the MCP server configuration:
-
-**Question**: "Where should the MCP server configuration be saved?"
-
-**Options**:
-- `Project (.claude/settings.json)` - Recommended for team sharing, committed to repo
-- `Global (~/.claude/settings.json)` - Personal setup, applies to all projects
-
-**Default**: Project-level (first option)
-
-## Step 5: Generate Settings
-
-Based on selections, generate the appropriate `settings.json` content.
-
-### Base Structure
-
-```json
-{
-  "mcpServers": {}
-}
-```
-
-### Add Linear (if selected)
-
-```json
-{
-  "mcpServers": {
-    "linear": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
-    }
-  }
-}
-```
-
-### Add Jira (if selected)
-
-```json
-{
-  "mcpServers": {
-    "jira": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
-    }
-  }
-}
-```
-
-### GitHub Issues
-
-No MCP server needed - uses `gh` CLI which is already configured.
-
-## Step 6: Merge with Existing Settings
-
-If settings file exists at the chosen location:
-
-1. Read existing settings
-2. Merge `mcpServers` (new servers override existing with same name)
-3. Preserve all other settings (hooks, permissions, etc.)
-
-```javascript
-// Pseudo-code for merging
-existingSettings.mcpServers = {
-  ...existingSettings.mcpServers,
-  ...newMcpServers
-};
-```
-
-## Step 7: Write Settings File
-
-Write the settings to the chosen location:
-
-**Project-level**: `.claude/settings.json`
-**Global**: `~/.claude/settings.json`
-
-Ensure the directory exists:
+Use the package synchronizer so classification, atomic replacement, and ledger behavior stay consistent:
 
 ```bash
-# For project settings
-mkdir -p .claude
-
-# For global settings
-mkdir -p ~/.claude
+node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/sync-project.mjs" --source "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}" --target <project> --host codex --migrate-config --initialize-config --dry-run
 ```
 
-## Step 8: Workflow Configuration (Optional)
+After showing the result and receiving confirmation for customized files, rerun without `--dry-run` and add `--force` only for replacements the user approved. When the skill itself was invoked with `--dry-run`, do not perform the second run. A source checkout may substitute its absolute root when neither package-root variable is set.
 
-Ask if user wants to configure workflow settings:
+For each agent:
 
-**Question**: "Would you like to configure workflow settings?"
+- Missing target: list it as `+` and install it.
+- Identical target: list it as `=` and leave it unchanged.
+- Different target: list it as `~`, show a unified diff, and ask before overwriting.
 
-**Options**:
-- `Yes` - Set up config.yaml with branch naming, commit formats, etc.
-- `No` - Skip (use defaults)
+Create `.codex/agents/` when needed. Do not set a model, reasoning effort, concurrency limit, or permission mode; installed agents inherit the parent Codex session. The plugin-bundled Codex hook is discovered separately from `hooks/hooks.json` and requires the host's normal hook trust review.
 
-### If Yes: Ask Workflow Questions
+Claude Code loads the existing plugin agents directly. For a manual Claude installation, synchronize `skills/`, `agents/*.md`, and the shared `references/` directory into `.claude/skills/`, `.claude/agents/`, and `.claude/references/` with the same missing/identical/different rules. Use `--host claude` (or `both`) with the synchronizer.
 
-**Question 1: Development Branch**
-- "What is your development/staging branch name?"
-- Options: `staging`, `develop`, `dev`, Other (text input)
+## 4. Configure issue-tracker MCP (optional)
 
-**Question 2: Production Branch**
-- "What is your production branch name?"
-- Options: `main`, `master`, Other (text input)
+Ask which integrations are needed: none, Linear, Jira, GitHub Issues, or more than one.
 
-**Question 3: Issue Tracker Type**
-Set based on Step 2 selection, or ask if multiple were selected:
-- "Which is your primary issue tracker for ticket references?"
-- Options: Based on earlier selections
+- Codex: update the selected project `.codex/config.toml` or explicit user `~/.codex/config.toml` MCP tables without replacing unrelated settings.
+- Claude Code: update the selected `.claude/settings.json` or explicit user `~/.claude/settings.json` MCP configuration without replacing unrelated settings.
+- GitHub Issues can use the authenticated `gh` CLI and does not require an MCP server.
 
-### Generate config.yaml
+Never print or persist access tokens in workflow configuration. If a server needs credentials, reference environment variables and tell the user which variables must be set.
 
-```yaml
-# Claude Code Commands Configuration
-# Generated by /setup
+## 5. Record installation
 
-workflow:
-  type: staging
-  developmentBranch: {selected_dev_branch}
-  productionBranch: {selected_prod_branch}
+The synchronizer writes `.git-workflow/version.json` with:
 
-issueTracker:
-  type: {selected_tracker}
-  # Jira-specific (if applicable)
-  jira:
-    baseUrl: {jira_url}
-
-# Default branch naming
-branches:
-  feature: "{type}/{ticket}-{description}"
-  release: "release/{version}"
-
-# Default commit format
-commits:
-  format: "[{type}] {message}"
-  types:
-    - Feature
-    - Fix
-    - Hotfix
-    - Refactor
-    - Docs
-    - Test
-    - Chore
+```json
+{
+  "version": "2.4.0",
+  "source": "<resolved-plugin-source>",
+  "installed_at": "<ISO-8601 timestamp>",
+  "hosts": ["codex"],
+  "managed_files": [".codex/agents/pr-reviewer.toml"]
+}
 ```
 
-Write to `.claude/config.yaml`
+Report created, migrated, skipped, and user-preserved files separately. End with host-specific invocation examples, including `/status` for Claude Code and `$status` for Codex.
 
-## Step 9: Summary
+## Failure handling
 
-Display a summary of what was configured:
-
-```
-Setup Complete!
-
-MCP Servers configured:
-- Linear: Enabled
-- Jira: Enabled (https://your-company.atlassian.net)
-
-Settings saved to: .claude/settings.json
-
-Workflow configuration: .claude/config.yaml
-- Development branch: staging
-- Production branch: main
-- Issue tracker: linear
-
-Next steps:
-1. Restart Claude Code to load MCP servers
-2. Try /start to create a new feature branch
-3. See CONFIGURATION.md for advanced options
-```
-
-## Step 10: Authentication Reminder
-
-If Linear or Jira was configured, remind about authentication:
-
-```
-Authentication Note:
-MCP servers handle authentication automatically.
-On first use, you'll be prompted to authenticate:
-- Linear: OAuth login via browser
-- Jira: Atlassian OAuth login via browser
-```
-
-## Error Handling
-
-| Scenario | Action |
-|----------|--------|
-| Invalid Jira URL | Show format example, ask to retry |
-| Cannot create directory | Show error, suggest manual creation |
-| Cannot write file | Show error with permissions hint |
-| Existing file conflict | Ask to merge or overwrite |
-
-## Examples
-
-### Example 1: Linear Only
-
-```
-User: /setup
-Agent: Which issue tracker(s)? -> Linear
-Agent: Where to save? -> Project
-Result: .claude/settings.json with Linear MCP configured
-```
-
-### Example 2: Jira + GitHub
-
-```
-User: /setup
-Agent: Which issue tracker(s)? -> Jira, GitHub Issues
-Agent: Jira URL? -> https://acme.atlassian.net
-Agent: Where to save? -> Global
-Agent: Configure workflow? -> Yes
-Agent: Dev branch? -> develop
-Agent: Prod branch? -> main
-Result: ~/.claude/settings.json with Jira MCP
-        .claude/config.yaml with workflow settings
-```
-
-### Example 3: No Issue Tracker
-
-```
-User: /setup
-Agent: Which issue tracker(s)? -> None
-Agent: Configure workflow? -> Yes
-Agent: Dev branch? -> staging
-Agent: Prod branch? -> main
-Result: .claude/config.yaml with workflow settings only
-```
+- Missing plugin source: stop before writing and report how source resolution failed.
+- Invalid existing YAML, JSON, or TOML: report the file and parse error; do not replace it.
+- Permission failure: report the exact target and leave existing files unchanged.
+- Partial agent installation: report every completed and failed file so `$update` or `/update` can resume safely.

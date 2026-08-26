@@ -2,7 +2,7 @@
 
 ## The Problem Nobody Talks About
 
-AI coding assistants have gotten remarkably good at writing code. Claude can implement features, fix bugs, and even write tests.
+AI coding assistants have gotten remarkably good at writing code. Claude Code and Codex can implement features, fix bugs, and write tests.
 
 But here's what I noticed: the code is only half the job.
 
@@ -18,9 +18,11 @@ These tasks eat hours every week. They're repetitive, error-prone, and frankly..
 
 So I built a solution.
 
-## Introducing Claude Code Commands
+## Introducing Git Workflow
 
-Over the past few months, I've developed a set of 10 slash commands that automate the entire development workflow. Today I'm open-sourcing them.
+Over the past few months, I've developed a package of 17 skills that automates the entire development workflow in both Claude Code and Codex. Today I'm open-sourcing it.
+
+Claude invokes a skill as `/name`; Codex uses `$name`. The examples below use Claude syntax, but the same workflows are available in Codex by replacing the leading slash with a dollar sign.
 
 **The Core Workflow:**
 ```
@@ -32,7 +34,9 @@ Over the past few months, I've developed a set of 10 slash commands that automat
 
 That's it. From ticket to pull request in minutes, not hours.
 
-## The Commands
+## The 17 Skills
+
+Beyond the core workflow, Git Workflow includes setup and updates, TDD, PR review, release notes, synchronization, QA planning and execution, RFCs, review requests, standups, status, and safe cleanup of gone branches. Eight specialized agents support review, release validation, QA execution, and version analysis.
 
 ### `/start` - Begin with Context
 
@@ -112,7 +116,7 @@ Here's what I'm most proud of: **you don't need any configuration to start**.
 
 Just install the commands and go. They use sensible defaults that work for most projects.
 
-But when you need customization, everything is configurable via `.claude/config.yaml`:
+But when you need customization, everything is configurable via `.git-workflow/config.yaml`:
 
 - Branch naming patterns
 - Commit message formats
@@ -132,7 +136,7 @@ Here's my typical day now:
 ```
 Branch created, ticket context loaded.
 
-**Development**: I write code with Claude's help
+**Development**: I write code with Claude Code or Codex
 
 **Ready to commit**:
 ```
@@ -158,20 +162,34 @@ Total time spent on Git workflow: maybe 5 minutes across the entire feature life
 
 ## Getting Started
 
-Copy the skills to your project:
-```bash
-git clone https://github.com/rlajous/claude-code-commands
-cp -r claude-code-commands/skills your-project/.claude/
-cp -r claude-code-commands/agents your-project/.claude/
+Install for Claude Code from the marketplace:
+```text
+/plugin marketplace add rlajous/claude-code-commands
+/plugin install git-workflow@git-workflow-marketplace
+/git-workflow:setup
 ```
 
-Then run `/setup` to configure MCP servers (Linear, Jira, GitHub), branch naming conventions, and other options.
+For a manual Claude project copy, copy `skills/`, `agents/`, and `references/` into `.claude/`, then run `/setup`.
+
+For Codex, install or load the repository as a plugin and run:
+```text
+$setup
+```
+
+The Codex plugin exposes all 17 skills and installs eight project agents into `.codex/agents/`. Both hosts share `.git-workflow/config.yaml` and generated state, while legacy `.claude/` state remains a read-only fallback.
+
+To explore the source locally:
+```bash
+git clone https://github.com/rlajous/claude-code-commands
+```
+
+Linear and Jira connect through the active host's MCP configuration. GitHub operations use the GitHub CLI. Setup also configures branch naming conventions and other workflow options.
 
 No dependencies. No accounts to create. Just better workflows.
 
 ## What's Next
 
-This is v2.0 (now packaged as skills), but there's more coming:
+This is v2.4.0, with native Claude and Codex packaging, but there's more coming:
 - More issue tracker integrations
 - Customizable PR templates
 - Team workflow presets

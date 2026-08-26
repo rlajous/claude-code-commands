@@ -6,7 +6,7 @@
 // HTML page to stdout.
 //
 // Usage:
-//   node scripts/status-report.mjs > .claude/status.html
+//   node scripts/status-report.mjs > .git-workflow/status.html
 //
 // Plain Node ESM, no dependencies (node:child_process, node:fs, node:path only).
 // Never throws: every external command is wrapped in try/catch and failures
@@ -32,25 +32,49 @@ function safe(fn, fallback = null) {
   }
 }
 
-function getDevelopmentBranch() {
-  const configPath = path.join(process.cwd(), ".claude", "config.yaml");
-  if (!existsSync(configPath)) return "staging";
+function getDevelopmentBranch(warnings) {
+  const canonical = path.join(process.cwd(), ".git-workflow", "config.yaml");
+  const legacy = path.join(process.cwd(), ".claude", "config.yaml");
+  const configPath = existsSync(canonical) ? canonical : existsSync(legacy) ? legacy : null;
+  if (!configPath) return "staging";
   try {
     const raw = readFileSync(configPath, "utf8");
-    const match = raw.match(/developmentBranch:\s*["']?([\w./-]+)["']?/);
-    return match ? match[1] : "staging";
-  } catch {
+    const match = raw.match(/^\s*developmentBranch:\s*(.*?)\s*$/m);
+    let value = null;
+    if (match) {
+      const scalar = match[1].replace(/\s+#.*$/, "").trim();
+      const quoted = scalar.match(/^(["'])(.*)\1$/);
+      if (quoted) value = quoted[2];
+      else if (scalar && !/^[\[{|>]/.test(scalar) && !/^["']/.test(scalar)) value = scalar;
+    }
+    if (!value && /developmentBranch\s*:/.test(raw)) {
+      warnings.push(`Could not parse developmentBranch from ${path.relative(process.cwd(), configPath)}; using staging.`);
+    }
+    return value || "staging";
+  } catch (error) {
+    warnings.push(`Could not read ${path.relative(process.cwd(), configPath)}: ${error.message}; using staging.`);
     return "staging";
   }
 }
 
-function getPrContext() {
-  const contextPath = path.join(process.cwd(), ".claude", ".pr-context.json");
-  if (!existsSync(contextPath)) return null;
+function getPrContext(warnings, currentBranch) {
+  const canonical = path.join(process.cwd(), ".git-workflow", "pr-context.json");
+  const legacy = path.join(process.cwd(), ".claude", ".pr-context.json");
+  const contextPath = existsSync(canonical) ? canonical : existsSync(legacy) ? legacy : null;
+  if (!contextPath) return null;
   try {
     const raw = readFileSync(contextPath, "utf8");
-    return JSON.parse(raw);
-  } catch {
+    const context = JSON.parse(raw);
+    if (!context || typeof context !== "object" || Array.isArray(context)) {
+      throw new TypeError("expected a JSON object");
+    }
+    if (context.branch && currentBranch && context.branch !== currentBranch) {
+      warnings.push(`Ignored stale ${path.relative(process.cwd(), contextPath)} for branch ${context.branch}; current branch is ${currentBranch}.`);
+      return null;
+    }
+    return context;
+  } catch (error) {
+    warnings.push(`Could not read ${path.relative(process.cwd(), contextPath)}: ${error.message}; ignoring PR context.`);
     return null;
   }
 }
@@ -100,17 +124,19 @@ function getLatestRelease() {
 }
 
 function buildState() {
+  const warnings = [];
   const branch = safe(() => run("git", ["rev-parse", "--abbrev-ref", "HEAD"]));
   const porcelain = safe(() => run("git", ["status", "--porcelain"]));
   const dirty = porcelain === null ? null : porcelain.length > 0;
-  const developmentBranch = getDevelopmentBranch();
+  const developmentBranch = getDevelopmentBranch(warnings);
   const commitsAhead = branch ? getCommitsAhead(developmentBranch) : null;
   const pr = getPrInfo();
   const latestRelease = getLatestRelease();
-  const prContext = getPrContext();
+  const prContext = getPrContext(warnings, branch);
 
   return {
     generatedAt: new Date().toISOString(),
+    warnings,
     branch,
     developmentBranch,
     dirty,

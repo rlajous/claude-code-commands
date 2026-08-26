@@ -2,10 +2,12 @@
 name: tdd
 description: Implement a ticket using Test-Driven Development (RED-GREEN-REFACTOR)
 argument-hint: "<ticket-id>"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash, AskUserQuestion, Edit, Write
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping implement a ticket using Test-Driven Development (TDD). Your task is to guide the user through the RED-GREEN-REFACTOR cycle: write failing tests first, implement code to pass tests, then refactor while keeping tests green.
 
@@ -15,11 +17,23 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+if [ -f ".git-workflow/config.yaml" ]; then
+  CONFIG_PATH=".git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  CONFIG_PATH=".claude/config.yaml" # legacy read-only fallback
+else
+  CONFIG_PATH=""
+fi
+if [ -f ".git-workflow/pr-context.json" ]; then
+  CONTEXT_PATH=".git-workflow/pr-context.json"
+elif [ -f ".claude/.pr-context.json" ]; then
+  CONTEXT_PATH=".claude/.pr-context.json" # legacy read-only fallback
+else
+  CONTEXT_PATH=""
+fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 qa:
@@ -434,7 +448,13 @@ mypy .
 
 ## Step 10: Update Context
 
-Update `.claude/.pr-context.json` with TDD information:
+Update `.git-workflow/pr-context.json` with TDD information:
+
+```bash
+mkdir -p .git-workflow
+```
+
+Always write the canonical path. Never modify the legacy context fallback.
 
 ```json
 {

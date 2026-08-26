@@ -74,7 +74,7 @@ alembic/
 
 ## Git Workflow
 
-Uses Claude Code commands with Jira integration:
+Uses Git Workflow through Claude Code with Jira integration:
 
 - `/start` → Create branch from Jira ticket
 - `/commit` → Commit with `[Type] Message (JIRA-ID)`

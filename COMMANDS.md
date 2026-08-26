@@ -1,10 +1,10 @@
-# Commands Reference
+# Skills reference
 
-This library provides slash commands for Claude Code. Commands are markdown files with YAML frontmatter that define custom commands Claude can execute.
+Git Workflow provides the same 17 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
 
-## Command Format
+## Skill format
 
-Commands in Claude Code use **YAML frontmatter** in markdown files. There is no JSON manifest file - commands are discovered directly from the command files.
+Each `skills/<name>/SKILL.md` starts with standard `name` and `description` fields. Claude also consumes its supported frontmatter fields; Codex relies on the standard fields and the parent session's permissions. The host-neutral body is shared.
 
 Reference: https://code.claude.com/docs/en/skills
 
@@ -12,7 +12,7 @@ Discover more command ideas: [skills.sh](https://skills.sh/)
 
 ## Frontmatter Fields
 
-Each command file (`.md`) can include the following frontmatter fields:
+The following extended fields are retained for Claude compatibility:
 
 ```yaml
 ---
@@ -60,10 +60,10 @@ argument-hint: "[ticket-id]"
 
 #### `disable-model-invocation`
 
-When set to `true`, Claude will not automatically invoke this command - the user must explicitly type the slash command. This is recommended for workflow actions that have side effects (creating branches, committing, etc.).
+When set to `true`, Claude will not automatically invoke this command. Codex plugin ingestion requires this shared field to be absent or `false`, so Git Workflow keeps it `false` and puts confirmation requirements for side effects in each skill body.
 
 ```yaml
-disable-model-invocation: true
+disable-model-invocation: false
 ```
 
 #### `allowed-tools`
@@ -74,15 +74,7 @@ Specifies which tools Claude can use without asking for permission when executin
 allowed-tools: Read, Grep, Glob
 ```
 
-Available tools:
-- `Read` - Read files
-- `Grep` - Search file contents
-- `Glob` - Find files by pattern
-- `Bash` - Execute shell commands
-- `Write` - Create/overwrite files
-- `Edit` - Edit existing files
-- `WebFetch` - Fetch web content
-- `AskUserQuestion` - Ask user for input
+Skill bodies describe host-neutral actions such as reading files, searching text, running shell commands, fetching authoritative documentation, and asking the user for a decision. Each host maps those actions to its available tools and current permissions.
 
 **Security Note**: Only grant the tools necessary for the command to function. Read-only commands should not have `Write`, `Edit`, or `Bash` access.
 
@@ -105,7 +97,9 @@ model: opus    # Most capable, for complex reasoning
 model: haiku   # Fastest, for simple tasks
 ```
 
-## Available Commands
+## Available skills
+
+The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 
 ### Setup & Maintenance
 
@@ -113,7 +107,7 @@ model: haiku   # Fastest, for simple tasks
 |---------|-------------|-----------|
 | `/setup` | Interactive setup for MCP servers and project configuration | - |
 | `/status` | Show where you are in the workflow and the recommended next step | `[--html]` |
-| `/update` | Update commands and agents from the source repository | `[--dry-run] [--prune] [--force] [--source <path>]` |
+| `/update` | Update commands and agents from the source repository | `[--host <claude\|codex\|both>] [--dry-run] [--prune] [--force] [--source <path-or-git-url>]` |
 | `/clean-gone` | Delete local branches whose upstream is gone on the remote, and remove their worktrees | `[--dry-run]` |
 
 ### PR Workflow
@@ -156,14 +150,17 @@ model: haiku   # Fastest, for simple tasks
 
 ## Using Commands
 
-### As Slash Commands
+### Direct invocation
 
-Type the command name with a forward slash:
+Use a forward slash in Claude or a dollar sign in Codex:
 
-```
+```text
 /start PROJ-123
 /commit
 /finish
+$start PROJ-123
+$commit
+$finish
 ```
 
 ### With Arguments
@@ -184,13 +181,13 @@ Arguments are passed after the command name:
 /start-qa tests/qa/proj-123-test.yaml
 ```
 
-### In Conversation
+### In conversation
 
 You can reference commands naturally:
 
 > "I just finished implementing the feature. Can you run /commit and then /finish?"
 
-Claude will invoke the commands in sequence.
+The active host can invoke the skills in sequence.
 
 ## Workflows
 
@@ -274,7 +271,7 @@ Your command instructions here...
 ### Plugin Format (This Repo)
 
 ```text
-skills/                 # Skills (each is an invocable slash command)
+skills/                 # Shared host-neutral skills
 ├── setup/SKILL.md
 ├── start/SKILL.md
 ├── tdd/SKILL.md
@@ -291,7 +288,7 @@ skills/                 # Skills (each is an invocable slash command)
 ├── clean-gone/SKILL.md
 └── status/SKILL.md
 
-agents/                 # Subagents
+agents/                 # Canonical agent instructions
 ├── pr-reviewer.md
 ├── release-validator.md
 └── qa-executor.md
@@ -310,9 +307,11 @@ agents/                 # Subagents
     └── ...
 ```
 
+Codex plugins expose `skills/` directly. `$setup` installs generated project agents as `.codex/agents/*.toml`.
+
 ## Subagents
 
-Subagents are specialized AI assistants defined in the `agents/` directory. They have their own instructions and tool access.
+Agents are specialized assistants whose canonical instructions live in `agents/`. The committed `.codex/agents/*.toml` definitions are generated from those files.
 
 ### Agent Frontmatter
 
@@ -332,11 +331,11 @@ model: sonnet
 | `tools` | string | Comma-separated list of allowed tools |
 | `model` | string | Model to use: `sonnet`, `opus`, or `haiku` |
 
-See [AGENTS.md](./AGENTS.md) for complete documentation.
+See [docs/SUBAGENTS.md](docs/SUBAGENTS.md) for the user-facing catalog. `AGENTS.md` contains concise Codex contributor guidance.
 
 ## Configuration
 
-Commands respect the project configuration in `.claude/config.yaml`:
+Commands respect the project configuration in `.git-workflow/config.yaml`:
 
 ```yaml
 # Affects /start, /commit, /finish

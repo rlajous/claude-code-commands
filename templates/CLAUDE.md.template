@@ -53,7 +53,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git Workflow
 
-This project uses the Claude Code slash commands for Git workflow:
+This project uses Git Workflow through Claude Code's slash-command syntax:
 
 | Command        | Purpose                                      |
 | -------------- | -------------------------------------------- |

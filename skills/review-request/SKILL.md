@@ -6,6 +6,8 @@ allowed-tools: Read, Grep, Glob, Bash(gh pr view:*)
 user-invocable: true
 ---
 
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
+
 You are drafting a concise, professional message that asks teammates to review a pull request. Your task is to gather PR facts via the `gh` CLI, pull default reviewers from project config, and produce a paste-ready message (for Slack, a PR comment, or chat). Follow each step in order. Requires GitHub CLI (`gh`) authenticated.
 
 ## Step 1: Resolve the Pull Request
@@ -23,7 +25,7 @@ If no PR exists for the current branch, stop and tell the user to create one fir
 
 ## Step 2: Load Configuration
 
-Check for `.claude/config.yaml`:
+Resolve `.git-workflow/config.yaml` first, then `.claude/config.yaml` as a legacy read-only fallback. Use defaults only when neither file exists.
 
 - `pullRequests.reviewers` → default reviewers (GitHub usernames or `org/team` slugs). Use these as the people/teams to @-mention.
 - `pullRequests.labels` → for context only.

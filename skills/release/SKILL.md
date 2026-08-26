@@ -1,10 +1,12 @@
 ---
 name: release
 description: Create a release branch and PR to main with auto-extracted changes from staging
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Task, Bash, AskUserQuestion, Edit
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping create a production release. Your task is to create a release branch from the development branch, bump the version, extract changes, and create a comprehensive release PR to the production branch.
 
@@ -13,10 +15,10 @@ You are helping create a production release. Your task is to create a release br
 Check for configuration:
 
 ```bash
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 workflow:
@@ -124,7 +126,7 @@ fi
 
 ## Step 4: Ask for Version Type
 
-Ask the user which version bump to perform (use AskUserQuestion tool):
+Ask the user which version bump to perform (use the active host user-input mechanism):
 
 **Question**: "What type of version bump for this release?"
 
@@ -232,7 +234,7 @@ echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | sort -u
 
 ## Step 7: Detect Special Changes
 
-> **Optional — validate readiness first.** For a higher-stakes release, delegate a pre-release check to the **`release-validator`** agent via the Task tool (it checks tests, build, lint, types, dependency audit, changelog, and git state) and fold any blockers into the checklist. For releases that bump a major dependency or change a public API, delegate to the **`version-delta-analyst`** agent to catalog breaking changes and populate the PR's "Breaking Changes" section.
+> **Validate readiness first.** Delegate a pre-release check to the **`release-validator`** agent through the active host subagent mechanism (it checks tests, build, lint, types, dependency audit, changelog, and git state) and fold any blockers into the checklist. When the release bumps a dependency/framework/API version or changes a public API, also delegate to the **`version-delta-analyst`** agent to catalog breaking changes and populate the PR's "Breaking Changes" section. Start both applicable agents before waiting, then wait for every delegated report.
 
 ### OpenAPI Changes
 

@@ -16,8 +16,14 @@ You are a release validation specialist. Your role is to ensure a release is rea
 Check for project configuration:
 
 ```bash
-# Check for config
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+# Check canonical config first, then the legacy fallback
+if [ -f ".git-workflow/config.yaml" ]; then
+  echo "CONFIG=.git-workflow/config.yaml"
+elif [ -f ".claude/config.yaml" ]; then
+  echo "CONFIG=.claude/config.yaml (legacy)"
+else
+  echo "CONFIG=false"
+fi
 
 # Detect project type
 [ -f "package.json" ] && echo "TYPE=node"
@@ -40,6 +46,17 @@ grep -Po '(?<=version = ")[^"]*' pyproject.toml 2>/dev/null
 # Rust
 grep -Po '(?<=^version = ")[^"]*' Cargo.toml 2>/dev/null
 ```
+
+For a Git Workflow manifest-only package, read `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. Require the Claude version, Codex version, marketplace metadata version, and marketplace plugin version to be identical. Require every plugin identity to be `git-workflow`.
+
+```bash
+python3 scripts/validate-codex-plugin.py
+node scripts/generate-codex-agents.mjs --check
+bash scripts/validate.sh
+git diff --check
+```
+
+Run the official Codex plugin validator when it is installed. Treat a missing optional official validator as a documented skipped check, not as proof that validation passed.
 
 ### 3. Test Suite
 
@@ -126,6 +143,8 @@ Check for changelog updates:
 git log --oneline -1 -- CHANGELOG.md 2>/dev/null
 ```
 
+Require the changelog to contain a heading for the exact release version discovered above. A manifest-only package without a matching entry is not ready for release.
+
 ### 9. Git State Check
 
 Verify clean git state:
@@ -134,10 +153,12 @@ Verify clean git state:
 # Check for uncommitted changes
 git status --porcelain
 
-# Check branch is up-to-date
-git fetch origin
+# Inspect the currently known upstream state without changing refs or contacting a remote
+git branch -vv
 git status -uno
 ```
+
+If release confidence requires fresh remote refs, explain why and obtain explicit user confirmation immediately before running `git fetch origin`. Do not fetch as an automatic part of validation.
 
 ### 10. Migration Check
 

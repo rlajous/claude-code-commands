@@ -6,6 +6,8 @@ allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), B
 user-invocable: true
 ---
 
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
+
 You are performing a comprehensive code review on a GitHub pull request. Your task is to deeply analyze the changes, identify issues across multiple dimensions, and produce a structured review document.
 
 ## Step 1: Parse Arguments
@@ -21,7 +23,7 @@ Determine the PR to review:
 gh pr view --json number,url 2>/dev/null || echo "NO_PR_FOUND"
 ```
 
-If no PR is found, use AskUserQuestion to ask:
+If no PR is found, use the active host user-input mechanism to ask:
 
 **Question**: "Which PR would you like to review? Provide a PR number or GitHub URL."
 
@@ -30,7 +32,7 @@ When `REPO_FLAG` is empty (PR number or current-branch input), resolve `{owner}`
 ## Step 2: Fetch PR Metadata
 
 ```bash
-gh pr view {PR_NUMBER} {REPO_FLAG} --json number,title,body,author,state,baseRefName,headRefName,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
+gh pr view {PR_NUMBER} {REPO_FLAG} --json number,title,body,author,state,baseRefName,baseRefOid,headRefName,headRefOid,files,url,additions,deletions,changedFiles,labels,reviewRequests,createdAt
 ```
 
 If `{owner}` and `{repo}` were not set in Step 1 (i.e., input was a PR number or current branch), extract them from the `url` field in the response (format: `https://github.com/{owner}/{repo}/pull/{number}`).
@@ -47,7 +49,7 @@ If `{owner}` and `{repo}` were not set in Step 1 (i.e., input was a PR number or
 
 ## Step 3: Ask for Review Context
 
-Use AskUserQuestion with a single question:
+Ask the following single question through the active host user-input mechanism:
 
 **Question**: "Any specific focus areas, business context, or known risks for this review? (Type 'skip' to proceed without additional context)"
 
@@ -60,6 +62,8 @@ Use AskUserQuestion with a single question:
 
 ## Step 4: Collect Changes
 
+Resolve `CONFIG_PATH` once: use `.git-workflow/config.yaml` when present, otherwise `.claude/config.yaml` as a legacy read-only fallback. Use defaults only when neither exists.
+
 Get the diff and assess its size:
 
 ```bash
@@ -67,7 +71,7 @@ Get the diff and assess its size:
 gh pr diff {PR_NUMBER} {REPO_FLAG} | wc -l
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:
@@ -135,7 +139,7 @@ cat -- "{file_path}"
 
 ## Step 7: Dispatch Specialized Review Agents (parallel)
 
-Instead of reviewing every dimension inline, fan out to focused subagents via the **Task** tool and aggregate their findings. This yields sharper, single-concern analysis than one monolithic pass.
+Instead of reviewing every dimension inline, fan out to focused subagents through the active host's subagent mechanism and aggregate their findings. This yields sharper, single-concern analysis than one monolithic pass.
 
 **Select aspects** from `$ARGUMENTS` (space-separated; default `all`):
 
@@ -156,7 +160,7 @@ Instead of reviewing every dimension inline, fan out to focused subagents via th
 | Test files added/changed, or new behavior lacking tests | `pr-test-analyzer` |
 | Comments/docstrings added or changed | `comment-analyzer` |
 
-**Launch in parallel:** issue the applicable Task calls in a single message so the agents run concurrently. Give each agent: the PR number/repo, the changed-file list, and the diff (or file paths for large PRs). Each agent returns its own findings; collect them all before continuing.
+**Launch in parallel:** start every applicable named agent before waiting so the agents run concurrently. Give each agent the PR number/repo, `baseRefOid` as `BASE_SHA`, `headRefOid` as `HEAD_SHA`, changed-file list, and diff (or file paths for large PRs). The `pr-reviewer` must use `BASE_SHA...HEAD_SHA` when it needs to reconstruct the PR diff; it must not substitute the locally checked-out `HEAD`. Wait for every agent and collect all findings before continuing.
 
 > **Review lenses** the general `pr-reviewer` pass (and your own synthesis) applies — architecture, business logic, data integrity, error handling, security, performance, testing, code quality. Use them to fill gaps the specialized agents don't cover. Full checklist: see `references/review-lenses.md`.
 
@@ -296,7 +300,7 @@ Produce a structured markdown document:
 
 ## Step 12: Save Review
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:
@@ -325,7 +329,7 @@ If `saveLocally` is false: the review content is held in memory for posting or d
 
 ## Step 13: Confirm Before Posting
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (if one exists):**
 
 ```yaml
 review:
@@ -336,7 +340,7 @@ review:
 
 If `postToGitHub` is `always`: skip to Step 14.
 If `postToGitHub` is `never`: skip to Step 15.
-If `postToGitHub` is `ask`: use AskUserQuestion:
+If `postToGitHub` is `ask`: use the active host user-input mechanism:
 
 **Question**: "How would you like to proceed with this review?"
 
@@ -432,7 +436,7 @@ Review posted: {pr_url}
 If `--sarif` was passed as an argument, also export the findings from Step 9 as a SARIF 2.1.0 log for CI / code-scanning ingestion. Serialize the findings to the JSON array shape `[{ file, line, severity, confidence, message, rule }]` and pipe it through the converter script:
 
 ```bash
-echo '{FINDINGS_JSON}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/to-sarif.mjs" > review.sarif
+echo '{FINDINGS_JSON}' | node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/to-sarif.mjs" > review.sarif
 ```
 
 Tell the user the SARIF file was written to `review.sarif` (e.g. for `github/codeql-action/upload-sarif`).

@@ -80,7 +80,7 @@ constants/
 
 ## Git Workflow
 
-Uses Claude Code commands with Linear integration:
+Uses Git Workflow through Claude Code with Linear integration:
 
 - `/start` → Create branch from Linear ticket
 - `/commit` → Commit with `[Type] Message (TICKET-ID)`

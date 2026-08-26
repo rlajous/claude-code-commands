@@ -1,10 +1,12 @@
 ---
 name: commit
 description: Stage and commit changes with proper formatting following repo conventions
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), AskUserQuestion, Edit
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping commit changes for a pull request. Your task is to stage changes, generate a properly formatted commit message following project conventions, and handle pre-commit hooks.
 
@@ -14,11 +16,11 @@ Check for configuration and context:
 
 ```bash
 # Check for config and context files
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
-[ -f ".claude/.pr-context.json" ] && echo "CONTEXT=true" || echo "CONTEXT=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
+if [ -f ".git-workflow/pr-context.json" ]; then CONTEXT_PATH=".git-workflow/pr-context.json"; elif [ -f ".claude/.pr-context.json" ]; then CONTEXT_PATH=".claude/.pr-context.json"; else CONTEXT_PATH=""; fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 commits:
@@ -28,10 +30,10 @@ commits:
   ticketPattern: "^[A-Z]+-\\d+$"
 attribution:
   enabled: false
-  format: "Co-Authored-By: Claude <noreply@anthropic.com>"
+  format: ""
 ```
 
-**Load from `.claude/.pr-context.json` (if exists):**
+**Load from the resolved `CONTEXT_PATH` (canonical first, legacy read-only fallback):**
 
 ```json
 {
@@ -238,7 +240,7 @@ If commit fails due to pre-commit hooks:
 
 ### Attribution (If Enabled)
 
-If `attribution.enabled: true` in config:
+If `attribution.enabled: true` in config, append the configured prose note to the commit body. The note must comply with repository commit rules and must not impersonate or add another commit author.
 
 ```bash
 git commit -m "{message}
@@ -251,14 +253,18 @@ Example:
 ```
 [Fix] Update token schema (PROJ-1234)
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+This commit was created with assistance from an AI coding agent.
 ```
 
 **Note:** Attribution is disabled by default.
 
 ## Step 7: Update Context
 
-Update `.claude/.pr-context.json`:
+Update `.git-workflow/pr-context.json`:
+
+```bash
+mkdir -p .git-workflow
+```
 
 ```json
 {
@@ -310,8 +316,8 @@ Message: [Fix] Update token schema (PROJ-1234)
 | `commits.format`     | `[{type}] {message} ({ticket})`   | Commit message format          |
 | `commits.types`      | Feature, Fix, Hotfix...           | Allowed commit types           |
 | `commits.requireTicket` | `false`                        | Require ticket ID              |
-| `attribution.enabled` | `false`                          | Add AI co-author               |
-| `attribution.format` | `Co-Authored-By: Claude <...>`    | Attribution line format        |
+| `attribution.enabled` | `false`                          | Add an AI assistance note      |
+| `attribution.format` | empty                              | Optional prose note             |
 
 ## Error Handling
 

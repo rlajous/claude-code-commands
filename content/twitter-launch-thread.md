@@ -4,9 +4,9 @@
 
 ### Tweet 1 (Hook)
 ```
-I just open-sourced my entire Claude Code workflow.
+I just open-sourced Git Workflow for Claude Code and Codex.
 
-10 slash commands that automate:
+17 skills that automate:
 - Feature branches from tickets
 - Conventional commits
 - PRs with full descriptions
@@ -33,12 +33,12 @@ Still manual. Still slow. Still inconsistent.
 
 ### Tweet 3 (The Solution)
 ```
-The solution: Slash commands that handle everything.
+The solution: agent skills that handle everything.
 
-/start TICKET-123 → Creates feature branch, fetches ticket context
-/commit → Stages changes, writes conventional commit
-/finish → Pushes and creates PR with full description
-/release → Version bump, changelog, PR to main
+Claude: /start, /commit, /finish, /release
+Codex: $start, $commit, $finish, $release
+
+Same 17 workflows, shared config and state, native packaging for each host.
 
 That's it. Ticket to production.
 ```
@@ -71,15 +71,16 @@ One command set for polyglot teams.
 
 ### Tweet 6 (CTA)
 ```
-Get started in 2 minutes:
+Get started in 2 minutes.
 
-git clone https://github.com/rlajous/claude-code-commands
-cp -r claude-code-commands/skills your-project/.claude/
-cp -r claude-code-commands/agents your-project/.claude/
+Claude marketplace:
+/plugin install git-workflow@git-workflow-marketplace
+/git-workflow:setup
 
-Then run /setup to configure.
+Codex plugin:
+$setup
 
-MIT licensed. No dependencies. Just better workflows.
+17 skills. 8 specialized agents. MIT licensed.
 
 github.com/rlajous/claude-code-commands
 ```
@@ -90,7 +91,7 @@ github.com/rlajous/claude-code-commands
 
 ### Angle 1 - Speed
 ```
-My PR workflow before Claude Code Commands: 30 minutes
+My PR workflow before Git Workflow: 30 minutes
 
 My PR workflow now:
 
@@ -122,7 +123,7 @@ Open source: github.com/rlajous/claude-code-commands
 ```
 "But my tickets are in Linear/Jira/GitHub..."
 
-Claude Code Commands integrates with all of them via MCP servers.
+Git Workflow integrates with Linear and Jira through MCP, and with GitHub through the `gh` CLI.
 
 /start LINEAR-123 → Fetches ticket title, description, acceptance criteria
 /finish → Links PR back to ticket automatically

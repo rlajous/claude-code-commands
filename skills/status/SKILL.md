@@ -2,10 +2,12 @@
 name: status
 description: Show where you are in the git-workflow pipeline (branch, ticket, commits, PR, release, QA) and what the recommended next step is. Use when the user asks "where am I", "what's the status", "what's next", "status of this branch/PR/release", or wants a quick summary of the current workflow state.
 argument-hint: "[--html]"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(git rev-parse:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh release list:*)
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are reporting the current position in the git-workflow pipeline and the recommended next step. This is **read-only** — never modify Git state, never create branches/commits/PRs. Follow each step in order.
 
@@ -17,10 +19,10 @@ You are reporting the current position in the git-workflow pipeline and the reco
 
 Read the durable workflow context if present:
 
-- `.claude/.pr-context.json` — ticket id/title, branch, type, timestamps written by `/start`, `/tdd`, `/commit`.
-- `.claude/config.yaml` — `workflow.developmentBranch`/`productionBranch`, issue tracker.
+- `.git-workflow/pr-context.json` — ticket id/title, branch, type, timestamps written by `/start`, `/tdd`, `/commit`.
+- `.git-workflow/config.yaml` — `workflow.developmentBranch`/`productionBranch`, issue tracker.
 
-If neither exists, fall back to live Git/GitHub state only.
+If a canonical file is absent, read its matching legacy `.claude/` fallback as defined in the compatibility reference. If neither form exists, fall back to live Git/GitHub state only.
 
 ## Step 3: Gather Live State (read-only)
 
@@ -81,10 +83,11 @@ Map the stage to the recommended next command:
 If `--html` was passed, generate a self-contained HTML status page:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/status-report.mjs" > .claude/status.html
+mkdir -p .git-workflow
+node "${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/status-report.mjs" > .git-workflow/status.html
 ```
 
-The script gathers the same `git`/`gh` state as JSON and injects it into `assets/status-template.html`. Tell the user the file path (`.claude/status.html`) and that it is a single self-contained file they can open in a browser. If Node is unavailable, skip the HTML and print the text report only.
+The script gathers the same `git`/`gh` state as JSON and injects it into `assets/status-template.html`. Tell the user the file path (`.git-workflow/status.html`) and that it is a single self-contained file they can open in a browser. If Node is unavailable, skip the HTML and print the text report only.
 
 ## Error Handling
 

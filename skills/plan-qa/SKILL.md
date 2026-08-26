@@ -2,10 +2,12 @@
 name: plan-qa
 description: Generate QA test plan YAML from ticket
 argument-hint: "<ticket-id> [--url <url>]"
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, WebFetch, Write, Bash(gh issue view:*), Bash(mkdir:*), Bash(cat:*)
 user-invocable: true
 ---
+
+> Cross-runtime: follow [runtime compatibility](../../references/runtime-compatibility.md) for invocation, delegation, configuration precedence, state paths, and permissions.
 
 You are helping generate a QA test plan from a ticket description, issue tracker ticket, or requirements. This command creates a structured YAML test plan that can be executed with `/start-qa`.
 
@@ -14,10 +16,10 @@ You are helping generate a QA test plan from a ticket description, issue tracker
 Check for configuration:
 
 ```bash
-[ -f ".claude/config.yaml" ] && echo "CONFIG=true" || echo "CONFIG=false"
+if [ -f ".git-workflow/config.yaml" ]; then CONFIG_PATH=".git-workflow/config.yaml"; elif [ -f ".claude/config.yaml" ]; then CONFIG_PATH=".claude/config.yaml"; else CONFIG_PATH=""; fi
 ```
 
-**Load from `.claude/config.yaml` (if exists):**
+**Load from the resolved `CONFIG_PATH` (canonical first, legacy read-only fallback):**
 
 ```yaml
 qa:

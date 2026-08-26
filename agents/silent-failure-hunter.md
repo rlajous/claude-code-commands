@@ -1,6 +1,6 @@
 ---
 name: silent-failure-hunter
-description: Use this agent when reviewing code changes in a pull request to identify silent failures, inadequate error handling, and inappropriate fallback behavior. This agent should be invoked proactively after completing a logical chunk of work that involves error handling, catch blocks, fallback logic, or any code that could potentially suppress errors. Examples:\n\n<example>\nContext: A developer has just finished implementing a new feature that fetches data from an API with fallback behavior.\nuser: "I've added error handling to the API client. Can you review it?"\nassistant: "Let me use the silent-failure-hunter agent to thoroughly examine the error handling in your changes."\n<Task tool invocation to launch silent-failure-hunter agent>\n</example>\n\n<example>\nContext: A developer has opened a PR with changes that include try-catch blocks.\nuser: "Please review PR #1234"\nassistant: "I'll use the silent-failure-hunter agent to check for any silent failures or inadequate error handling in this PR."\n<Task tool invocation to launch silent-failure-hunter agent>\n</example>\n\n<example>\nContext: A developer has just refactored error handling code.\nuser: "I've updated the error handling in the authentication module"\nassistant: "Let me proactively use the silent-failure-hunter agent to ensure the error handling changes don't introduce silent failures."\n<Task tool invocation to launch silent-failure-hunter agent>\n</example>
+description: Review changed code for swallowed errors, overly broad catches, misleading fallbacks, and failures that are logged but not surfaced. Use during pull-request review or when the user asks specifically about error handling.
 tools: Read, Grep, Glob
 model: inherit
 color: yellow
@@ -88,7 +88,7 @@ Look for patterns that hide errors:
 
 ### 5. Validate Against Project Standards
 
-Ensure compliance with the project's own error handling conventions (check `CLAUDE.md` or equivalent contributor docs if present):
+Ensure compliance with the project's own error handling conventions (check `AGENTS.md`, `CLAUDE.md`, or equivalent contributor docs if present):
 - Never silently fail in production code
 - Always log errors with the project's designated logging mechanism
 - Include relevant context in error messages
