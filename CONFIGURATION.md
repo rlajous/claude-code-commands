@@ -62,6 +62,26 @@ testing:
   typeCheck: auto
   build: auto
 
+# Review publishing and event selection
+review:
+  saveLocally: true
+  reviewsDir: docs
+  postToGitHub: ask       # ask | always | never
+  maxDiffLines: 3000
+  postEvent: auto         # auto | comment
+
+# Review-request daemon and worker
+reviewWatch:
+  enabled: false
+  intervalSeconds: 60
+  sound: Glass
+  linters: auto
+  knownIssues: references/known-issues.md
+
+# Self-contained HTML decision briefs
+changeBrief:
+  outputDir: .git-workflow/change-brief
+
 # QA test settings
 qa:
   apiBaseUrl: ${API_BASE_URL}
@@ -282,6 +302,69 @@ testing:
   build: "npm run build"
 ```
 
+### Review
+
+```yaml
+review:
+  # Save the review document in the local checkout
+  saveLocally: true
+
+  # Directory used for saved review documents
+  reviewsDir: docs
+
+  # ask: preview and confirm; always: post; never: keep local
+  postToGitHub: ask
+
+  # Switch from a monolithic diff to file-by-file reading above this size
+  maxDiffLines: 3000
+
+  # auto: derive REQUEST_CHANGES/APPROVE; comment: always post COMMENT
+  postEvent: auto
+```
+
+Self-authored pull requests cannot use `REQUEST_CHANGES` or `APPROVE` and fall back to `COMMENT`.
+`review.postToGitHub` remains the final permission gate regardless of the resolved event.
+
+### Review Watch
+
+```yaml
+reviewWatch:
+  # Explicit opt-in for both the daemon and worker
+  enabled: false
+
+  # Poll interval in seconds; a daemon CLI option can override it
+  intervalSeconds: 60
+
+  # macOS system sound name
+  sound: Glass
+
+  # Auto-detect changed-file linters, or provide one explicit command
+  linters: auto
+
+  # Relative paths prefer the project, then the bundled skill reference
+  knownIssues: references/known-issues.md
+```
+
+The daemon discovers up to 50 open PRs requesting the authenticated user's review, optionally
+filtered by repository. It de-duplicates by `repo#number@headRefOid` and stores queue state outside
+the project under `${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow/`. Completed-review SHAs are
+stored in `.git-workflow/.review-watch-reviewed`.
+
+See the [Review Watch guide](docs/REVIEW_WATCH.md) for notifications, queue schema, commands, and
+posting behavior.
+
+### Change Brief
+
+```yaml
+changeBrief:
+  # Base directory for per-PR self-contained HTML files
+  outputDir: .git-workflow/change-brief
+```
+
+PR `42` is written to `<outputDir>/pr-42/index.html`. The same resolved value is reported to the
+user. Each file embeds its styles, scripts, diagrams, and screenshots and is validated to prevent
+automatic external requests. See the [Change Brief guide](docs/CHANGE_BRIEF.md).
+
 ### QA
 
 ```yaml
@@ -363,6 +446,15 @@ qa:
 | `issueTracker.type` | `auto` |
 | `versioning.file` | `auto` |
 | `attribution.enabled` | `false` |
+| `review.postToGitHub` | `ask` |
+| `review.maxDiffLines` | `3000` |
+| `review.postEvent` | `auto` |
+| `reviewWatch.enabled` | `false` |
+| `reviewWatch.intervalSeconds` | `60` |
+| `reviewWatch.sound` | `Glass` |
+| `reviewWatch.linters` | `auto` |
+| `reviewWatch.knownIssues` | `references/known-issues.md` |
+| `changeBrief.outputDir` | `.git-workflow/change-brief` |
 | `qa.timeout` | `10` |
 
 ## Hooks Configuration

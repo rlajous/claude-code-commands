@@ -13,6 +13,8 @@
   diagrams, conditional UI/mobile screenshots, API cURL exchanges, risks, and evidence gaps.
 - Include repository, PR number, author, and title in review-watch notifications; fetch live queue
   metadata with GraphQL and keep validation runs from sending desktop test notifications.
+- Add complete Review Watch and Change Brief guides, real macOS notification captures, and a
+  downloadable self-contained HTML example.
 
 ## 2.5.1
 

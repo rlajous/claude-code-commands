@@ -128,6 +128,26 @@ on a clean PR posts `APPROVE`, generates a `change-brief` with diagrams, UI/mobi
 API cURL evidence when relevant, and pings you. Opt in with
 `reviewWatch.enabled: true` in `.git-workflow/config.yaml`.
 
+### What it looks like
+
+Review Watch uses the same identity at both points in the lifecycle:
+
+| Review requested | Ready for merge |
+| --- | --- |
+| ![A real macOS notification showing the repository, PR, author, and title.](docs/assets/review-watch-requested-macos.png) | ![A real macOS notification showing that the same PR is ready for merge.](docs/assets/review-watch-ready-macos.png) |
+
+Linux uses the active desktop's native `notify-send` appearance. The daemon only discovers,
+de-duplicates, queues, and notifies; the active Claude or Codex session performs the review.
+
+A clean result produces one self-contained HTML decision brief designed for a 6–8 minute read. It
+combines business rules, a diagram when the flow benefits from one, contextual screenshots or API
+cURL evidence, focused before/after code, risks, rollout, rollback, and verification.
+
+[![Example PR #23 change brief with summary, business rules, workflow diagram, and notification evidence.](docs/assets/change-brief-pr-23.png)](docs/examples/change-brief-pr-23.html)
+
+[Open the HTML example](docs/examples/change-brief-pr-23.html), read the complete
+[Review Watch guide](docs/REVIEW_WATCH.md), or see the [Change Brief guide](docs/CHANGE_BRIEF.md).
+
 ## Agents and delegation
 
 The canonical instructions live in `agents/*.md`; generated Codex definitions live in `.codex/agents/*.toml`.

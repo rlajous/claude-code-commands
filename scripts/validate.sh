@@ -267,6 +267,31 @@ for requirement in (
     "6–8 minutes",
 ):
     assert requirement in evidence_playbook, requirement
+
+documentation_assets = (
+    "docs/assets/review-watch-requested-macos.png",
+    "docs/assets/review-watch-ready-macos.png",
+    "docs/assets/change-brief-pr-23.png",
+)
+for path in documentation_assets:
+    assert Path(path).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path
+
+example = read("docs/examples/change-brief-pr-23.html")
+assert "Snapshot: e49c47b" in example
+assert example.count("data:image/png;base64,") == 2
+assert "__REQUESTED_IMAGE_DATA__" not in example and "__READY_IMAGE_DATA__" not in example
+
+readme = read("README.md")
+for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md"):
+    assert path in readme, path
+
+review_watch_docs = read("docs/REVIEW_WATCH.md")
+assert "up to 50 open PRs" in review_watch_docs
+assert "unknown author" in review_watch_docs
+assert "REVIEW_WATCH_NOTIFY_SCRIPT" in review_watch_docs
+change_brief_docs = read("docs/CHANGE_BRIEF.md")
+assert "less than 10 minutes" in change_brief_docs
+assert "zero\nautomatic external requests" in change_brief_docs
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
@@ -280,6 +305,11 @@ if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; 
 if bash scripts/test-review-watch.sh >/dev/null; then ok "review watcher configuration and queue behavior"; else err "review watcher configuration and queue behavior"; fi
 if bash scripts/test-review-event.sh >/dev/null; then ok "review event configuration modes"; else err "review event configuration modes"; fi
 if bash scripts/test-self-contained-html.sh >/dev/null; then ok "self-contained HTML network guard"; else err "self-contained HTML network guard"; fi
+if python3 skills/change-brief/scripts/validate-self-contained-html.py docs/examples/change-brief-pr-23.html >/dev/null; then
+  ok "documented change brief is self-contained"
+else
+  err "documented change brief is self-contained"
+fi
 if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precedence"; else err "runtime state precedence"; fi
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
 if bash scripts/test-skill-resource-paths.sh >/dev/null; then ok "skill-local resources and compatibility wrappers"; else err "skill-local resource paths or wrappers"; fi

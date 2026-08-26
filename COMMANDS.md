@@ -207,6 +207,43 @@ Commands are designed to work together in workflows:
 4. `/finish` - Push and create PR
 5. `/review` - Comprehensive code review on the PR
 
+### Review Automation Flow
+
+Use Review Watch when you want a lightweight daemon to detect review requests and the active host
+session to make the review decision:
+
+```text
+/review-watch --doctor          # Claude: validate the installation
+/review-watch --daemon-command  # Claude: print the daemon command
+/review-watch --drain           # Claude: process queued PRs
+
+$review-watch --doctor          # Codex: validate the installation
+$review-watch --daemon-command  # Codex: print the daemon command
+$review-watch --drain           # Codex: process queued PRs
+```
+
+| Argument | Behavior |
+| --- | --- |
+| `<pr-number-or-url>` | Review one PR. |
+| `--drain` or no argument | Process the local daemon queue, newest record per PR. |
+| `--comment-only` | Never post `REQUEST_CHANGES` or `APPROVE`; use `COMMENT`. |
+| `--doctor` | Check paths, dependencies, configuration, and `gh` authentication without querying PRs or changing GitHub. |
+| `--daemon-command` | Print the absolute command to run in another terminal. |
+
+The daemon notifies once per head SHA. Tier 1 runs project linters and deterministic known-issue
+rules; Tier 2 fans out to the relevant review agents only when Tier 1 is clean. Blocking findings
+produce `REQUEST_CHANGES`. A clean result produces `APPROVE` or policy-safe `COMMENT`, a
+self-contained Change Brief, and a ready-for-merge notification.
+
+Generate the HTML directly for any PR with `/change-brief <pr>` in Claude or
+`$change-brief <pr>` in Codex. The artifact is written under
+`.git-workflow/change-brief/pr-<n>/index.html` by default and includes business logic, diagrams,
+conditional UI/mobile screenshots, API cURL evidence, focused before/after code, risks, and
+verification in a sub-10-minute reading path.
+
+See [Review Watch](docs/REVIEW_WATCH.md) and [Change Brief](docs/CHANGE_BRIEF.md) for the complete
+behavior and visual examples.
+
 ### TDD Flow
 
 ```text
