@@ -1,0 +1,42 @@
+name: Capture macOS notification evidence
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/capture-macos-notifications.yml"
+      - "site/scripts/capture-macos-notifications.sh"
+      - "site/scripts/macos-notification-*.swift"
+      - "skills/notifications/scripts/notify.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture on a clean remote Mac
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Capture real Notification Center banners
+        run: bash site/scripts/capture-macos-notifications.sh .artifacts/macos-notifications
+
+      - name: Summarize captures
+        if: success()
+        run: |
+          for image in .artifacts/macos-notifications/*-macos.png; do
+            printf '### `%s`\n\n' "$(basename "$image")" >> "$GITHUB_STEP_SUMMARY"
+            sips -g pixelWidth -g pixelHeight "$image" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Upload captures and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-notification-evidence
+          path: .artifacts/macos-notifications
+          if-no-files-found: warn
+          retention-days: 14

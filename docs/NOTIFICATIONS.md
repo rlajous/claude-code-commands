@@ -86,6 +86,12 @@ theme.
 
 ![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
 
+The screenshots are generated on a clean remote Mac by the repository's
+[`Capture macOS notification evidence`](../.github/workflows/capture-macos-notifications.yml)
+workflow. It calls the same packaged notifier used at runtime, captures the real Notification
+Center windows against a deterministic background, and uploads both the banners and full-screen
+diagnostics. No personal desktop, open application, or fabricated browser mockup is involved.
+
 ## One daemon, two GitHub channels
 
 The notifications skill owns one daemon shared with [Review Watch](REVIEW_WATCH.md):
