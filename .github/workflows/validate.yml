@@ -33,3 +33,53 @@ jobs:
 
       - name: Validate package, hooks, and synchronization
         run: bash scripts/validate.sh
+
+  validate-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install site dependencies
+        working-directory: site
+        run: npm ci
+
+      - name: Audit site dependencies
+        working-directory: site
+        run: npm audit --audit-level=high
+
+      - name: Install Chromium
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+
+      - name: Check and build documentation site
+        working-directory: site
+        env:
+          ASTRO_TELEMETRY_DISABLED: "1"
+        run: npm run check && npm run build
+
+      - name: Validate self-contained decision brief
+        run: python3 scripts/validate-self-contained-html.py docs/examples/change-brief-pr-23.html
+
+      - name: Test responsive layouts and accessibility
+        working-directory: site
+        run: npm run test:site
+
+      - name: Audit performance, accessibility, best practices, and SEO
+        working-directory: site
+        run: npm run test:lighthouse
+
+      - name: Upload static site preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-tooling-site-preview
+          path: site/dist
+          retention-days: 7
+          if-no-files-found: error

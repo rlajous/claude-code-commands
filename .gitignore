@@ -11,3 +11,16 @@
 # Python helper bytecode
 __pycache__/
 *.py[cod]
+
+# Documentation site dependencies and generated output
+site/node_modules/
+site/dist/
+site/.astro/
+site/playwright-report/
+site/test-results/
+site/.lighthouseci/
+site/src/content/docs/generated/
+site/public/assets/
+site/public/git-workflow/
+site/public/index.md
+site/public/llms.txt
