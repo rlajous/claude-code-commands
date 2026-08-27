@@ -18,8 +18,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -31,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build and upload Astro site
         uses: withastro/action@v6
@@ -39,6 +39,9 @@ jobs:
           node-version: 24
 
   deploy:
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

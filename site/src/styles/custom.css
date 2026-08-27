@@ -1,7 +1,7 @@
 :root {
-  --at-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --at-font-body: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  --at-font-code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --at-font-display: "Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", serif;
+  --at-font-body: "Avenir Next", "Avenir", "Segoe UI", sans-serif;
+  --at-font-code: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   --at-accent: oklch(62% 0.19 38);
   --at-accent-deep: oklch(46% 0.16 37);
   --at-paper: oklch(97% 0.018 82);
@@ -32,6 +32,7 @@
   --sl-color-hairline-light: color-mix(in oklch, var(--at-rule) 64%, var(--at-paper));
   --sl-content-width: 48rem;
   --sl-content-pad-x: clamp(1.15rem, 3vw, 2.5rem);
+
   color-scheme: light;
 }
 
@@ -57,6 +58,7 @@
   --sl-color-gray-5: oklch(32% 0.02 65);
   --sl-color-gray-6: oklch(24% 0.018 63);
   --sl-color-black: var(--at-paper);
+
   color-scheme: dark;
 }
 
@@ -74,7 +76,7 @@ body {
   color: var(--at-ink);
   font-family: var(--at-font-body);
   font-kerning: normal;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
 }
 
 ::selection {
@@ -222,6 +224,7 @@ header.header {
 
 .hub-landing {
   --hub-max: 88rem;
+
   position: relative;
   left: 50%;
   width: min(var(--hub-max), calc(100vw - 2rem));
@@ -811,6 +814,7 @@ header.header {
   :root {
     --at-paper: oklch(98% 0.005 80);
     --at-ink: oklch(18% 0.01 60);
+
     background: var(--at-paper);
   }
 
