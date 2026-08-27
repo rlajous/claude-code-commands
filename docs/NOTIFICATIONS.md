@@ -87,8 +87,9 @@ theme.
 ![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
 
 The repository includes two reproducible ways to refresh these screenshots on a clean remote Mac:
-the public repository's [Cirrus CI task](https://cirrus-ci.com/github/rlajous/claude-code-commands)
-runs in a managed Tart VM, while the
+after the repository is connected to Cirrus CI, its
+[Cirrus task](https://cirrus-ci.com/github/rlajous/claude-code-commands) runs in a managed Tart VM
+using the free public open-source allocation. The
 [`Capture macOS notification evidence`](https://github.com/rlajous/claude-code-commands/actions/workflows/capture-macos-notifications.yml)
 workflow supports a dedicated runner. Both call the same packaged notifier used at runtime,
 capture the real Notification Center windows against a deterministic background, and upload both
