@@ -60,6 +60,8 @@ launchctl bootstrap \
   >>"$output_dir/notification-preferences.log" 2>&1 || true
 launchctl kickstart -k "gui/$(id -u)/com.apple.notificationcenterui.agent" \
   >>"$output_dir/notification-preferences.log" 2>&1 || true
+open -gja /System/Library/CoreServices/NotificationCenter.app \
+  >>"$output_dir/notification-preferences.log" 2>&1 || true
 launchctl print "gui/$(id -u)/com.apple.notificationcenterui.agent" \
   >>"$output_dir/notification-preferences.log" 2>&1 || true
 sleep 3
@@ -87,6 +89,9 @@ capture_banner() {
     >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
   launchctl kickstart "gui/$(id -u)/com.apple.notificationcenterui.agent" \
     >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
+  open -gja /System/Library/CoreServices/NotificationCenter.app \
+    >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
+  sleep 1
   "$notify_script" "$title" "$message" Glass
 
   : >"$output_dir/${filename%.png}-windows.log"
