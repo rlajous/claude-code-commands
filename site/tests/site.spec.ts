@@ -17,20 +17,60 @@ for (const route of primaryRoutes) {
 
 test('landing page presents both hosts and real evidence', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: /Ship with an agent/ })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Claude Code' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Codex' })).toBeVisible();
-  const fieldIndex = page.getByRole('navigation', { name: 'Landing page sections' });
-  await expect(fieldIndex.getByRole('link')).toHaveCount(4);
-  await expect(fieldIndex.getByRole('link', { name: /01\s*Install/i })).toHaveAttribute('href', '#install');
-  await expect(fieldIndex.getByRole('link', { name: /03\s*Evidence/i })).toHaveAttribute('href', '#evidence');
-  const notificationImages = page.locator('.notification-proof img');
+  await expect(page.getByRole('heading', { level: 1, name: /Ship software with agents/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Claude Code' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Codex' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ready for review' })).toBeVisible();
+  await expect(page.getByText('20 shared skills', { exact: true }).first()).toBeVisible();
+  const notificationImages = page.locator('.notification-stack img');
   await expect(notificationImages).toHaveCount(3);
   await notificationImages.last().scrollIntoViewIfNeeded();
   await expect.poll(async () => notificationImages.evaluateAll((images) => (
     images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)
   ))).toBe(true);
-  await expect(page.getByRole('link', { name: /Open the real PR #23 brief/ })).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
+  await expect(page.locator('.brief-preview')).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
+});
+
+test('host quick start supports mouse, keyboard, and copy feedback', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+
+  const claude = page.getByRole('tab', { name: 'Claude Code' });
+  const codex = page.getByRole('tab', { name: 'Codex' });
+  await expect(claude).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name: 'Claude Code' })).toBeVisible();
+
+  await claude.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(codex).toBeFocused();
+  await expect(codex).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel', { name: 'Codex' })).toBeVisible();
+
+  const copy = page.getByRole('button', { name: 'Copy Codex setup commands' });
+  await copy.click();
+  await expect(copy).toContainText('Copied');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('$setup');
+});
+
+test('documentation shell exposes navigation, command search, and active sidebar state', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'The full command shell is visible on desktop.');
+  await page.goto('/git-workflow/notifications/');
+  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
+  await expect(page.locator('.sidebar-content a[aria-current="page"]')).toContainText('Notifications');
+
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Search' })).not.toBeVisible();
+});
+
+test('mobile documentation navigation opens without hiding core controls', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'The menu trigger is only visible on mobile.');
+  await page.goto('/git-workflow/notifications/');
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.locator('.sidebar-pane')).toBeVisible();
+  await expect(page.locator('.mobile-preferences .theme-trigger')).toBeVisible();
+  await expect(page.locator('.sidebar-content a[aria-current="page"]')).toContainText('Notifications');
 });
 
 test('documentation exposes canonical, Markdown, llms, and structured data', async ({ page }) => {
@@ -166,6 +206,23 @@ test('open theme menu has no automatically detectable accessibility violations',
   await trigger.click();
   await page.waitForTimeout(200);
   results = await new AxeBuilder({ page })
+    .exclude('astro-dev-toolbar')
+    .exclude('.sl-skip-link')
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test('open search and mobile navigation have no detectable accessibility violations', async ({ page }, testInfo) => {
+  await page.goto('/git-workflow/notifications/');
+  if (testInfo.project.name === 'desktop') {
+    await page.getByRole('button', { name: 'Search' }).click();
+  } else if (testInfo.project.name === 'mobile') {
+    await page.getByRole('button', { name: 'Menu' }).click();
+  } else {
+    test.skip();
+  }
+  await page.waitForTimeout(300);
+  const results = await new AxeBuilder({ page })
     .exclude('astro-dev-toolbar')
     .exclude('.sl-skip-link')
     .analyze();

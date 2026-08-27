@@ -1,0 +1,7 @@
+---
+interface Props { id: string; label: string; class?: string; }
+const { id, label, class: className } = Astro.props;
+---
+<div id={id} popover="auto" role="menu" aria-label={label} data-slot="dropdown-menu" class:list={['ui-dropdown-menu', className]}>
+  <slot />
+</div>

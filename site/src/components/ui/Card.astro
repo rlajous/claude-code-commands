@@ -1,0 +1,9 @@
+---
+interface Props {
+  class?: string;
+  elevated?: boolean;
+}
+const { class: className, elevated = false } = Astro.props;
+---
+
+<article data-slot="card" data-elevated={elevated ? 'true' : undefined} class:list={['ui-card', className]}><slot /></article>

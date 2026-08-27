@@ -65,8 +65,10 @@ export default defineConfig({
       pagefind: true,
       customCss: ['./src/styles/custom.css'],
       components: {
+        Header: './src/components/Header.astro',
         Head: './src/components/Head.astro',
         PageTitle: './src/components/PageTitle.astro',
+        Search: './src/components/Search.astro',
         SiteTitle: './src/components/SiteTitle.astro',
         ThemeSelect: './src/components/ThemeSelect.astro',
       },

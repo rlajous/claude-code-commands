@@ -1,0 +1,29 @@
+---
+import Search from './Search.astro';
+import SiteTitle from './SiteTitle.astro';
+import ThemeSelect from './ThemeSelect.astro';
+import IconGlyph from './ui/IconGlyph.astro';
+
+const path = Astro.url.pathname;
+const links = [
+  { label: 'Git Workflow', href: '/git-workflow/' },
+  { label: 'Install', href: '/git-workflow/installation/' },
+  { label: 'Commands', href: '/git-workflow/reference/commands/' },
+];
+---
+
+<div class="at-header" data-slot="site-header">
+  <div class="at-header-brand"><SiteTitle /></div>
+  <nav class="at-header-nav" aria-label="Primary navigation">
+    {links.map((link) => (
+      <a href={link.href} aria-current={path === link.href ? 'page' : undefined}>{link.label}</a>
+    ))}
+  </nav>
+  <div class="at-header-search"><Search /></div>
+  <div class="at-header-actions print:hidden">
+    <a class="at-github-link" href="https://github.com/rlajous/claude-code-commands" aria-label="GitHub repository">
+      <IconGlyph name="github" size={18} />
+    </a>
+    <ThemeSelect />
+  </div>
+</div>

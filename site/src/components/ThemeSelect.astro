@@ -263,7 +263,7 @@ const themes = [
 			justify-content: center;
 			gap: 0.55rem;
 			border: 1px solid transparent;
-			border-radius: 0;
+			border-radius: var(--radius-md);
 			background: transparent;
 			color: var(--at-ink-soft);
 			cursor: pointer;
@@ -278,13 +278,13 @@ const themes = [
 
 		.theme-trigger:hover,
 		.theme-trigger[aria-expanded='true'] {
-			border-color: var(--at-rule);
-			background: var(--at-paper-raised);
+			border-color: var(--border);
+			background: var(--muted);
 			color: var(--at-ink);
 		}
 
 		.theme-trigger[aria-expanded='true'] {
-			box-shadow: 0.18rem 0.18rem 0 var(--at-rule);
+			box-shadow: var(--shadow-sm);
 		}
 
 		.theme-trigger :global(svg) {
@@ -320,10 +320,10 @@ const themes = [
 			inset: auto;
 			width: min(13rem, calc(100vw - 1.5rem));
 			margin: 0;
-			border: 1px solid var(--at-ink);
-			border-radius: 0;
-			background: var(--at-paper-raised);
-			box-shadow: 0.38rem 0.38rem 0 var(--at-rule);
+			border: 1px solid var(--border);
+			border-radius: var(--radius-lg);
+			background: var(--popover);
+			box-shadow: var(--shadow-lg);
 			color: var(--at-ink);
 			overflow: visible;
 			padding: 0.72rem;
@@ -363,7 +363,7 @@ const themes = [
 		.menu-rule {
 			height: 1px;
 			margin: 0 -0.72rem 0.35rem;
-			background: var(--at-rule);
+			background: var(--border);
 		}
 
 		.theme-option {
@@ -375,7 +375,7 @@ const themes = [
 			align-items: center;
 			gap: 0.62rem;
 			border: 0;
-			border-radius: 0;
+			border-radius: var(--radius-sm);
 			background: transparent;
 			color: var(--theme-menu-muted);
 			cursor: pointer;
@@ -384,28 +384,16 @@ const themes = [
 			text-align: start;
 		}
 
-		.theme-option::before {
-			position: absolute;
-			inset-block: 0.38rem;
-			inset-inline-start: -0.72rem;
-			width: 3px;
-			background: transparent;
-			content: '';
-		}
-
 		.theme-option:hover,
 		.theme-option:focus-visible {
-			background: color-mix(in oklch, var(--at-accent) 10%, var(--at-paper-raised));
+			background: var(--accent);
 			color: var(--at-ink);
 		}
 
 		.theme-option[aria-checked='true'] {
-			color: var(--at-ink);
+			background: var(--primary-surface);
+			color: var(--primary-strong);
 			font-weight: 700;
-		}
-
-		.theme-option[aria-checked='true']::before {
-			background: var(--at-accent);
 		}
 
 		.option-icon,
@@ -420,7 +408,7 @@ const themes = [
 		}
 
 		.option-check {
-			color: var(--at-accent-deep);
+			color: var(--primary-strong);
 			opacity: 0;
 			transform: translateX(-0.2rem);
 			transition:
@@ -434,7 +422,7 @@ const themes = [
 		}
 
 		.menu-note {
-			border-top: 1px solid var(--at-rule);
+			border-top: 1px solid var(--border);
 			color: var(--theme-menu-muted);
 			font-size: 0.58rem;
 			letter-spacing: 0.075em;

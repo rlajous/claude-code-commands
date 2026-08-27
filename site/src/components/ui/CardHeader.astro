@@ -1,0 +1,5 @@
+---
+interface Props { class?: string; }
+const { class: className } = Astro.props;
+---
+<header data-slot="card-header" class:list={['ui-card-header', className]}><slot /></header>

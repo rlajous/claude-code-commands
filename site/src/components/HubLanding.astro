@@ -1,4 +1,16 @@
 ---
+import Badge from './ui/Badge.astro';
+import Button from './ui/Button.astro';
+import Card from './ui/Card.astro';
+import CardContent from './ui/CardContent.astro';
+import CardHeader from './ui/CardHeader.astro';
+import IconGlyph from './ui/IconGlyph.astro';
+import Item from './ui/Item.astro';
+import Kbd from './ui/Kbd.astro';
+import Separator from './ui/Separator.astro';
+import TabPanel from './ui/TabPanel.astro';
+import Tabs from './ui/Tabs.astro';
+
 const version = import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION;
 const skillCount = import.meta.env.PUBLIC_GIT_WORKFLOW_SKILL_COUNT;
 const agentCount = import.meta.env.PUBLIC_GIT_WORKFLOW_AGENT_COUNT;
@@ -8,13 +20,13 @@ const capabilityGroups = [
     index: '01',
     title: 'Shape the change',
     skills: '$start · $tdd · $commit · $finish',
-    detail: 'Move from an issue to a reviewable pull request with repository conventions preserved.',
+    detail: 'Turn an issue into a reviewable pull request while preserving each repository’s conventions.',
   },
   {
     index: '02',
     title: 'Prove the change',
     skills: '$review · $review-watch · $change-brief',
-    detail: 'Review with specialized agents, deterministic checks, and evidence a human can absorb quickly.',
+    detail: 'Combine deterministic checks, specialist review, and evidence a human can absorb quickly.',
   },
   {
     index: '03',
@@ -26,147 +38,218 @@ const capabilityGroups = [
     index: '04',
     title: 'Stay in the loop',
     skills: '$notifications · $status · $standup',
-    detail: 'Get private local signals and a clear answer to what happened and what comes next.',
+    detail: 'Receive private local signals and always know what happened and what comes next.',
   },
+];
+
+const workflow = [
+  ['start', 'Issue → branch'],
+  ['commit', 'Diff → history'],
+  ['finish', 'Branch → PR'],
+  ['review', 'Evidence → decision'],
+  ['release', 'Change → users'],
 ];
 ---
 
 <div class="hub-landing">
-  <section class="hub-hero" aria-labelledby="hub-title">
-    <div class="hero-copy">
-      <p class="eyebrow"><span>Open source</span> Agent workflows for real repositories</p>
-      <h1 id="hub-title">Ship with an agent.<br /><em>Keep human control.</em></h1>
-      <p class="hero-lede">
-        Git Workflow turns the repetitive edges of software delivery into twenty portable skills for Claude Code and Codex—without hiding the decisions that matter.
+  <section class="product-hero" aria-labelledby="hub-title">
+    <div class="hero-message">
+      <Badge variant="secondary"><span class="status-dot"></span>Git Workflow v{version}</Badge>
+      <h1 id="hub-title">Ship software with agents.<br /><span>Keep the decisions human.</span></h1>
+      <p>
+        A portable workflow for Claude Code and Codex that turns branches, reviews, releases, and proof into explicit, repeatable steps.
       </p>
       <div class="hero-actions">
-        <a class="primary-action" href="/git-workflow/installation/">Install Git Workflow <span aria-hidden="true">↗</span></a>
-        <a class="text-action" href="https://github.com/rlajous/claude-code-commands">Read the source</a>
+        <Button href="/git-workflow/installation/">Install Git Workflow <IconGlyph name="arrow-right" /></Button>
+        <Button href="https://github.com/rlajous/claude-code-commands" variant="outline">
+          <IconGlyph name="github" /> View on GitHub
+        </Button>
+      </div>
+      <div class="hero-facts" aria-label="Project facts">
+        <span><strong>{skillCount}</strong> shared skills</span>
+        <Separator orientation="vertical" />
+        <span><strong>{agentCount}</strong> specialist agents</span>
+        <Separator orientation="vertical" />
+        <span><strong>2</strong> runtimes</span>
       </div>
     </div>
 
-    <aside class="field-note" aria-label="Project summary">
-      <div class="note-rule"><span>FIELD NOTE / 001</span><span>v{version}</span></div>
-      <p class="note-statement">One package.<br />Two agent runtimes.<br />No duplicated workflows.</p>
-      <dl>
-        <div><dt>Skills</dt><dd>{skillCount}</dd></div>
-        <div><dt>Agents</dt><dd>{agentCount}</dd></div>
-        <div><dt>License</dt><dd>MIT</dd></div>
-      </dl>
-      <svg class="branch-mark" viewBox="0 0 320 132" role="img" aria-label="Two agent runtime paths converging on one Git workflow">
-        <path d="M18 20h72c44 0 38 46 82 46h130M18 112h72c44 0 38-46 82-46" fill="none" stroke="currentColor" stroke-width="2"></path>
-        <circle cx="18" cy="20" r="5"></circle><circle cx="18" cy="112" r="5"></circle><circle cx="302" cy="66" r="6"></circle>
-        <text x="18" y="10">CLAUDE</text><text x="18" y="130">CODEX</text><text x="219" y="54">GIT WORKFLOW</text>
-      </svg>
-    </aside>
+    <div class="product-playground" aria-label="Git Workflow product preview">
+      <div class="playground-toolbar">
+        <div><span></span><span></span><span></span></div>
+        <code>git-workflow / current change</code>
+        <Badge variant="success">live</Badge>
+      </div>
+
+      <div class="playground-grid">
+        <Card class="status-card" elevated>
+          <CardHeader>
+            <div>
+              <p class="card-label">Pipeline status</p>
+              <h2>Ready for review</h2>
+            </div>
+            <span class="status-icon"><IconGlyph name="check" /></span>
+          </CardHeader>
+          <CardContent>
+            <div class="branch-row"><code>feat/codex-support</code><Badge variant="outline">PR #29</Badge></div>
+            <ol class="mini-workflow" aria-label="Workflow progress">
+              {workflow.map(([step], index) => (
+                <li class:list={{ done: index < 4, current: index === 3 }}>
+                  <span><IconGlyph name={index < 4 ? 'check' : 'spark'} size={12} /></span>
+                  <small>{step}</small>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+
+        <Card class="review-card">
+          <CardHeader>
+            <div class="review-avatar" aria-hidden="true">RN</div>
+            <div><p class="card-label">Review decision</p><h2>Approved</h2></div>
+            <Badge variant="success"><IconGlyph name="check" size={12} /> clean</Badge>
+          </CardHeader>
+          <CardContent>
+            <p>Deterministic checks passed. The implementation preserves Claude and Codex compatibility.</p>
+            <div class="review-meta"><span>8 agents</span><span>0 findings</span><span>4m 12s</span></div>
+          </CardContent>
+        </Card>
+
+        <Card class="terminal-card">
+          <CardHeader>
+            <div><p class="card-label">Next command</p><h2>Continue the workflow</h2></div>
+            <Kbd>⌘ K</Kbd>
+          </CardHeader>
+          <CardContent>
+            <div class="terminal-line"><span>›</span><code>$finish</code><span class="terminal-cursor"></span></div>
+            <p>Create the pull request with repository context and validation evidence.</p>
+          </CardContent>
+        </Card>
+
+        <Card class="signal-card">
+          <CardHeader>
+            <div><p class="card-label">Local notification</p><h2>Review approved</h2></div>
+            <span class="signal-mark"><IconGlyph name="spark" /></span>
+          </CardHeader>
+          <CardContent>
+            <strong>rlajous/claude-code-commands · PR #29</strong>
+            <p>@reviewer approved — Polish Agent Tooling site visuals</p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   </section>
 
-  <nav class="field-index" aria-label="Landing page sections">
-    <span>Field index</span>
-    <ol>
-      <li><a href="#install"><b>01</b><span>Install</span></a></li>
-      <li><a href="#workflow"><b>02</b><span>Workflow</span></a></li>
-      <li><a href="#evidence"><b>03</b><span>Evidence</span></a></li>
-      <li><a href="#capabilities"><b>04</b><span>Skills</span></a></li>
-    </ol>
-  </nav>
-
-  <section id="install" class="install-ledger" aria-labelledby="install-title">
-    <div class="section-label"><span>Quick start</span><span>Choose your host</span></div>
-    <h2 id="install-title">Same workflow.<br />Native invocation.</h2>
-    <div class="host-commands">
-      <article>
-        <header><span class="host-dot"></span><h3>Claude Code</h3><span>Marketplace</span></header>
-        <pre><code><span>/plugin marketplace add</span> rlajous/claude-code-commands
-<span>/plugin install</span> git-workflow@git-workflow-marketplace
-
-<b>/git-workflow:status</b></code></pre>
-      </article>
-      <article>
-        <header><span class="host-dot"></span><h3>Codex</h3><span>Plugin or checkout</span></header>
-        <pre><code><span># Load the plugin, then configure the project</span>
-<b>$setup</b>
-
-<span># Ask for the next workflow step</span>
-<b>$status</b></code></pre>
-      </article>
+  <section id="install" class="quick-start" aria-labelledby="install-title">
+    <div class="section-copy">
+      <Badge variant="outline">Quick start</Badge>
+      <h2 id="install-title">Same workflow.<br />Native in each host.</h2>
+      <p>Install once, then use the syntax your agent already understands. The workflow and bundled resources stay identical.</p>
+      <a href="/git-workflow/installation/">Read the installation guide <IconGlyph name="arrow-right" size={14} /></a>
     </div>
-    <p class="install-caveat">Use the installed plugin or checkout-local discovery in one session—not both.</p>
+
+    <Tabs id="host-install" label="Installation host" tabs={[{ id: 'claude', label: 'Claude Code' }, { id: 'codex', label: 'Codex' }]}>
+      <TabPanel tabsId="host-install" tab="claude" active>
+        <div class="command-heading"><span><IconGlyph name="terminal" />Terminal</span><Badge variant="muted">Marketplace</Badge></div>
+        <pre><code id="claude-install">/plugin marketplace add rlajous/claude-code-commands
+/plugin install git-workflow@git-workflow-marketplace
+
+/git-workflow:status</code></pre>
+        <button class="copy-command" type="button" data-copy-target="claude-install" aria-label="Copy Claude Code installation commands">
+          <IconGlyph name="clipboard" /><span>Copy</span>
+        </button>
+      </TabPanel>
+      <TabPanel tabsId="host-install" tab="codex">
+        <div class="command-heading"><span><IconGlyph name="terminal" />Codex</span><Badge variant="muted">Plugin or checkout</Badge></div>
+        <pre><code id="codex-install"># Configure the project
+$setup
+
+# Ask for the next workflow step
+$status</code></pre>
+        <button class="copy-command" type="button" data-copy-target="codex-install" aria-label="Copy Codex setup commands">
+          <IconGlyph name="clipboard" /><span>Copy</span>
+        </button>
+      </TabPanel>
+      <p class="install-note">Use the installed plugin or checkout-local discovery in one session, not both.</p>
+    </Tabs>
   </section>
 
   <section id="workflow" class="workflow-section" aria-labelledby="workflow-title">
-    <div class="section-intro">
-      <p class="eyebrow">A visible delivery loop</p>
-      <h2 id="workflow-title">Every step leaves a trail.</h2>
-      <p>Each step produces something inspectable: a branch, a commit, a pull request, a review decision, a release.</p>
-    </div>
-    <ol class="workflow-line">
-      <li><span>01</span><strong>start</strong><small>Issue → branch</small></li>
-      <li><span>02</span><strong>commit</strong><small>Diff → history</small></li>
-      <li><span>03</span><strong>finish</strong><small>Branch → PR</small></li>
-      <li><span>04</span><strong>review</strong><small>Evidence → decision</small></li>
-      <li><span>05</span><strong>release</strong><small>Change → users</small></li>
+    <header class="section-heading">
+      <div><Badge variant="outline">A visible delivery loop</Badge><h2 id="workflow-title">Every step leaves proof.</h2></div>
+      <p>Branches, commits, pull requests, review decisions, and releases remain inspectable instead of disappearing inside an agent session.</p>
+    </header>
+    <ol class="workflow-track">
+      {workflow.map(([step, output], index) => (
+        <li class:list={{ emphasized: step === 'review' }}>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <div><strong>{step}</strong><small>{output}</small></div>
+          {index < workflow.length - 1 && <IconGlyph name="chevron-right" />}
+        </li>
+      ))}
     </ol>
   </section>
 
   <section id="evidence" class="evidence-section" aria-labelledby="evidence-title">
-    <header class="evidence-heading">
-      <div>
-        <p class="eyebrow">Evidence, not ceremony</p>
-        <h2 id="evidence-title">Signals you can act on.</h2>
-      </div>
-      <div class="evidence-copy">
-        <p>Local notifications name the repository, pull request, and person. Decision briefs turn a clean review into business logic, risks, and proof—not a wall of diff.</p>
-        <a class="text-action" href="/git-workflow/change-brief/">How decision briefs work</a>
-      </div>
+    <header class="section-heading">
+      <div><Badge variant="outline">Evidence, not ceremony</Badge><h2 id="evidence-title">Signals a human can act on.</h2></div>
+      <p>Local notifications identify the repository, pull request, and person. Decision briefs turn a clean review into business logic, risks, diagrams, and proof.</p>
     </header>
-    <div class="evidence-stage">
-      <figure class="notification-proof">
-        <div class="proof-heading"><span>Live signal / v{version}</span><span>macOS</span></div>
-        <div class="notification-step">
-          <p><span>01</span><strong>The agent finishes</strong></p>
-          <img src="/assets/agent-finished-macos-720.webp" srcset="/assets/agent-finished-macos-480.webp 480w, /assets/agent-finished-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification showing that a Codex turn completed in the Git Workflow repository." loading="lazy" decoding="async" width="720" height="160" />
-        </div>
-        <div class="notification-step">
-          <p><span>02</span><strong>A reviewer decides</strong></p>
-          <img src="/assets/pr-approved-macos-720.webp" srcset="/assets/pr-approved-macos-480.webp 480w, /assets/pr-approved-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and approval." loading="lazy" decoding="async" width="720" height="160" />
-        </div>
-        <div class="notification-step">
-          <p><span>03</span><strong>Or asks for changes</strong></p>
-          <img src="/assets/pr-changes-requested-macos-720.webp" srcset="/assets/pr-changes-requested-macos-480.webp 480w, /assets/pr-changes-requested-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and requested changes." loading="lazy" decoding="async" width="720" height="160" />
-        </div>
-        <figcaption>Observed on macOS · emitted by the packaged notifier</figcaption>
+    <div class="evidence-layout">
+      <figure class="notification-stack">
+        <figcaption><span>Real macOS notifications</span><Badge variant="success">Observed</Badge></figcaption>
+        <img src="/assets/agent-finished-macos-720.webp" srcset="/assets/agent-finished-macos-480.webp 480w, /assets/agent-finished-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification showing that a Codex turn completed in the Git Workflow repository." loading="lazy" decoding="async" width="720" height="160" />
+        <img src="/assets/pr-approved-macos-720.webp" srcset="/assets/pr-approved-macos-480.webp 480w, /assets/pr-approved-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and approval." loading="lazy" decoding="async" width="720" height="160" />
+        <img src="/assets/pr-changes-requested-macos-720.webp" srcset="/assets/pr-changes-requested-macos-480.webp 480w, /assets/pr-changes-requested-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and requested changes." loading="lazy" decoding="async" width="720" height="160" />
       </figure>
-      <a class="brief-proof" href="/git-workflow/examples/pr-23/">
-        <div class="brief-frame">
-          <span class="proof-kicker">Decision brief / PR #23</span>
-          <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 50rem) calc(100vw - 2rem), 46rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
-        </div>
-        <span>Open the real PR #23 brief <b aria-hidden="true">↗</b></span>
+      <a class="brief-preview" href="/git-workflow/examples/pr-23/">
+        <div class="brief-browser"><span></span><span></span><span></span><code>decision-brief / PR #23</code></div>
+        <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 50rem) calc(100vw - 2rem), 44rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
+        <span>Open the real PR #23 decision brief <IconGlyph name="arrow-right" /></span>
       </a>
     </div>
   </section>
 
   <section id="capabilities" class="capabilities-section" aria-labelledby="capabilities-title">
-    <div class="section-label"><span>Twenty shared skills</span><span>One operating model</span></div>
-    <h2 id="capabilities-title">From first branch<br />to final signal.</h2>
-    <div class="capability-ledger">
+    <header class="section-heading">
+      <div><Badge variant="outline">{skillCount} shared skills</Badge><h2 id="capabilities-title">One operating model, end to end.</h2></div>
+      <p>Use a single skill for the next task or let the workflow carry context across the full delivery loop.</p>
+    </header>
+    <div class="capability-list">
       {capabilityGroups.map((group) => (
-        <article>
-          <span class="capability-index">{group.index}</span>
-          <div><h3>{group.title}</h3><code>{group.skills}</code></div>
+        <Item index={group.index}>
+          <div class="capability-title"><h3>{group.title}</h3><code>{group.skills}</code></div>
           <p>{group.detail}</p>
-        </article>
+          <a slot="aside" href="/git-workflow/reference/commands/" aria-label={`Explore commands for ${group.title}`}><IconGlyph name="arrow-right" /></a>
+        </Item>
       ))}
     </div>
   </section>
 
   <section class="closing-call" aria-labelledby="closing-title">
-    <p class="eyebrow">Start with the next real change</p>
-    <h2 id="closing-title">Your repository already has a workflow.<br /><em>Make it legible to your agent.</em></h2>
+    <Badge variant="secondary">Open source · MIT licensed</Badge>
+    <h2 id="closing-title">Make your repository legible to your agent.</h2>
+    <p>Start with the next real change. Keep the evidence, review decisions, and release history yours.</p>
     <div>
-      <a class="primary-action" href="/git-workflow/installation/">Read the installation guide <span aria-hidden="true">↗</span></a>
-      <a class="text-action" href="/git-workflow/reference/commands/">Explore all commands</a>
+      <Button href="/git-workflow/installation/">Install Git Workflow <IconGlyph name="arrow-right" /></Button>
+      <Button href="/git-workflow/reference/commands/" variant="ghost">Explore every command</Button>
     </div>
   </section>
 </div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-target]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = button.dataset.copyTarget ? document.getElementById(button.dataset.copyTarget) : null;
+      if (!target) return;
+      await navigator.clipboard.writeText(target.textContent ?? '');
+      const label = button.querySelector('span');
+      if (label) label.textContent = 'Copied';
+      button.dataset.copied = 'true';
+      window.setTimeout(() => {
+        if (label) label.textContent = 'Copy';
+        delete button.dataset.copied;
+      }, 1800);
+    });
+  });
+</script>

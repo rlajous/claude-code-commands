@@ -1,0 +1,5 @@
+---
+interface Props { orientation?: 'horizontal' | 'vertical'; class?: string; }
+const { orientation = 'horizontal', class: className } = Astro.props;
+---
+<div data-slot="separator" role="separator" aria-orientation={orientation} data-orientation={orientation} class:list={['ui-separator', className]}></div>
