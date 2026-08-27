@@ -461,6 +461,10 @@ site-search dialog {
 .ui-tab-panel:focus-visible { outline-offset: 0; }
 
 /* Landing page */
+body:has(.hub-landing) main > .content-panel:first-child {
+  display: none;
+}
+
 .hub-landing {
   position: relative;
   left: 50%;
@@ -471,32 +475,10 @@ site-search dialog {
 .hub-landing p, .hub-landing h1, .hub-landing h2, .hub-landing h3 { margin: 0; }
 
 .product-hero {
-  position: relative;
   display: grid;
-  align-items: center;
+  align-items: start;
   gap: clamp(3rem, 5vw, 5.5rem);
-  min-height: min(49rem, calc(100svh - 4rem));
-  padding: clamp(3.5rem, 7vw, 6rem) 0 clamp(4rem, 8vw, 6.5rem);
-}
-
-.product-hero::before {
-  position: absolute;
-  inset: 1.5rem 0 auto;
-  height: 1px;
-  background: var(--border);
-  content: '';
-}
-
-.product-hero::after {
-  position: absolute;
-  top: 1.25rem;
-  right: 0;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: -1rem 0 0 var(--secondary-hover), -2rem 0 0 var(--border-strong);
-  content: '';
+  padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(3rem, 5vw, 4.5rem);
 }
 
 .hero-message { position: relative; z-index: 1; display: grid; justify-items: start; gap: 1.25rem; }
@@ -519,22 +501,20 @@ site-search dialog {
 .hero-assurance > svg { color: var(--success); }
 .hero-assurance > span { color: var(--border-strong); }
 
-.hero-visual { position: relative; min-width: 0; padding-top: 3rem; }
-.runtime-intake { position: absolute; z-index: 2; top: 0; left: clamp(0.5rem, 4vw, 3rem); display: grid; width: min(32rem, calc(100% - 2rem)); min-height: 3.5rem; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--background); box-shadow: var(--shadow-md); color: var(--muted-foreground); grid-template-columns: auto minmax(1rem, 1fr) auto minmax(1rem, 1fr) auto; padding: 0.55rem 0.8rem; }
-.runtime-intake > span { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.66rem; font-weight: 700; white-space: nowrap; }
-.runtime-intake code { display: grid; width: 1.45rem; height: 1.45rem; border-radius: var(--radius-sm); background: var(--primary-surface); color: var(--primary-strong); font-weight: 800; place-items: center; }
-.runtime-intake > span:last-child code { background: var(--secondary-surface); color: var(--secondary-strong); }
-.runtime-intake strong { color: var(--foreground); font-size: 0.68rem; text-align: center; white-space: nowrap; }
-.runtime-path { display: flex; align-items: center; padding-inline: 0.45rem; }
-.runtime-path::before { width: 100%; height: 1px; background: var(--border-strong); content: ''; }
-.runtime-path i { display: none; }
+.hero-visual { min-width: 0; margin-top: 0; }
 
 .product-playground { position: relative; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--muted); box-shadow: var(--shadow-lg); overflow: hidden; }
 .playground-toolbar { display: grid; min-height: 3rem; align-items: center; border-bottom: 1px solid var(--border); background: var(--card); padding: 0 0.9rem; grid-template-columns: 1fr auto 1fr; }
-.playground-toolbar > div { display: flex; gap: 0.35rem; }
-.playground-toolbar > div span { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--border-strong); }
-.playground-toolbar > div span:first-child { background: var(--primary); }
-.playground-toolbar code { color: var(--muted-foreground); font-size: 0.64rem; }
+.window-controls { display: flex; gap: 0.35rem; }
+.window-controls span { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--border-strong); }
+.window-controls span:first-child { background: var(--primary); }
+.runtime-intake { display: flex; align-items: center; justify-content: center; gap: 0.55rem; color: var(--muted-foreground); font-size: 0.64rem; font-weight: 700; }
+.runtime-intake > span { display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
+.runtime-intake code { display: grid; width: 1.35rem; height: 1.35rem; border-radius: var(--radius-sm); background: var(--primary-surface); color: var(--primary-strong); font-weight: 800; place-items: center; }
+.runtime-intake > span:last-child code { background: var(--secondary-surface); color: var(--secondary-strong); }
+.runtime-path { color: var(--border-strong); }
+.runtime-path strong { color: var(--foreground); font-size: 0.66rem; }
+.runtime-path i { color: var(--secondary-strong); font-family: var(--font-mono); font-style: normal; }
 .playground-toolbar > .ui-badge { justify-self: end; }
 .playground-grid { display: grid; gap: 0.65rem; padding: 0.65rem; }
 .status-card { grid-column: 1 / -1; }
@@ -653,7 +633,6 @@ site-search dialog {
 
 @media (min-width: 68rem) {
   .product-hero { grid-template-columns: minmax(28rem, 0.9fr) minmax(34rem, 1.1fr); }
-  .hero-visual { margin-right: -1rem; }
 }
 
 @media (max-width: 30rem) {
@@ -661,13 +640,12 @@ site-search dialog {
   .hero-actions, .hero-actions .ui-button, .closing-call > div, .closing-call .ui-button { width: 100%; }
   .hero-message h1 { font-size: clamp(2.65rem, 13.3vw, 3.35rem); line-height: 0.94; }
   .hero-kicker > span { width: 100%; }
-  .runtime-intake { left: 0.35rem; width: calc(100% - 0.7rem); grid-template-columns: auto minmax(0.5rem, 1fr) auto minmax(0.5rem, 1fr) auto; padding-inline: 0.55rem; }
-  .runtime-intake > span { font-size: 0; }
-  .runtime-intake > span code { font-size: 0.7rem; }
-  .runtime-intake strong { font-size: 0.61rem; }
-  .runtime-path { padding-inline: 0.25rem; }
+  .playground-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.55rem; padding-inline: 0.65rem; }
+  .runtime-intake { gap: 0.3rem; }
+  .runtime-intake b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .runtime-path strong { font-size: 0.6rem; }
+  .runtime-path i { display: none; }
   .playground-toolbar code { display: none; }
-  .playground-toolbar { grid-template-columns: 1fr auto; }
   .review-card .ui-card-header { align-items: flex-start; flex-wrap: wrap; }
   .review-card .ui-badge { margin-left: 2.8rem; }
   .ui-item { align-items: start; grid-template-columns: 1.5rem minmax(0, 1fr) auto; }

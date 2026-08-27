@@ -77,18 +77,14 @@ const workflow = [
     </div>
 
     <div class="hero-visual">
-      <div class="runtime-intake" aria-label="Claude Code and Codex use one shared workflow">
-        <span><code>/</code> Claude Code</span>
-        <div class="runtime-path" aria-hidden="true"><i></i><i></i><i></i></div>
-        <strong>One shared workflow</strong>
-        <div class="runtime-path" aria-hidden="true"><i></i><i></i><i></i></div>
-        <span><code>$</code> Codex</span>
-      </div>
-
       <div class="product-playground" aria-label="Git Workflow product preview">
         <div class="playground-toolbar">
-          <div><span></span><span></span><span></span></div>
-          <code>git-workflow / current change</code>
+          <div class="window-controls" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="runtime-intake" aria-label="Claude Code and Codex use one shared workflow">
+            <span><code>/</code><b>Claude Code</b></span>
+            <span class="runtime-path"><i aria-hidden="true">→</i><strong>One shared workflow</strong><i aria-hidden="true">←</i></span>
+            <span><code>$</code><b>Codex</b></span>
+          </div>
           <Badge variant="success">live</Badge>
         </div>
 

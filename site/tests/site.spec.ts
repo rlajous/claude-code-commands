@@ -32,6 +32,22 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.locator('.brief-preview')).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
 });
 
+test('landing hero starts directly below the header without a duplicate navigation band', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'The two-column hero is visible at this breakpoint.');
+  await page.goto('/');
+
+  const header = await page.locator('header.header').boundingBox();
+  const message = await page.locator('.hero-message').boundingBox();
+  const visual = await page.locator('.hero-visual').boundingBox();
+  expect(header).not.toBeNull();
+  expect(message).not.toBeNull();
+  expect(visual).not.toBeNull();
+  expect(message!.y - (header!.y + header!.height)).toBeLessThan(96);
+  expect(Math.abs(message!.y - visual!.y)).toBeLessThan(2);
+  await expect(page.locator('.product-hero > .runtime-intake')).toHaveCount(0);
+  await expect(page.locator('.playground-toolbar .runtime-intake')).toBeVisible();
+});
+
 test('host quick start supports mouse, keyboard, and copy feedback', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/');
