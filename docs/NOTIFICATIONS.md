@@ -86,13 +86,17 @@ theme.
 
 ![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
 
-The repository includes a reproducible way to refresh these screenshots on a clean remote Mac: the
+The repository includes two reproducible ways to refresh these screenshots on a clean remote Mac:
+the public repository's [Cirrus CI task](https://cirrus-ci.com/github/rlajous/claude-code-commands)
+runs in a managed Tart VM, while the
 [`Capture macOS notification evidence`](https://github.com/rlajous/claude-code-commands/actions/workflows/capture-macos-notifications.yml)
-workflow. It calls the same packaged notifier used at runtime, captures the real Notification
-Center windows against a deterministic background, and uploads both the banners and full-screen
-diagnostics. No personal desktop, open application, or fabricated browser mockup is involved.
+workflow supports a dedicated runner. Both call the same packaged notifier used at runtime,
+capture the real Notification Center windows against a deterministic background, and upload both
+the banners and full-screen diagnostics. No personal desktop, open application, or fabricated
+browser mockup is involved.
 
-The workflow targets a dedicated self-hosted runner labeled `macOS` and `notification-capture`.
+The GitHub Actions fallback targets a dedicated self-hosted runner labeled `macOS` and
+`notification-capture`.
 GitHub-hosted macOS images are not suitable for this evidence: they expose a graphical desktop but
 do not load the per-user Notification Center LaunchAgent required to render banners. A dedicated
 remote Mac keeps the capture real while isolating it from a contributor's personal computer.

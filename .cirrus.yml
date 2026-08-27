@@ -1,0 +1,19 @@
+macos_notification_evidence_task:
+  name: macOS Notification Evidence
+  only_if: >-
+    changesInclude(
+      '.cirrus.yml',
+      '.github/workflows/capture-macos-notifications.yml',
+      'site/scripts/capture-macos-notifications.sh',
+      'site/scripts/enable-macos-notification-banners.py',
+      'site/scripts/macos-notification-*.swift',
+      'skills/notifications/scripts/notify.sh'
+    )
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-runner:sonoma
+  capture_script:
+    - sw_vers
+    - bash site/scripts/capture-macos-notifications.sh .artifacts/macos-notifications
+  always:
+    evidence_artifacts:
+      path: ".artifacts/macos-notifications/**"
