@@ -270,11 +270,4 @@ for (const platform of ['nestjs', 'nextjs', 'python', 'react-native', 'monorepo'
   await copyAsset(`examples/${platform}/config.yaml`, `/git-workflow/examples/config/${platform}.yaml`);
 }
 
-const briefSource = await readFile(resolve(repoRoot, 'docs/examples/change-brief-pr-23.html'), 'utf8');
-const briefHead = `\n<link rel="canonical" href="${productionOrigin}/git-workflow/examples/pr-23/">\n<link rel="describedby" href="${productionOrigin}/git-workflow/llms.txt">\n`;
-const briefOutput = briefSource.includes('</head>') ? briefSource.replace('</head>', `${briefHead}</head>`) : briefSource;
-const briefTarget = join(productPublic, 'examples/pr-23/index.html');
-await mkdir(dirname(briefTarget), { recursive: true });
-await writeFile(briefTarget, briefOutput);
-
 console.log(`Synced ${generatedEntries.length} canonical documents for Git Workflow ${manifest.version}.`);
