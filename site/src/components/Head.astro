@@ -1,0 +1,59 @@
+---
+import DefaultHead from '@astrojs/starlight/components/Head.astro';
+
+const origin = Astro.site ?? new URL('https://agents.navarrolajous.com');
+const pathname = Astro.url.pathname;
+const isRoot = pathname === '/';
+const isProduct = pathname.startsWith('/git-workflow/');
+const isNotFound = pathname === '/404/' || pathname === '/404';
+const markdownPath = isRoot ? '/index.md' : `${pathname.replace(/\/$/, '')}/index.md`;
+const llmsPath = isProduct ? '/git-workflow/llms.txt' : '/llms.txt';
+const version = import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION;
+const skillCount = import.meta.env.PUBLIC_GIT_WORKFLOW_SKILL_COUNT;
+
+const structuredData = isRoot
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Agent Tooling',
+      url: new URL('/', origin).href,
+      description: 'Open-source workflows that help coding agents ship software with evidence and control.',
+      publisher: { '@type': 'Person', name: 'Rodrigo Navarro Lajous', url: 'https://navarrolajous.com' },
+    }
+  : isProduct
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareSourceCode',
+        name: 'Git Workflow',
+        codeRepository: 'https://github.com/rlajous/claude-code-commands',
+        programmingLanguage: ['Bash', 'JavaScript', 'Python'],
+        runtimePlatform: ['Claude Code', 'Codex'],
+        version,
+        license: 'https://spdx.org/licenses/MIT.html',
+        description: `${skillCount} host-neutral skills for Git, pull requests, releases, QA, review automation, decision briefs, and local notifications.`,
+        author: { '@type': 'Person', name: 'Rodrigo Navarro Lajous', url: 'https://navarrolajous.com' },
+      }
+    : undefined;
+
+const safeStructuredData = structuredData
+  ? JSON.stringify(structuredData).replaceAll('<', '\\u003c')
+  : undefined;
+---
+
+<DefaultHead />
+{!isNotFound && <link rel="alternate" type="text/markdown" href={new URL(markdownPath, origin)} />}
+{!isNotFound && <link rel="describedby" href={new URL(llmsPath, origin)} />}
+{safeStructuredData && <script is:inline type="application/ld+json" set:html={safeStructuredData} />}
+<script is:inline>
+  (() => {
+    const labelScrollableCode = () => {
+      document.querySelectorAll('.expressive-code pre[role="region"]').forEach((block, index) => {
+        if (!block.hasAttribute('aria-label')) block.setAttribute('aria-label', `Scrollable code example ${index + 1}`);
+      });
+    };
+    const observer = new MutationObserver(labelScrollableCode);
+    observer.observe(document.documentElement, { attributes: true, childList: true, subtree: true, attributeFilter: ['role'] });
+    document.addEventListener('astro:page-load', labelScrollableCode);
+    labelScrollableCode();
+  })();
+</script>

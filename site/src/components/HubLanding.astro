@@ -1,0 +1,144 @@
+---
+const version = import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION;
+const skillCount = import.meta.env.PUBLIC_GIT_WORKFLOW_SKILL_COUNT;
+const agentCount = import.meta.env.PUBLIC_GIT_WORKFLOW_AGENT_COUNT;
+
+const capabilityGroups = [
+  {
+    index: '01',
+    title: 'Shape the change',
+    skills: '$start · $tdd · $commit · $finish',
+    detail: 'Move from an issue to a reviewable pull request with repository conventions preserved.',
+  },
+  {
+    index: '02',
+    title: 'Prove the change',
+    skills: '$review · $review-watch · $change-brief',
+    detail: 'Review with specialized agents, deterministic checks, and evidence a human can absorb quickly.',
+  },
+  {
+    index: '03',
+    title: 'Deliver the change',
+    skills: '$release · $release-notes · $sync',
+    detail: 'Validate releases, explain what shipped, and keep long-lived branches synchronized.',
+  },
+  {
+    index: '04',
+    title: 'Stay in the loop',
+    skills: '$notifications · $status · $standup',
+    detail: 'Get private local signals and a clear answer to what happened and what comes next.',
+  },
+];
+---
+
+<div class="hub-landing">
+  <section class="hub-hero" aria-labelledby="hub-title">
+    <div class="hero-copy">
+      <p class="eyebrow"><span>Open source</span> Agent workflows for real repositories</p>
+      <h1 id="hub-title">Ship with an agent.<br /><em>Keep human control.</em></h1>
+      <p class="hero-lede">
+        Git Workflow turns the repetitive edges of software delivery into twenty portable skills for Claude Code and Codex—without hiding the decisions that matter.
+      </p>
+      <div class="hero-actions">
+        <a class="primary-action" href="/git-workflow/installation/">Install Git Workflow <span aria-hidden="true">↗</span></a>
+        <a class="text-action" href="https://github.com/rlajous/claude-code-commands">Read the source</a>
+      </div>
+    </div>
+
+    <aside class="field-note" aria-label="Project summary">
+      <div class="note-rule"><span>FIELD NOTE / 001</span><span>v{version}</span></div>
+      <p class="note-statement">One package.<br />Two agent runtimes.<br />No duplicated workflows.</p>
+      <dl>
+        <div><dt>Skills</dt><dd>{skillCount}</dd></div>
+        <div><dt>Agents</dt><dd>{agentCount}</dd></div>
+        <div><dt>License</dt><dd>MIT</dd></div>
+      </dl>
+      <svg class="branch-mark" viewBox="0 0 320 132" role="img" aria-label="Two agent runtime paths converging on one Git workflow">
+        <path d="M18 20h72c44 0 38 46 82 46h130M18 112h72c44 0 38-46 82-46" fill="none" stroke="currentColor" stroke-width="2"></path>
+        <circle cx="18" cy="20" r="5"></circle><circle cx="18" cy="112" r="5"></circle><circle cx="302" cy="66" r="6"></circle>
+        <text x="18" y="10">CLAUDE</text><text x="18" y="130">CODEX</text><text x="219" y="54">GIT WORKFLOW</text>
+      </svg>
+    </aside>
+  </section>
+
+  <section class="install-ledger" aria-labelledby="install-title">
+    <div class="section-label"><span>Quick start</span><span>Choose your host</span></div>
+    <h2 id="install-title">Same workflow.<br />Native invocation.</h2>
+    <div class="host-commands">
+      <article>
+        <header><span class="host-dot"></span><h3>Claude Code</h3><span>Marketplace</span></header>
+        <pre><code><span>/plugin marketplace add</span> rlajous/claude-code-commands
+<span>/plugin install</span> git-workflow@git-workflow-marketplace
+
+<b>/git-workflow:status</b></code></pre>
+      </article>
+      <article>
+        <header><span class="host-dot"></span><h3>Codex</h3><span>Plugin or checkout</span></header>
+        <pre><code><span># Load the plugin, then configure the project</span>
+<b>$setup</b>
+
+<span># Ask for the next workflow step</span>
+<b>$status</b></code></pre>
+      </article>
+    </div>
+    <p class="install-caveat">Use the installed plugin or checkout-local discovery in one session—not both.</p>
+  </section>
+
+  <section class="workflow-section" aria-labelledby="workflow-title">
+    <div class="section-intro">
+      <p class="eyebrow">A visible delivery loop</p>
+      <h2 id="workflow-title">Automation that leaves a trail.</h2>
+      <p>Each step produces something inspectable: a branch, a commit, a pull request, a review decision, a release.</p>
+    </div>
+    <ol class="workflow-line">
+      <li><span>01</span><strong>start</strong><small>Issue → branch</small></li>
+      <li><span>02</span><strong>commit</strong><small>Diff → history</small></li>
+      <li><span>03</span><strong>finish</strong><small>Branch → PR</small></li>
+      <li><span>04</span><strong>review</strong><small>Evidence → decision</small></li>
+      <li><span>05</span><strong>release</strong><small>Change → users</small></li>
+    </ol>
+  </section>
+
+  <section class="evidence-section" aria-labelledby="evidence-title">
+    <div class="evidence-copy">
+      <p class="eyebrow">Evidence, not ceremony</p>
+      <h2 id="evidence-title">Know when to look.<br />Know what changed.</h2>
+      <p>Local notifications identify the repository, pull request, and person. A clean review can produce a decision brief with the business logic, risks, and proof—not a wall of diff.</p>
+      <a class="text-action" href="/git-workflow/change-brief/">How decision briefs work</a>
+    </div>
+    <div class="evidence-visuals">
+      <figure class="notification-proof">
+        <img src="/assets/review-watch-requested-macos-720.webp" srcset="/assets/review-watch-requested-macos-480.webp 480w, /assets/review-watch-requested-macos-720.webp 720w" sizes="(max-width: 72rem) calc(100vw - 2rem), 36rem" alt="A real macOS notification identifying the repository, pull request, author, and title." loading="lazy" decoding="async" width="720" height="160" />
+        <img src="/assets/review-watch-ready-macos-720.webp" srcset="/assets/review-watch-ready-macos-480.webp 480w, /assets/review-watch-ready-macos-720.webp 720w" sizes="(max-width: 72rem) calc(100vw - 2rem), 36rem" alt="A real macOS notification showing that the pull request is ready to merge." loading="lazy" decoding="async" width="720" height="160" />
+        <figcaption>Observed on macOS · native notifier</figcaption>
+      </figure>
+      <a class="brief-proof" href="/git-workflow/examples/pr-23/">
+        <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 72rem) 70vw, 22rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
+        <span>Open the real PR #23 brief <b aria-hidden="true">↗</b></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="capabilities-section" aria-labelledby="capabilities-title">
+    <div class="section-label"><span>Twenty shared skills</span><span>One operating model</span></div>
+    <h2 id="capabilities-title">From first branch<br />to final signal.</h2>
+    <div class="capability-ledger">
+      {capabilityGroups.map((group) => (
+        <article>
+          <span class="capability-index">{group.index}</span>
+          <div><h3>{group.title}</h3><code>{group.skills}</code></div>
+          <p>{group.detail}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="closing-call" aria-labelledby="closing-title">
+    <p class="eyebrow">Start with the next real change</p>
+    <h2 id="closing-title">Your repository already has a workflow.<br /><em>Make it legible to your agent.</em></h2>
+    <div>
+      <a class="primary-action" href="/git-workflow/installation/">Read the installation guide <span aria-hidden="true">↗</span></a>
+      <a class="text-action" href="/git-workflow/reference/commands/">Explore all commands</a>
+    </div>
+  </section>
+</div>

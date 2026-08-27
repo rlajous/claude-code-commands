@@ -2,6 +2,8 @@
 
 An agent-neutral package of 20 skills, eight specialized agents, and opt-in hooks for Git, pull requests, releases, QA, and desktop notifications. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
+[Documentation](https://agents.navarrolajous.com/) · [Installation](https://agents.navarrolajous.com/git-workflow/installation/) · [Latest release](https://github.com/rlajous/claude-code-commands/releases/latest)
+
 ## What it includes
 
 - Framework-agnostic branch, commit, PR, release, QA, RFC, and status workflows
