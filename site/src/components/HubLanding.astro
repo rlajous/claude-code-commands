@@ -55,8 +55,8 @@ const workflow = [
   <section class="product-hero" aria-labelledby="hub-title">
     <div class="hero-message">
       <div class="hero-kicker">
-        <Badge variant="secondary"><span class="status-dot"></span>Git Workflow v{version}</Badge>
-        <span>Built for Claude Code + Codex</span>
+        <span class="hero-version"><span class="status-dot"></span>Git Workflow v{version}</span>
+        <span class="hero-hosts">Claude Code <i aria-hidden="true">/</i> Codex</span>
       </div>
       <h1 id="hub-title">
         <span class="hero-line">Ship software</span>
@@ -149,7 +149,7 @@ const workflow = [
     </div>
   </section>
 
-  <section id="install" class="quick-start" aria-labelledby="install-title">
+  <section id="install" class="quick-start" aria-labelledby="install-title" data-reveal>
     <div class="section-copy">
       <Badge variant="outline">Quick start</Badge>
       <h2 id="install-title">Same workflow.<br />Native in each host.</h2>
@@ -165,7 +165,7 @@ const workflow = [
 
 /git-workflow:status</code></pre>
         <button class="copy-command" type="button" data-copy-target="claude-install" aria-label="Copy Claude Code installation commands">
-          <IconGlyph name="clipboard" /><span>Copy</span>
+          <IconGlyph name="clipboard" /><span aria-live="polite">Copy</span>
         </button>
       </TabPanel>
       <TabPanel tabsId="host-install" tab="codex">
@@ -176,7 +176,7 @@ $setup
 # Ask for the next workflow step
 $status</code></pre>
         <button class="copy-command" type="button" data-copy-target="codex-install" aria-label="Copy Codex setup commands">
-          <IconGlyph name="clipboard" /><span>Copy</span>
+          <IconGlyph name="clipboard" /><span aria-live="polite">Copy</span>
         </button>
       </TabPanel>
       <p class="install-note">Use the installed plugin or checkout-local discovery in one session, not both.</p>
@@ -184,11 +184,11 @@ $status</code></pre>
   </section>
 
   <section id="workflow" class="workflow-section" aria-labelledby="workflow-title">
-    <header class="section-heading">
+    <header class="section-heading" data-reveal>
       <div><Badge variant="outline">A visible delivery loop</Badge><h2 id="workflow-title">Every step leaves proof.</h2></div>
       <p>Branches, commits, pull requests, review decisions, and releases remain inspectable instead of disappearing inside an agent session.</p>
     </header>
-    <ol class="workflow-track">
+    <ol class="workflow-track" data-reveal>
       {workflow.map(([step, output], index) => (
         <li class:list={{ emphasized: step === 'review' }}>
           <span>{String(index + 1).padStart(2, '0')}</span>
@@ -200,11 +200,11 @@ $status</code></pre>
   </section>
 
   <section id="evidence" class="evidence-section" aria-labelledby="evidence-title">
-    <header class="section-heading">
+    <header class="section-heading" data-reveal>
       <div><Badge variant="outline">Evidence, not ceremony</Badge><h2 id="evidence-title">Signals a human can act on.</h2></div>
       <p>Local notifications identify the repository, pull request, and person. Decision briefs turn a clean review into business logic, risks, diagrams, and proof.</p>
     </header>
-    <div class="evidence-layout">
+    <div class="evidence-layout" data-reveal>
       <NotificationStage />
       <a class="brief-preview" href="/git-workflow/examples/pr-23/">
         <div class="brief-browser"><span></span><span></span><span></span><code>decision-brief / PR #23</code></div>
@@ -215,11 +215,11 @@ $status</code></pre>
   </section>
 
   <section id="capabilities" class="capabilities-section" aria-labelledby="capabilities-title">
-    <header class="section-heading">
+    <header class="section-heading" data-reveal>
       <div><Badge variant="outline">{skillCount} shared skills</Badge><h2 id="capabilities-title">One operating model, end to end.</h2></div>
       <p>Use a single skill for the next task or let the workflow carry context across the full delivery loop.</p>
     </header>
-    <div class="capability-list">
+    <div class="capability-list" data-reveal>
       {capabilityGroups.map((group) => (
         <Item index={group.index}>
           <div class="capability-title"><h3>{group.title}</h3><code>{group.skills}</code></div>
@@ -230,7 +230,7 @@ $status</code></pre>
     </div>
   </section>
 
-  <section class="closing-call" aria-labelledby="closing-title">
+  <section class="closing-call" aria-labelledby="closing-title" data-reveal>
     <Badge variant="secondary">Open source · MIT licensed</Badge>
     <h2 id="closing-title">Make your repository legible to your agent.</h2>
     <p>Start with the next real change. Keep the evidence, review decisions, and release history yours.</p>
@@ -242,18 +242,61 @@ $status</code></pre>
 </div>
 
 <script>
-  document.querySelectorAll<HTMLButtonElement>('[data-copy-target]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const target = button.dataset.copyTarget ? document.getElementById(button.dataset.copyTarget) : null;
-      if (!target) return;
-      await navigator.clipboard.writeText(target.textContent ?? '');
-      const label = button.querySelector('span');
-      if (label) label.textContent = 'Copied';
-      button.dataset.copied = 'true';
-      window.setTimeout(() => {
-        if (label) label.textContent = 'Copy';
-        delete button.dataset.copied;
-      }, 1800);
+  const initializeHubInteractions = () => {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy-target]').forEach((button) => {
+      if (button.dataset.initialized === 'true') return;
+      button.dataset.initialized = 'true';
+      const initialLabel = button.getAttribute('aria-label') ?? 'Copy commands';
+
+      button.addEventListener('click', async () => {
+        const target = button.dataset.copyTarget ? document.getElementById(button.dataset.copyTarget) : null;
+        const label = button.querySelector<HTMLElement>('span[aria-live]');
+        if (!target || !label) return;
+
+        try {
+          await navigator.clipboard.writeText(target.textContent ?? '');
+          label.textContent = 'Copied';
+          button.dataset.copyState = 'success';
+          button.setAttribute('aria-label', `${initialLabel}. Copied`);
+        } catch {
+          label.textContent = 'Try again';
+          button.dataset.copyState = 'error';
+          button.setAttribute('aria-label', `${initialLabel}. Copy failed`);
+        }
+
+        window.setTimeout(() => {
+          label.textContent = 'Copy';
+          button.setAttribute('aria-label', initialLabel);
+          delete button.dataset.copyState;
+        }, 1800);
+      });
     });
-  });
+
+    const revealItems = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+    if (revealItems.length === 0) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      revealItems.forEach((item) => { item.dataset.revealState = 'visible'; });
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const item = entry.target as HTMLElement;
+        item.dataset.revealState = 'visible';
+        observer.unobserve(item);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+    revealItems.forEach((item) => {
+      if (item.dataset.revealState === 'visible') return;
+      item.dataset.revealState = 'pending';
+      observer.observe(item);
+    });
+  };
+
+  initializeHubInteractions();
+  document.addEventListener('astro:page-load', initializeHubInteractions);
 </script>

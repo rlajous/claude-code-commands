@@ -82,6 +82,7 @@ test('notification evidence respects reduced motion and document visibility', as
   const stage = page.locator('[data-notification-stage]');
   const agent = page.locator('[data-notification-image="agent-finished"]');
   await expect(stage).toHaveAttribute('data-playback', 'paused');
+  await expect(page.locator('[data-reveal][data-reveal-state="pending"]')).toHaveCount(0);
   await page.waitForTimeout(1_300);
   await expect(agent).toHaveAttribute('data-active', 'true');
 
@@ -146,12 +147,35 @@ test('host quick start supports mouse, keyboard, and copy feedback', async ({ pa
   await page.keyboard.press('ArrowRight');
   await expect(codex).toBeFocused();
   await expect(codex).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-tabs-id="host-install"]')).toHaveAttribute('data-active-index', '1');
   await expect(page.getByRole('tabpanel', { name: 'Codex' })).toBeVisible();
 
   const copy = page.getByRole('button', { name: 'Copy Codex setup commands' });
   await copy.click();
   await expect(copy).toContainText('Copied');
+  await expect(copy).toHaveAttribute('aria-label', 'Copy Codex setup commands. Copied');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('$setup');
+});
+
+test('landing sections reveal once with tokenized compositor-only motion', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers the shared motion system.');
+  await page.goto('/');
+
+  const workflow = page.locator('.workflow-track');
+  await expect(workflow).toHaveAttribute('data-reveal-state', 'pending');
+  await workflow.scrollIntoViewIfNeeded();
+  await expect(workflow).toHaveAttribute('data-reveal-state', 'visible');
+  await expect.poll(() => workflow.evaluate((element) => getComputedStyle(element).opacity)).toBe('1');
+
+  const values = await workflow.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      duration: style.transitionDuration,
+      token: getComputedStyle(document.documentElement).getPropertyValue('--duration-layout').trim(),
+    };
+  });
+  expect(['420ms', '.42s', '0.42s']).toContain(values.token);
+  expect(values.duration).toContain('0.42s');
 });
 
 test('documentation shell exposes navigation, command search, and active sidebar state', async ({ page }, testInfo) => {

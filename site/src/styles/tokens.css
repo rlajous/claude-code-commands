@@ -1,0 +1,224 @@
+/*
+ * Agent Tooling design tokens
+ *
+ * Ceibo provides the primitive palette. Semantic names keep components
+ * independent from a specific color, theme, or viewport. Fluid type and
+ * spacing follow Utopia's min/max interpolation model; motion vocabulary is
+ * intentionally small and informed by Open Props' duration/easing approach.
+ */
+
+:root {
+  /* Primitive palette */
+  --ceibo-coral-100: #f9e1de;
+  --ceibo-coral-300: #ed9286;
+  --ceibo-coral-500: #e1685a;
+  --ceibo-coral-600: #c54e40;
+  --ceibo-coral-700: #aa3a30;
+  --ceibo-sage-100: #ebf0e5;
+  --ceibo-sage-200: #e5edd9;
+  --ceibo-sage-300: #bbcea8;
+  --ceibo-sage-400: #adc179;
+  --ceibo-sage-600: #7da339;
+  --ceibo-ink-950: #020817;
+  --ceibo-ink-900: #060b14;
+  --ceibo-ink-850: #0b1220;
+  --ceibo-ink-800: #101827;
+  --ceibo-graphite-700: #39393c;
+  --ceibo-paper-50: #fffbfd;
+  --ceibo-paper-100: #fffbf7;
+
+  /* Type */
+  --font-sans: "Avenir Next", Avenir, "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --text-caption: clamp(0.7rem, 0.683rem + 0.074vw, 0.75rem);
+  --text-label: clamp(0.78rem, 0.755rem + 0.111vw, 0.855rem);
+  --text-body: 1rem;
+  --text-lead: clamp(1.025rem, 0.979rem + 0.204vw, 1.1625rem);
+  --text-subheading: clamp(1.25rem, 1.167rem + 0.37vw, 1.5rem);
+  --text-section: clamp(2.35rem, 1.683rem + 2.963vw, 4.35rem);
+  --text-display: clamp(3rem, 2.383rem + 2.741vw, 4.85rem);
+  --leading-body: 1.65;
+  --leading-dark-body: 1.72;
+  --leading-heading: 1.02;
+  --tracking-heading: -0.035em;
+  --tracking-display: -0.07em;
+
+  /* Fluid spacing: 4px foundation, composed into Utopia-style pairs. */
+  --space-3xs: clamp(0.25rem, 0.229rem + 0.093vw, 0.3125rem);
+  --space-2xs: clamp(0.5rem, 0.458rem + 0.185vw, 0.625rem);
+  --space-xs: clamp(0.75rem, 0.667rem + 0.37vw, 1rem);
+  --space-sm: clamp(1rem, 0.917rem + 0.37vw, 1.25rem);
+  --space-md: clamp(1.5rem, 1.333rem + 0.741vw, 2rem);
+  --space-lg: clamp(2.25rem, 1.917rem + 1.481vw, 3.25rem);
+  --space-xl: clamp(3.5rem, 2.833rem + 2.963vw, 5.5rem);
+  --space-2xl: clamp(4.5rem, 3.5rem + 4.444vw, 7.5rem);
+  --space-3xl: clamp(5.5rem, 4rem + 6.667vw, 10rem);
+
+  /* Shape, elevation, and stacking */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow-sm: 0 1px 2px rgb(57 57 60 / 6%);
+  --shadow-md: 0 8px 24px rgb(57 57 60 / 8%), 0 1px 3px rgb(57 57 60 / 8%);
+  --shadow-lg: 0 22px 55px rgb(57 57 60 / 12%), 0 2px 8px rgb(57 57 60 / 8%);
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-dialog: 400;
+
+  /* Motion: instant feedback, state changes, and one composed entrance. */
+  --duration-instant: 80ms;
+  --duration-feedback: 140ms;
+  --duration-state: 240ms;
+  --duration-layout: 420ms;
+  --duration-entrance: 600ms;
+  --duration-cursor: 1200ms;
+  --stagger-step: 50ms;
+  --stagger-start: 40ms;
+  --stagger-2: 100ms;
+  --stagger-3: 150ms;
+  --stagger-4: 200ms;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out: var(--ease-out-quint);
+
+  /* Light theme semantics */
+  --background: var(--ceibo-paper-100);
+  --foreground: var(--ceibo-graphite-700);
+  --card: #f7f6f6;
+  --card-foreground: var(--ceibo-graphite-700);
+  --popover: var(--ceibo-paper-50);
+  --popover-foreground: var(--ceibo-graphite-700);
+  --primary: var(--ceibo-coral-500);
+  --primary-hover: var(--ceibo-coral-600);
+  --primary-strong: var(--ceibo-coral-700);
+  --primary-foreground: #321512;
+  --primary-surface: var(--ceibo-coral-100);
+  --action: var(--ceibo-coral-600);
+  --action-hover: var(--ceibo-coral-700);
+  --action-foreground: #fffdfa;
+  --action-border: var(--ceibo-coral-700);
+  --secondary: var(--ceibo-sage-300);
+  --secondary-hover: var(--ceibo-sage-400);
+  --secondary-strong: var(--ceibo-sage-600);
+  --secondary-foreground: #263316;
+  --secondary-surface: var(--ceibo-sage-100);
+  --muted: #f3f3f3;
+  --muted-foreground: #5f6063;
+  --accent: var(--ceibo-sage-200);
+  --accent-foreground: #304119;
+  --border: #ddd9d4;
+  --border-strong: #c7c0b8;
+  --input: #d7d2cc;
+  --ring: var(--ceibo-sage-600);
+  --code: #252628;
+  --code-foreground: #fff2e8;
+  --code-border: #333944;
+  --code-control: #151b24;
+  --code-control-border: #404753;
+  --code-control-foreground: #dce2e9;
+  --success: #48651b;
+  --success-surface: var(--ceibo-sage-200);
+  --warning: #a55c1f;
+  --warning-surface: #fff2e8;
+  --evidence-background: var(--ceibo-ink-950);
+  --evidence-border: #29354a;
+  --evidence-rule-strong: #18202d;
+  --evidence-rule-soft: #0f151f;
+  --evidence-muted: #9ca9b9;
+  --evidence-shadow: drop-shadow(0 0.8rem 1rem rgb(0 0 0 / 24%));
+  --content-max: 80rem;
+
+  /* Compatibility aliases for Starlight and the appearance control. */
+  --at-font-body: var(--font-sans);
+  --at-font-code: var(--font-mono);
+  --at-font-display: var(--font-sans);
+  --at-accent: var(--primary);
+  --at-accent-deep: var(--primary-strong);
+  --at-paper: var(--background);
+  --at-paper-raised: var(--popover);
+  --at-ink: var(--foreground);
+  --at-ink-soft: var(--muted-foreground);
+  --at-rule: var(--border);
+  --at-code: var(--code);
+  --at-code-text: var(--code-foreground);
+  --at-selection: var(--primary-surface);
+  --at-ease-out: var(--ease-out);
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+  --sl-color-accent-low: var(--primary-surface);
+  --sl-color-accent: var(--primary-strong);
+  --sl-color-accent-high: #6f211a;
+  --sl-color-white: var(--foreground);
+  --sl-color-gray-1: #454548;
+  --sl-color-gray-2: #5f6063;
+  --sl-color-gray-3: #67686b;
+  --sl-color-gray-4: #aaa7a3;
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-6: var(--muted);
+  --sl-color-black: var(--background);
+  --sl-color-bg: var(--background);
+  --sl-color-bg-nav: var(--background);
+  --sl-color-bg-sidebar: var(--background);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-light: var(--border);
+  --sl-content-width: 48rem;
+  --sl-content-pad-x: clamp(1rem, 3vw, 2rem);
+  --sl-nav-height: 4rem;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --background: var(--ceibo-ink-950);
+  --foreground: #f5f7f8;
+  --card: var(--ceibo-ink-850);
+  --card-foreground: #f5f7f8;
+  --popover: var(--ceibo-ink-800);
+  --popover-foreground: #f5f7f8;
+  --primary: var(--ceibo-coral-500);
+  --primary-hover: var(--ceibo-coral-300);
+  --primary-strong: var(--ceibo-coral-300);
+  --primary-foreground: #220c0a;
+  --primary-surface: #3f1f20;
+  --action: var(--ceibo-coral-500);
+  --action-hover: var(--ceibo-coral-300);
+  --action-foreground: #220c0a;
+  --action-border: var(--ceibo-coral-300);
+  --secondary: var(--ceibo-sage-600);
+  --secondary-hover: var(--ceibo-sage-400);
+  --secondary-strong: var(--ceibo-sage-300);
+  --secondary-foreground: #0f1708;
+  --secondary-surface: #182413;
+  --muted: #111b2d;
+  --muted-foreground: #aeb7c4;
+  --accent: #1d2a1a;
+  --accent-foreground: #e4eade;
+  --border: #263549;
+  --border-strong: #425b39;
+  --input: #344154;
+  --ring: var(--ceibo-sage-400);
+  --code: var(--ceibo-ink-900);
+  --code-foreground: #fff2e8;
+  --success: var(--ceibo-sage-300);
+  --success-surface: #1d2a1a;
+  --warning: #edb374;
+  --warning-surface: #342416;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --sl-color-accent-low: var(--primary-surface);
+  --sl-color-accent: var(--primary-strong);
+  --sl-color-accent-high: var(--ceibo-coral-100);
+  --sl-color-white: var(--foreground);
+  --sl-color-gray-1: #eef1f5;
+  --sl-color-gray-2: #c6ced8;
+  --sl-color-gray-3: #9ca8b7;
+  --sl-color-gray-4: #59687a;
+  --sl-color-gray-5: var(--border);
+  --sl-color-gray-6: var(--muted);
+  --sl-color-black: var(--background);
+  color-scheme: dark;
+}

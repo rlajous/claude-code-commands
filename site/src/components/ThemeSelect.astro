@@ -271,9 +271,9 @@ const themes = [
 			letter-spacing: 0.025em;
 			padding: 0;
 			transition:
-				background-color 150ms var(--at-ease-out),
-				border-color 150ms var(--at-ease-out),
-				color 150ms var(--at-ease-out);
+				background-color var(--duration-feedback) var(--ease-out-quart),
+				border-color var(--duration-feedback) var(--ease-out-quart),
+				color var(--duration-feedback) var(--ease-out-quart);
 		}
 
 		.theme-trigger:hover,
@@ -330,7 +330,7 @@ const themes = [
 		}
 
 		.theme-menu:popover-open {
-			animation: theme-menu-in 160ms var(--at-ease-out);
+			animation: theme-menu-in var(--duration-state) var(--ease-out-expo);
 		}
 
 		.theme-menu[data-direction='up'] {
@@ -412,8 +412,8 @@ const themes = [
 			opacity: 0;
 			transform: translateX(-0.2rem);
 			transition:
-				opacity 120ms var(--at-ease-out),
-				transform 120ms var(--at-ease-out);
+				opacity var(--duration-feedback) var(--ease-out-quart),
+				transform var(--duration-feedback) var(--ease-out-expo);
 		}
 
 		.theme-option[aria-checked='true'] .option-check {

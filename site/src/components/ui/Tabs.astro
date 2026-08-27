@@ -13,7 +13,7 @@ interface Props {
 const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.props;
 ---
 
-<ui-tabs data-slot="tabs" data-tabs-id={id} class:list={['ui-tabs', className]}>
+<ui-tabs data-slot="tabs" data-tabs-id={id} data-active-index="0" class:list={['ui-tabs', className]}>
   <div data-slot="tabs-list" role="tablist" aria-label={label}>
     {tabs.map((tab) => (
       <button
@@ -51,6 +51,8 @@ const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.pr
 
     private select(trigger: HTMLButtonElement, focus = false): void {
       const tab = trigger.dataset.tab;
+      const activeIndex = this.triggers.indexOf(trigger);
+      this.dataset.activeIndex = String(Math.max(0, activeIndex));
       this.triggers.forEach((candidate) => {
         const selected = candidate === trigger;
         candidate.setAttribute('aria-selected', String(selected));
