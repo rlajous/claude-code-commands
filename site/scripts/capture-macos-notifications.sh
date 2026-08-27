@@ -47,7 +47,16 @@ swiftc "$script_dir/macos-notification-window.swift" -o "$temporary_dir/notifica
 
 defaults write NSGlobalDomain AppleInterfaceStyle -string Dark >/dev/null 2>&1 || true
 defaults write NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically -bool false >/dev/null 2>&1 || true
-killall SystemUIServer NotificationCenter >/dev/null 2>&1 || true
+
+# Register Script Editor as a notification source, then enable its temporary
+# banner style for this disposable CI user. Fresh macOS users commonly default
+# AppleScript notifications to Notification Center history without a banner.
+"$notify_script" 'Git Workflow capture' 'Preparing notification evidence' Glass
+python3 "$script_dir/enable-macos-notification-banners.py" | tee "$output_dir/notification-preferences.log"
+killall cfprefsd usernoted NotificationCenter >/dev/null 2>&1 || true
+launchctl kickstart -k "gui/$(id -u)/com.apple.notificationcenterui.agent" \
+  >>"$output_dir/notification-preferences.log" 2>&1 || true
+sleep 3
 
 "$temporary_dir/notification-surface" >"$output_dir/surface.log" 2>&1 &
 surface_pid=$!
@@ -66,8 +75,8 @@ capture_banner() {
   local window_id=""
   local attempt
 
-  killall NotificationCenter >/dev/null 2>&1 || true
-  sleep 2
+  launchctl kickstart "gui/$(id -u)/com.apple.notificationcenterui.agent" \
+    >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
   "$notify_script" "$title" "$message" Glass
 
   : >"$output_dir/${filename%.png}-windows.log"
@@ -101,6 +110,9 @@ capture_banner() {
   fi
 
   printf '%s\t%sx%s\twindow %s\n' "$filename" "$width" "$height" "$window_id"
+
+  # Let a temporary banner expire before delivering the next fixture.
+  sleep 6
 }
 
 capture_banner \
