@@ -301,6 +301,7 @@ site_assets = (
     "docs/assets/agent-tooling-site.png",
     "docs/assets/agent-tooling-site-mobile.png",
     "docs/assets/agent-tooling-evidence.png",
+    "docs/assets/agent-tooling-theme-menu.png",
 )
 for path in (*documentation_assets, *legacy_review_assets, *site_assets):
     assert Path(path).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path
