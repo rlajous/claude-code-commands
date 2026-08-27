@@ -20,6 +20,10 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: /Ship with an agent/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Claude Code' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Codex' })).toBeVisible();
+  const fieldIndex = page.getByRole('navigation', { name: 'Landing page sections' });
+  await expect(fieldIndex.getByRole('link')).toHaveCount(4);
+  await expect(fieldIndex.getByRole('link', { name: /01\s*Install/i })).toHaveAttribute('href', '#install');
+  await expect(fieldIndex.getByRole('link', { name: /03\s*Evidence/i })).toHaveAttribute('href', '#evidence');
   const notificationImages = page.locator('.notification-proof img');
   await expect(notificationImages).toHaveCount(3);
   await notificationImages.last().scrollIntoViewIfNeeded();
