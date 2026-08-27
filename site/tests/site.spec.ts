@@ -20,6 +20,7 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: /Ship software with agents/ })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Claude Code' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Codex' })).toBeVisible();
+  await expect(page.getByLabel('Claude Code and Codex use one shared workflow')).toContainText('One shared workflow');
   await expect(page.getByRole('heading', { name: 'Ready for review' })).toBeVisible();
   await expect(page.getByText('20 shared skills', { exact: true }).first()).toBeVisible();
   const notificationImages = page.locator('.notification-stack img');

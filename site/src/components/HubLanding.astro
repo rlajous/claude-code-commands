@@ -7,7 +7,6 @@ import CardHeader from './ui/CardHeader.astro';
 import IconGlyph from './ui/IconGlyph.astro';
 import Item from './ui/Item.astro';
 import Kbd from './ui/Kbd.astro';
-import Separator from './ui/Separator.astro';
 import TabPanel from './ui/TabPanel.astro';
 import Tabs from './ui/Tabs.astro';
 
@@ -54,88 +53,101 @@ const workflow = [
 <div class="hub-landing">
   <section class="product-hero" aria-labelledby="hub-title">
     <div class="hero-message">
-      <Badge variant="secondary"><span class="status-dot"></span>Git Workflow v{version}</Badge>
-      <h1 id="hub-title">Ship software with agents.<br /><span>Keep the decisions human.</span></h1>
-      <p>
-        A portable workflow for Claude Code and Codex that turns branches, reviews, releases, and proof into explicit, repeatable steps.
-      </p>
+      <div class="hero-kicker">
+        <Badge variant="secondary"><span class="status-dot"></span>Git Workflow v{version}</Badge>
+        <span>Built for Claude Code + Codex</span>
+      </div>
+      <h1 id="hub-title">
+        <span class="hero-line">Ship software</span>
+        <span class="hero-line">with agents.</span>
+        <span class="hero-line hero-line-accent">Keep decisions</span>
+        <span class="hero-line hero-line-accent">human.</span>
+      </h1>
+      <p>From issue to release, give your agent a workflow it can follow—and your team evidence it can trust.</p>
       <div class="hero-actions">
         <Button href="/git-workflow/installation/">Install Git Workflow <IconGlyph name="arrow-right" /></Button>
         <Button href="https://github.com/rlajous/claude-code-commands" variant="outline">
           <IconGlyph name="github" /> View on GitHub
         </Button>
       </div>
-      <div class="hero-facts" aria-label="Project facts">
-        <span><strong>{skillCount}</strong> shared skills</span>
-        <Separator orientation="vertical" />
-        <span><strong>{agentCount}</strong> specialist agents</span>
-        <Separator orientation="vertical" />
-        <span><strong>2</strong> runtimes</span>
-      </div>
+      <p class="hero-assurance">
+        <IconGlyph name="check" size={14} />
+        Host-neutral core <span aria-hidden="true">·</span> {skillCount} skills <span aria-hidden="true">·</span> MIT licensed
+      </p>
     </div>
 
-    <div class="product-playground" aria-label="Git Workflow product preview">
-      <div class="playground-toolbar">
-        <div><span></span><span></span><span></span></div>
-        <code>git-workflow / current change</code>
-        <Badge variant="success">live</Badge>
+    <div class="hero-visual">
+      <div class="runtime-intake" aria-label="Claude Code and Codex use one shared workflow">
+        <span><code>/</code> Claude Code</span>
+        <div class="runtime-path" aria-hidden="true"><i></i><i></i><i></i></div>
+        <strong>One shared workflow</strong>
+        <div class="runtime-path" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span><code>$</code> Codex</span>
       </div>
 
-      <div class="playground-grid">
-        <Card class="status-card" elevated>
-          <CardHeader>
-            <div>
-              <p class="card-label">Pipeline status</p>
-              <h2>Ready for review</h2>
-            </div>
-            <span class="status-icon"><IconGlyph name="check" /></span>
-          </CardHeader>
-          <CardContent>
-            <div class="branch-row"><code>feat/codex-support</code><Badge variant="outline">PR #29</Badge></div>
-            <ol class="mini-workflow" aria-label="Workflow progress">
-              {workflow.map(([step], index) => (
-                <li class:list={{ done: index < 4, current: index === 3 }}>
-                  <span><IconGlyph name={index < 4 ? 'check' : 'spark'} size={12} /></span>
-                  <small>{step}</small>
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
+      <div class="product-playground" aria-label="Git Workflow product preview">
+        <div class="playground-toolbar">
+          <div><span></span><span></span><span></span></div>
+          <code>git-workflow / current change</code>
+          <Badge variant="success">live</Badge>
+        </div>
 
-        <Card class="review-card">
-          <CardHeader>
-            <div class="review-avatar" aria-hidden="true">RN</div>
-            <div><p class="card-label">Review decision</p><h2>Approved</h2></div>
-            <Badge variant="success"><IconGlyph name="check" size={12} /> clean</Badge>
-          </CardHeader>
-          <CardContent>
-            <p>Deterministic checks passed. The implementation preserves Claude and Codex compatibility.</p>
-            <div class="review-meta"><span>8 agents</span><span>0 findings</span><span>4m 12s</span></div>
-          </CardContent>
-        </Card>
+        <div class="playground-grid">
+          <Card class="status-card" elevated>
+            <CardHeader>
+              <div>
+                <p class="card-label">Pipeline status</p>
+                <h2>Ready for review</h2>
+              </div>
+              <span class="status-icon"><IconGlyph name="check" /></span>
+            </CardHeader>
+            <CardContent>
+              <div class="branch-row"><code>feat/codex-support</code><Badge variant="outline">PR #29</Badge></div>
+              <ol class="mini-workflow" aria-label="Workflow progress">
+                {workflow.map(([step], index) => (
+                  <li class:list={{ done: index < 4, current: index === 3 }}>
+                    <span><IconGlyph name={index < 4 ? 'check' : 'spark'} size={12} /></span>
+                    <small>{step}</small>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
 
-        <Card class="terminal-card">
-          <CardHeader>
-            <div><p class="card-label">Next command</p><h2>Continue the workflow</h2></div>
-            <Kbd>⌘ K</Kbd>
-          </CardHeader>
-          <CardContent>
-            <div class="terminal-line"><span>›</span><code>$finish</code><span class="terminal-cursor"></span></div>
-            <p>Create the pull request with repository context and validation evidence.</p>
-          </CardContent>
-        </Card>
+          <Card class="review-card">
+            <CardHeader>
+              <div class="review-avatar" aria-hidden="true">RN</div>
+              <div><p class="card-label">Review decision</p><h2>Approved</h2></div>
+              <Badge variant="success"><IconGlyph name="check" size={12} /> clean</Badge>
+            </CardHeader>
+            <CardContent>
+              <p>Deterministic checks passed. The implementation preserves Claude and Codex compatibility.</p>
+              <div class="review-meta"><span>{agentCount} agents</span><span>0 findings</span><span>4m 12s</span></div>
+            </CardContent>
+          </Card>
 
-        <Card class="signal-card">
-          <CardHeader>
-            <div><p class="card-label">Local notification</p><h2>Review approved</h2></div>
-            <span class="signal-mark"><IconGlyph name="spark" /></span>
-          </CardHeader>
-          <CardContent>
-            <strong>rlajous/claude-code-commands · PR #29</strong>
-            <p>@reviewer approved — Polish Agent Tooling site visuals</p>
-          </CardContent>
-        </Card>
+          <Card class="terminal-card">
+            <CardHeader>
+              <div><p class="card-label">Next command</p><h2>Continue the workflow</h2></div>
+              <Kbd>⌘ K</Kbd>
+            </CardHeader>
+            <CardContent>
+              <div class="terminal-line"><span>›</span><code>$finish</code><span class="terminal-cursor"></span></div>
+              <p>Create the pull request with repository context and validation evidence.</p>
+            </CardContent>
+          </Card>
+
+          <Card class="signal-card">
+            <CardHeader>
+              <div><p class="card-label">Human checkpoint</p><h2>Review approved</h2></div>
+              <span class="signal-mark"><IconGlyph name="spark" /></span>
+            </CardHeader>
+            <CardContent>
+              <strong>rlajous/claude-code-commands · PR #29</strong>
+              <p>@reviewer approved — Redesign Agent Tooling documentation UI</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   </section>
