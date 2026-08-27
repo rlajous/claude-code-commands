@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import fcntl
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -12,6 +12,12 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from typing import Iterator, TextIO
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 
 from notification_config import load_config, project_root
 
@@ -44,6 +50,31 @@ def _repository_label(root: Path) -> str:
     return root.name or "workspace"
 
 
+@contextmanager
+def _exclusive_lock(handle: TextIO) -> Iterator[None]:
+    """Hold an exclusive ledger lock on Unix or native Windows."""
+    if os.name == "nt":
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            # Windows locks a byte range. A blank line supplies one byte without
+            # becoming a ledger entry because readers discard empty lines.
+            handle.write("\n")
+            handle.flush()
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+    else:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    try:
+        yield
+    finally:
+        if os.name == "nt":
+            handle.flush()
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def _claim_once(payload: dict[str, object], host: str) -> bool:
     session = str(payload.get("session_id") or "unknown-session")
     turn = str(payload.get("turn_id") or "")
@@ -65,17 +96,17 @@ def _claim_once(payload: dict[str, object], host: str) -> bool:
     state_dir.mkdir(parents=True, exist_ok=True)
     ledger = state_dir / "agent-complete-seen"
     with ledger.open("a+", encoding="utf-8") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        handle.seek(0)
-        seen = [line.strip() for line in handle if line.strip()]
-        if digest in seen:
-            return False
-        seen.append(digest)
-        handle.seek(0)
-        handle.truncate()
-        handle.write("\n".join(seen[-500:]) + "\n")
-        handle.flush()
-        os.fsync(handle.fileno())
+        with _exclusive_lock(handle):
+            handle.seek(0)
+            seen = [line.strip() for line in handle if line.strip()]
+            if digest in seen:
+                return False
+            seen.append(digest)
+            handle.seek(0)
+            handle.truncate()
+            handle.write("\n".join(seen[-500:]) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
     return True
 
 

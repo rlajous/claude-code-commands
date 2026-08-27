@@ -104,6 +104,45 @@ invoke codex "$CONCURRENT" >/dev/null & second=$!
 wait "$first"; wait "$second"
 [ "$(( $(grep -c '^title=' "$LOG") - BEFORE ))" -eq 1 ]; check 'concurrent duplicate hooks emit once' $?
 
+# Exercise the native-Windows branch without requiring a Windows runner. The
+# fake msvcrt module verifies that import and lock/unlock selection do not touch
+# the Unix-only fcntl module when os.name is nt.
+python3 - "$HOOK" <<'PY'
+import importlib.util
+import os
+from pathlib import Path
+import subprocess  # Cache the host implementation before simulating os.name.
+import sys
+import tempfile
+import types
+
+hook = Path(sys.argv[1])
+sys.path.insert(0, str(hook.parent))
+calls = []
+msvcrt = types.ModuleType("msvcrt")
+msvcrt.LK_LOCK = 1
+msvcrt.LK_UNLCK = 2
+msvcrt.locking = lambda _fd, mode, size: calls.append((mode, size))
+sys.modules["msvcrt"] = msvcrt
+
+original_name = os.name
+handle = tempfile.TemporaryFile(mode="w+", encoding="utf-8")
+try:
+    os.name = "nt"
+    spec = importlib.util.spec_from_file_location("agent_complete_windows", hook)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    with module._exclusive_lock(handle):
+        handle.write("digest\n")
+finally:
+    os.name = original_name
+    handle.close()
+
+assert calls == [(msvcrt.LK_LOCK, 1), (msvcrt.LK_UNLCK, 1)], calls
+PY
+check 'native Windows uses msvcrt instead of importing fcntl' $?
+
 # Configuration precedence and validation stay narrow and deterministic.
 mkdir -p "$TEST_ROOT/legacy/.claude"
 printf 'notifications:\n  agentComplete: true\n  prActivity: true\n  sound: Glass\n' > "$TEST_ROOT/legacy/.claude/config.yaml"

@@ -214,7 +214,8 @@ bash scripts/validate.sh
 - If GitHub actions fail, run `gh auth status` and authenticate with `gh auth login`.
 - If Review Watch is silent, run the host-correct `review-watch --doctor`, confirm
   `reviewWatch.enabled: true`, and verify OS notification permissions.
-- If agent or authored-PR alerts are silent, run the host-correct `notifications --doctor`, confirm
-  the corresponding opt-in flag, and start the daemon for PR activity.
+- If agent or authored-PR alerts are silent, run `/notifications --doctor` in Claude Code or
+  `$notifications --doctor` in Codex, confirm the corresponding opt-in flag, and start the daemon
+  for PR activity.
 - If issue lookup fails, inspect the active host's MCP connection and OAuth state.
 - If the hook does nothing, confirm `review-on-commit: true`, start a new host session, and verify the invoked command is `git commit` or `git push`.
