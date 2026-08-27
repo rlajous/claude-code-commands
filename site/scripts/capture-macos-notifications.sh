@@ -53,8 +53,14 @@ defaults write NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically -bool fal
 # AppleScript notifications to Notification Center history without a banner.
 "$notify_script" 'Git Workflow capture' 'Preparing notification evidence' Glass
 python3 "$script_dir/enable-macos-notification-banners.py" | tee "$output_dir/notification-preferences.log"
-killall cfprefsd usernoted NotificationCenter >/dev/null 2>&1 || true
+killall cfprefsd usernoted >/dev/null 2>&1 || true
+launchctl bootstrap \
+  "gui/$(id -u)" \
+  /System/Library/LaunchAgents/com.apple.notificationcenterui.plist \
+  >>"$output_dir/notification-preferences.log" 2>&1 || true
 launchctl kickstart -k "gui/$(id -u)/com.apple.notificationcenterui.agent" \
+  >>"$output_dir/notification-preferences.log" 2>&1 || true
+launchctl print "gui/$(id -u)/com.apple.notificationcenterui.agent" \
   >>"$output_dir/notification-preferences.log" 2>&1 || true
 sleep 3
 
@@ -75,6 +81,10 @@ capture_banner() {
   local window_id=""
   local attempt
 
+  launchctl bootstrap \
+    "gui/$(id -u)" \
+    /System/Library/LaunchAgents/com.apple.notificationcenterui.plist \
+    >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
   launchctl kickstart "gui/$(id -u)/com.apple.notificationcenterui.agent" \
     >>"$output_dir/${filename%.png}-windows.log" 2>&1 || true
   "$notify_script" "$title" "$message" Glass
