@@ -2,25 +2,14 @@ name: Capture macOS notification evidence
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/capture-macos-notifications.yml"
-      - "site/scripts/capture-macos-notifications.sh"
-      - "site/scripts/enable-macos-notification-banners.py"
-      - "site/scripts/macos-notification-*.swift"
-      - "skills/notifications/scripts/notify.sh"
 
 permissions:
   contents: read
 
 jobs:
   capture:
-    name: Capture on ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-15, macos-15-intel]
-    runs-on: ${{ matrix.runner }}
+    name: Capture on a clean remote Mac
+    runs-on: [self-hosted, macOS, notification-capture]
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -41,7 +30,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: macos-notification-evidence-${{ matrix.runner }}
+          name: macos-notification-evidence
           path: .artifacts/macos-notifications
           if-no-files-found: warn
           retention-days: 14
