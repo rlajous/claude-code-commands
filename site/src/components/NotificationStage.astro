@@ -33,7 +33,7 @@ const notifications = [
     <Badge variant="success">Observed</Badge>
   </figcaption>
 
-  <div class="notification-viewport" aria-label="Three real Git Workflow notification states">
+  <div class="notification-viewport" role="group" aria-label="Three real Git Workflow notification states">
     <span class="notification-origin" aria-hidden="true">Notification Center · local only</span>
     {notifications.map((notification, index) => (
       <img
