@@ -4,6 +4,8 @@ An agent-neutral package of 20 skills, eight specialized agents, and opt-in hook
 
 [Documentation](https://agents.navarrolajous.com/) · [Installation](https://agents.navarrolajous.com/git-workflow/installation/) · [Latest release](https://github.com/rlajous/claude-code-commands/releases/latest)
 
+[![Agent Tooling documentation showing Git Workflow support for Claude Code and Codex.](docs/assets/agent-tooling-site.png)](https://agents.navarrolajous.com/)
+
 ## What it includes
 
 - Framework-agnostic branch, commit, PR, release, QA, RFC, and status workflows
@@ -159,11 +161,19 @@ API cURL evidence when relevant, and pings you. Opt in with
 
 ### What it looks like
 
-Review Watch uses the same identity at both points in the lifecycle:
+Unified notifications identify the repository and host or pull request before the event itself:
 
-| Review requested | Ready for merge |
-| --- | --- |
-| ![A real macOS notification showing the repository, PR, author, and title.](docs/assets/review-watch-requested-macos.png) | ![A real macOS notification showing that the same PR is ready for merge.](docs/assets/review-watch-ready-macos.png) |
+**Agent finished**
+
+![A real macOS notification showing that a Codex turn completed in the Git Workflow repository.](docs/assets/agent-finished-macos.png)
+
+**Review approved**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and approval.](docs/assets/pr-approved-macos.png)
+
+**Changes requested**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](docs/assets/pr-changes-requested-macos.png)
 
 Linux uses the active desktop's native `notify-send` appearance. The daemon only discovers,
 de-duplicates, queues, and notifies; the active Claude or Codex session performs the review.

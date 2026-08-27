@@ -87,7 +87,7 @@ const capabilityGroups = [
   <section class="workflow-section" aria-labelledby="workflow-title">
     <div class="section-intro">
       <p class="eyebrow">A visible delivery loop</p>
-      <h2 id="workflow-title">Automation that leaves a trail.</h2>
+      <h2 id="workflow-title">Every step leaves a trail.</h2>
       <p>Each step produces something inspectable: a branch, a commit, a pull request, a review decision, a release.</p>
     </div>
     <ol class="workflow-line">
@@ -100,20 +100,38 @@ const capabilityGroups = [
   </section>
 
   <section class="evidence-section" aria-labelledby="evidence-title">
-    <div class="evidence-copy">
-      <p class="eyebrow">Evidence, not ceremony</p>
-      <h2 id="evidence-title">Know when to look.<br />Know what changed.</h2>
-      <p>Local notifications identify the repository, pull request, and person. A clean review can produce a decision brief with the business logic, risks, and proof—not a wall of diff.</p>
-      <a class="text-action" href="/git-workflow/change-brief/">How decision briefs work</a>
-    </div>
-    <div class="evidence-visuals">
+    <header class="evidence-heading">
+      <div>
+        <p class="eyebrow">Evidence, not ceremony</p>
+        <h2 id="evidence-title">Signals you can act on.</h2>
+      </div>
+      <div class="evidence-copy">
+        <p>Local notifications name the repository, pull request, and person. Decision briefs turn a clean review into business logic, risks, and proof—not a wall of diff.</p>
+        <a class="text-action" href="/git-workflow/change-brief/">How decision briefs work</a>
+      </div>
+    </header>
+    <div class="evidence-stage">
       <figure class="notification-proof">
-        <img src="/assets/review-watch-requested-macos-720.webp" srcset="/assets/review-watch-requested-macos-480.webp 480w, /assets/review-watch-requested-macos-720.webp 720w" sizes="(max-width: 72rem) calc(100vw - 2rem), 36rem" alt="A real macOS notification identifying the repository, pull request, author, and title." loading="lazy" decoding="async" width="720" height="160" />
-        <img src="/assets/review-watch-ready-macos-720.webp" srcset="/assets/review-watch-ready-macos-480.webp 480w, /assets/review-watch-ready-macos-720.webp 720w" sizes="(max-width: 72rem) calc(100vw - 2rem), 36rem" alt="A real macOS notification showing that the pull request is ready to merge." loading="lazy" decoding="async" width="720" height="160" />
-        <figcaption>Observed on macOS · native notifier</figcaption>
+        <div class="proof-heading"><span>Live signal / v{version}</span><span>macOS</span></div>
+        <div class="notification-step">
+          <p><span>01</span><strong>The agent finishes</strong></p>
+          <img src="/assets/agent-finished-macos-720.webp" srcset="/assets/agent-finished-macos-480.webp 480w, /assets/agent-finished-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification showing that a Codex turn completed in the Git Workflow repository." loading="lazy" decoding="async" width="720" height="160" />
+        </div>
+        <div class="notification-step">
+          <p><span>02</span><strong>A reviewer decides</strong></p>
+          <img src="/assets/pr-approved-macos-720.webp" srcset="/assets/pr-approved-macos-480.webp 480w, /assets/pr-approved-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and approval." loading="lazy" decoding="async" width="720" height="160" />
+        </div>
+        <div class="notification-step">
+          <p><span>03</span><strong>Or asks for changes</strong></p>
+          <img src="/assets/pr-changes-requested-macos-720.webp" srcset="/assets/pr-changes-requested-macos-480.webp 480w, /assets/pr-changes-requested-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 37rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and requested changes." loading="lazy" decoding="async" width="720" height="160" />
+        </div>
+        <figcaption>Observed on macOS · emitted by the packaged notifier</figcaption>
       </figure>
       <a class="brief-proof" href="/git-workflow/examples/pr-23/">
-        <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 72rem) 70vw, 22rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
+        <div class="brief-frame">
+          <span class="proof-kicker">Decision brief / PR #23</span>
+          <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 50rem) calc(100vw - 2rem), 46rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
+        </div>
         <span>Open the real PR #23 brief <b aria-hidden="true">↗</b></span>
       </a>
     </div>

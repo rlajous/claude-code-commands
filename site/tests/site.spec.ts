@@ -20,7 +20,12 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: /Ship with an agent/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Claude Code' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Codex' })).toBeVisible();
-  await expect(page.locator('.notification-proof img')).toHaveCount(2);
+  const notificationImages = page.locator('.notification-proof img');
+  await expect(notificationImages).toHaveCount(3);
+  await notificationImages.last().scrollIntoViewIfNeeded();
+  await expect.poll(async () => notificationImages.evaluateAll((images) => (
+    images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)
+  ))).toBe(true);
   await expect(page.getByRole('link', { name: /Open the real PR #23 brief/ })).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
 });
 

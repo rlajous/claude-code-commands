@@ -288,11 +288,21 @@ for requirement in (
     assert requirement in evidence_playbook, requirement
 
 documentation_assets = (
-    "docs/assets/review-watch-requested-macos.png",
-    "docs/assets/review-watch-ready-macos.png",
+    "docs/assets/agent-finished-macos.png",
+    "docs/assets/pr-approved-macos.png",
+    "docs/assets/pr-changes-requested-macos.png",
     "docs/assets/change-brief-pr-23.png",
 )
-for path in documentation_assets:
+legacy_review_assets = (
+    "docs/assets/review-watch-requested-macos.png",
+    "docs/assets/review-watch-ready-macos.png",
+)
+site_assets = (
+    "docs/assets/agent-tooling-site.png",
+    "docs/assets/agent-tooling-site-mobile.png",
+    "docs/assets/agent-tooling-evidence.png",
+)
+for path in (*documentation_assets, *legacy_review_assets, *site_assets):
     assert Path(path).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path
 
 example = read("docs/examples/change-brief-pr-23.html")
@@ -305,6 +315,9 @@ for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "do
     assert path in readme, path
 
 review_watch_docs = read("docs/REVIEW_WATCH.md")
+for path in legacy_review_assets:
+    relative_path = path.removeprefix("docs/")
+    assert relative_path in review_watch_docs, path
 assert "up to 50 open PRs" in review_watch_docs
 assert "unknown author" in review_watch_docs
 assert "REVIEW_WATCH_NOTIFY_SCRIPT" in review_watch_docs

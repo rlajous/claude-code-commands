@@ -68,6 +68,24 @@ accounts appear as `unknown reviewer`. Reviews submitted by the authenticated us
 General PR comments, issue comments, CI status, merges, commits, dismissed reviews, agent failures,
 and mobile push notifications are outside v2.6.0.
 
+## What it looks like
+
+These banners were emitted by the packaged macOS notifier. They show the exact identity and message
+formats used by v2.6.0; Linux presents the same text through the active desktop's `notify-send`
+theme.
+
+**Main Codex turn completed**
+
+![A real macOS notification showing that a Codex turn completed in the Git Workflow repository.](assets/agent-finished-macos.png)
+
+**A reviewer approved an authored pull request**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and approval.](assets/pr-approved-macos.png)
+
+**A reviewer requested changes**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
+
 ## One daemon, two GitHub channels
 
 The notifications skill owns one daemon shared with [Review Watch](REVIEW_WATCH.md):
