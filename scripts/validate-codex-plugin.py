@@ -104,8 +104,8 @@ def main() -> None:
     require_string_list(interface[prompt_key], f"interface.{prompt_key}", maximum=3)
 
     skills = sorted((ROOT / "skills").glob("*/SKILL.md"))
-    if len(skills) != 19:
-        fail(f"expected 19 skills, found {len(skills)}")
+    if len(skills) != 20:
+        fail(f"expected 20 skills, found {len(skills)}")
     for skill in skills:
         frontmatter = parse_frontmatter(skill)
         if frontmatter.get("name") != skill.parent.name or not frontmatter.get("description"):

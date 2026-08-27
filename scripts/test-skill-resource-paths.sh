@@ -12,11 +12,12 @@ fail() {
 }
 
 PACKAGE="$TEST_ROOT/plugin with spaces"
-mkdir -p "$PACKAGE/.codex" "$PACKAGE/.codex-plugin" "$PACKAGE/scripts"
+mkdir -p "$PACKAGE/.codex" "$PACKAGE/.codex-plugin" "$PACKAGE/hooks" "$PACKAGE/scripts"
 PACKAGE="$(cd "$PACKAGE" && pwd -P)"
 cp -R "$ROOT_DIR/skills" "$ROOT_DIR/agents" "$ROOT_DIR/references" "$ROOT_DIR/templates" "$PACKAGE/"
 cp -R "$ROOT_DIR/.codex/agents" "$PACKAGE/.codex/"
 cp "$ROOT_DIR/.codex-plugin/plugin.json" "$PACKAGE/.codex-plugin/plugin.json"
+cp "$ROOT_DIR/hooks/hooks.json" "$ROOT_DIR/hooks/claude-hooks.json" "$PACKAGE/hooks/"
 cp "$ROOT_DIR/scripts/review-watch.sh" "$ROOT_DIR/scripts/review-event.sh" \
   "$ROOT_DIR/scripts/notify.sh" "$ROOT_DIR/scripts/status-report.mjs" \
   "$ROOT_DIR/scripts/to-sarif.mjs" "$ROOT_DIR/scripts/sync-project.mjs" \
@@ -24,14 +25,20 @@ cp "$ROOT_DIR/scripts/review-watch.sh" "$ROOT_DIR/scripts/review-event.sh" \
 
 [ -L "$ROOT_DIR/.agents/skills" ] || fail ".agents/skills is not a symlink"
 [ "$(readlink "$ROOT_DIR/.agents/skills")" = "../skills" ] || fail ".agents/skills target is not ../skills"
-[ "$(find -L "$ROOT_DIR/.agents/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')" = "19" ] \
-  || fail "Codex local discovery does not expose 19 skills"
+[ "$(find -L "$ROOT_DIR/.agents/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')" = "20" ] \
+  || fail "Codex local discovery does not expose 20 skills"
 
 for resource in \
   skills/review-watch/scripts/review-watch.sh \
   skills/review-watch/scripts/notify.sh \
   skills/review-watch/scripts/review-watch-tools.sh \
   skills/review-watch/references/known-issues.md \
+  skills/notifications/scripts/activity-watch.sh \
+  skills/notifications/scripts/activity-events.py \
+  skills/notifications/scripts/agent-complete.py \
+  skills/notifications/scripts/notification-tools.sh \
+  skills/notifications/scripts/notification_config.py \
+  skills/notifications/scripts/notify.sh \
   skills/review/scripts/review-event.sh \
   skills/review/scripts/to-sarif.mjs \
   skills/change-brief/scripts/validate-self-contained-html.py \
@@ -42,8 +49,8 @@ for resource in \
 done
 
 DAEMON_COMMAND="$(env -u PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT \
-  bash "$PACKAGE/skills/review-watch/scripts/review-watch-tools.sh" --daemon-command)"
-EXPECTED_DAEMON_COMMAND="$(printf 'bash %q' "$PACKAGE/skills/review-watch/scripts/review-watch.sh")"
+  bash "$PACKAGE/skills/notifications/scripts/notification-tools.sh" --daemon-command)"
+EXPECTED_DAEMON_COMMAND="$(printf 'bash %q' "$PACKAGE/skills/notifications/scripts/activity-watch.sh")"
 [ "$DAEMON_COMMAND" = "$EXPECTED_DAEMON_COMMAND" ] \
   || fail "daemon command did not use the absolute installed skill path"
 
@@ -59,7 +66,7 @@ PROJECT="$TEST_ROOT/project with spaces"
 mkdir -p "$PROJECT/.git-workflow"
 printf 'reviewWatch:\n  enabled: true\n' > "$PROJECT/.git-workflow/config.yaml"
 DOCTOR_OUTPUT="$(cd "$PROJECT" && PATH="$FAKE_BIN:$PATH" env -u PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT \
-  bash "$PACKAGE/skills/review-watch/scripts/review-watch-tools.sh" --doctor)"
+  bash "$PACKAGE/skills/notifications/scripts/notification-tools.sh" --doctor)"
 printf '%s\n' "$DOCTOR_OUTPUT" | grep -q 'RESULT: ready' || fail "doctor did not pass with isolated dependencies"
 [ ! -e "$PROJECT/.git-workflow/review-watch-queue.jsonl" ] || fail "doctor mutated review state"
 
@@ -73,7 +80,12 @@ import sys
 
 with open(sys.argv[1]) as file:
     arguments = file.read().splitlines()
-assert arguments == ["-", sys.argv[2], sys.argv[3]], arguments
+assert arguments[:6] == [
+    "-e", "on run argv",
+    "-e", "display notification (item 2 of argv) with title (item 1 of argv)",
+    "-e", "end run",
+], arguments
+assert arguments[6:] == [sys.argv[2], sys.argv[3]], arguments
 PY
 
 STATE_HOME="$TEST_ROOT/state with spaces"
@@ -94,7 +106,7 @@ import sys
 
 with open(sys.argv[1]) as file:
     arguments = file.read().splitlines()
-assert arguments == ["acme/app · PR #42", "@alice — Fix login redirect"], arguments
+assert arguments == ["acme/app · PR #42", "@alice — Fix login redirect", "Glass"], arguments
 PY
 [ -s "$STATE_HOME/git-workflow/review-watch-queue.jsonl" ] || fail "watcher wrapper did not enqueue the PR"
 

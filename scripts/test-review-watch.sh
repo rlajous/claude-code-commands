@@ -197,7 +197,7 @@ mkdir -p "$FAKE_GH_BIN"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'printf "%s\n" "$@" > "$FAKE_GH_ARGS"' \
-  'printf '\''[{"number":99,"title":"Add audit log","url":"https://github.com/acme/api/pull/99","repository":{"nameWithOwner":"acme/api"},"headRefOid":"live999","author":{"login":"bob"}}]'\''' \
+  'printf '\''{"viewer":"me","requested":[{"number":99,"title":"Add audit log","url":"https://github.com/acme/api/pull/99","repository":{"nameWithOwner":"acme/api"},"headRefOid":"live999","author":{"login":"bob"}}],"authored":[]}'\''' \
   > "$FAKE_GH_BIN/gh"
 chmod +x "$FAKE_GH_BIN/gh"
 OUTPUT_7="$(cd "$CONFIG_PROJECT" && PATH="$FAKE_GH_BIN:$PATH" FAKE_GH_ARGS="$FAKE_GH_ARGS" \
@@ -208,13 +208,82 @@ printf '%s' "$OUTPUT_7" | grep -q 'review requested on acme/api PR #99 by @bob �
 check "GraphQL live path returns notification metadata" $?
 grep -qx 'api' "$FAKE_GH_ARGS" && grep -qx 'graphql' "$FAKE_GH_ARGS"
 check "live path uses gh api graphql" $?
-grep -qx 'searchQuery=repo:acme/api is:pr is:open review-requested:@me' "$FAKE_GH_ARGS"
-check "GraphQL search keeps repo and review-request filters" $?
+grep -qx 'requestedQuery=repo:acme/api is:pr is:open review-requested:@me' "$FAKE_GH_ARGS" && \
+  grep -qx 'authoredQuery=repo:acme/api is:pr is:open author:@me' "$FAKE_GH_ARGS"
+check "GraphQL searches keep repo, review-request, and authored filters" $?
+grep -q 'requested: search' "$FAKE_GH_ARGS" && grep -q 'authored: search' "$FAKE_GH_ARGS" && \
+  grep -q 'reviews(last: 20)' "$FAKE_GH_ARGS"
+check "one GraphQL document contains both optional searches" $?
 if grep -qx 'search' "$FAKE_GH_ARGS" || grep -q 'headRefOid.*--json\|--json.*headRefOid' "$FAKE_GH_ARGS"; then
   check "live path avoids unsupported gh search fields" 1
 else
   check "live path avoids unsupported gh search fields" 0
 fi
+
+# 8. PR activity is baselined on first use, then each new review ID notifies
+# exactly once. Inline comment count does not multiply review notifications.
+ACTIVITY_PROJECT="$STATE_HOME/activity-project"
+ACTIVITY_STATE="$STATE_HOME/activity-state"
+ACTIVITY_LOG="$STATE_HOME/activity-notifications.log"
+mkdir -p "$ACTIVITY_PROJECT/.git-workflow"
+printf 'notifications:\n  agentComplete: false\n  prActivity: true\n  sound: Glass\nreviewWatch:\n  enabled: false\n' > "$ACTIVITY_PROJECT/.git-workflow/config.yaml"
+activity_payload() {
+  local reviews="$1"
+  printf '{"viewer":"me","requested":[],"authored":[{"number":42,"title":"Fix login redirect","url":"https://github.com/acme/app/pull/42","repository":{"nameWithOwner":"acme/app"},"reviews":{"nodes":%s}}]}' "$reviews"
+}
+run_activity() {
+  local data="$1"
+  (cd "$ACTIVITY_PROJECT" && XDG_STATE_HOME="$ACTIVITY_STATE" GIT_WORKFLOW_GITHUB_JSON="$data" \
+    GIT_WORKFLOW_NOTIFY_SCRIPT="$NOTIFY_CAPTURE" REVIEW_WATCH_NOTIFY_LOG="$ACTIVITY_LOG" \
+    bash "$SCRIPT" --once)
+}
+
+BASE_REVIEWS='[{"id":"R1","state":"APPROVED","submittedAt":"2026-01-01T00:00:00Z","author":{"login":"alice"},"comments":{"totalCount":3}}]'
+BASE_OUTPUT="$(run_activity "$(activity_payload "$BASE_REVIEWS")")"
+printf '%s' "$BASE_OUTPUT" | grep -q 'recorded baseline for 1 existing review(s)'
+check "first PR activity run creates a silent baseline" $?
+[ ! -e "$ACTIVITY_LOG" ]
+check "baseline does not send desktop notifications" $?
+
+NEW_REVIEWS='[{"id":"R1","state":"APPROVED","submittedAt":"2026-01-01T00:00:00Z","author":{"login":"alice"},"comments":{"totalCount":3}},{"id":"R2","state":"APPROVED","submittedAt":"2026-01-02T00:00:00Z","author":{"login":"alice"},"comments":{"totalCount":5}}]'
+APPROVED_OUTPUT="$(run_activity "$(activity_payload "$NEW_REVIEWS")")"
+printf '%s' "$APPROVED_OUTPUT" | grep -q '@alice approved on acme/app PR #42 — Fix login redirect'
+check "new approval is reported once regardless of inline comment count" $?
+grep -qx 'title=acme/app · PR #42' "$ACTIVITY_LOG" && grep -qx 'message=@alice approved — Fix login redirect' "$ACTIVITY_LOG"
+check "approval notification format is exact" $?
+LINES_AFTER_APPROVAL="$(wc -l < "$ACTIVITY_LOG" | tr -d ' ')"
+run_activity "$(activity_payload "$NEW_REVIEWS")" >/dev/null
+[ "$(wc -l < "$ACTIVITY_LOG" | tr -d ' ')" = "$LINES_AFTER_APPROVAL" ]
+check "same review ID is deduplicated" $?
+
+MORE_REVIEWS='[{"id":"R1","state":"APPROVED","submittedAt":"2026-01-01T00:00:00Z","author":{"login":"alice"}},{"id":"R2","state":"APPROVED","submittedAt":"2026-01-02T00:00:00Z","author":{"login":"alice"}},{"id":"R3","state":"CHANGES_REQUESTED","submittedAt":"2026-01-03T00:00:00Z","author":{"login":"bob"}},{"id":"R4","state":"COMMENTED","submittedAt":"2026-01-04T00:00:00Z","author":null},{"id":"R5","state":"COMMENTED","submittedAt":"2026-01-05T00:00:00Z","author":{"login":"me"}},{"id":"","state":"APPROVED","submittedAt":"2026-01-06T00:00:00Z","author":{"login":"mallory"}}]'
+MORE_OUTPUT="$(run_activity "$(activity_payload "$MORE_REVIEWS")")"
+printf '%s' "$MORE_OUTPUT" | grep -q '@bob requested changes on acme/app PR #42'
+check "changes requested activity is reported" $?
+printf '%s' "$MORE_OUTPUT" | grep -q 'unknown reviewer left review feedback on acme/app PR #42'
+check "deleted reviewer uses explicit fallback" $?
+if printf '%s' "$MORE_OUTPUT" | grep -q '@me\|mallory'; then check "self and malformed reviews are ignored" 1; else check "self and malformed reviews are ignored" 0; fi
+tail -n 4 "$ACTIVITY_LOG" | grep -qx 'message=@bob requested changes — Fix login redirect'
+check "changes requested notification format is exact" $?
+tail -n 2 "$ACTIVITY_LOG" | grep -qx 'message=unknown reviewer left review feedback — Fix login redirect'
+check "review feedback notification format is exact" $?
+
+# A fresh review by the same reviewer has a distinct node ID and notifies again.
+REPEAT_REVIEW='[{"id":"R6","state":"APPROVED","submittedAt":"2026-01-07T00:00:00Z","author":{"login":"alice"}}]'
+REPEAT_OUTPUT="$(run_activity "$(activity_payload "$REPEAT_REVIEW")")"
+printf '%s' "$REPEAT_OUTPUT" | grep -q '@alice approved'
+check "new review ID from the same reviewer notifies again" $?
+
+# The activity ledger is bounded to the newest 2,000 IDs.
+python3 - "$ACTIVITY_STATE/git-workflow/pr-activity-seen" <<'PY'
+import sys
+with open(sys.argv[1], "w") as f:
+    for i in range(2000): f.write(f"old-{i:04d}\n")
+PY
+run_activity "$(activity_payload '[{"id":"R-new","state":"COMMENTED","submittedAt":"2026-01-08T00:00:00Z","author":{"login":"zoe"}}]')" >/dev/null
+[ "$(wc -l < "$ACTIVITY_STATE/git-workflow/pr-activity-seen" | tr -d ' ')" = 2000 ] && \
+  grep -qx 'R-new' "$ACTIVITY_STATE/git-workflow/pr-activity-seen"
+check "PR activity ledger remains capped at 2,000 IDs" $?
 
 if [ "$FAILURES" -gt 0 ]; then
   printf '%d assertion(s) failed\n' "$FAILURES" >&2

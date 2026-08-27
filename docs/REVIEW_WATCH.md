@@ -22,9 +22,10 @@ flowchart LR
   Brief --> Ready[Ready-for-merge notification]
 ```
 
-The daemon uses one GraphQL search for up to 50 open PRs with `review-requested:@me`. An optional
-repository filter adds `repo:owner/name`. Each result includes repository, PR number, title, URL,
-author, and `headRefOid`, so the same SHA is never announced twice.
+The daemon uses one GraphQL request shared with [Notifications](NOTIFICATIONS.md). Its optional
+review-request alias returns up to 50 open PRs with `review-requested:@me`. An optional repository
+filter adds `repo:owner/name`. Each result includes repository, PR number, title, URL, author, and
+`headRefOid`, so the same SHA is never announced twice.
 
 ## Quick start
 
@@ -34,9 +35,11 @@ Enable the opt-in setting in the project:
 reviewWatch:
   enabled: true
   intervalSeconds: 60
-  sound: Glass
   linters: auto
   knownIssues: references/known-issues.md
+
+notifications:
+  sound: Glass
 ```
 
 Check the installation without querying PRs or changing GitHub:
@@ -141,7 +144,8 @@ Daemon discovery state is user-local:
 ```text
 ${XDG_STATE_HOME:-$HOME/.local/state}/git-workflow/
 ├── review-watch-seen
-└── review-watch-queue.jsonl
+├── review-watch-queue.jsonl
+└── pr-activity-seen        # present when notifications.prActivity is enabled
 ```
 
 Each new queue record has this shape:
@@ -172,7 +176,7 @@ head SHA and makes the PR eligible for another review round.
 | --- | --- | --- |
 | `reviewWatch.enabled` | `false` | Explicitly opts the project into the daemon and worker flow. |
 | `reviewWatch.intervalSeconds` | `60` | Poll interval used when the CLI does not override it. |
-| `reviewWatch.sound` | `Glass` | macOS system sound name. |
+| `notifications.sound` | `Glass` | macOS system sound name shared by all banners. |
 | `reviewWatch.linters` | `auto` | Auto-detect project linters or run an explicit command. |
 | `reviewWatch.knownIssues` | `references/known-issues.md` | Project or skill-local deterministic ruleset. |
 | `review.postToGitHub` | `ask` | `ask`, `always`, or `never`. |
@@ -185,7 +189,8 @@ read-only fallback. CLI interval and repository arguments take precedence over c
 
 - `--doctor` checks paths, Bash, Python, Node, Git, `gh`, authentication, and parsed configuration.
   It does not query PRs, publish reviews, or create queue state.
-- Automated tests replace the notifier through the internal `REVIEW_WATCH_NOTIFY_SCRIPT` override,
+- Automated tests replace the notifier through `GIT_WORKFLOW_NOTIFY_SCRIPT` or the compatible
+  internal `REVIEW_WATCH_NOTIFY_SCRIPT` override,
   so validation never emits real desktop notifications.
 - The live query asks GitHub only for metadata required to identify and de-duplicate PRs.
 - Review posting uses the same permission and self-review guards as the regular review skill.

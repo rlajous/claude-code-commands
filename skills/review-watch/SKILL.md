@@ -159,11 +159,15 @@ Print a compact summary per PR: verdict (REQUEST_CHANGES / APPROVED / COMMENTED)
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `reviewWatch.intervalSeconds` | `60` | Daemon poll interval |
-| `reviewWatch.sound` | `Glass` | Notification sound name |
+| `notifications.sound` | `Glass` | Shared notification sound name (`reviewWatch.sound` remains a fallback) |
 | `reviewWatch.linters` | `auto` | `auto`-detect, or an explicit lint command |
 | `reviewWatch.knownIssues` | `references/known-issues.md` | Deterministic ruleset path |
 | `review.postToGitHub` | `ask` | `ask` \| `always` \| `never` |
 | `review.postEvent` | `auto` | `auto` (derive REQUEST_CHANGES/APPROVE) \| `comment` |
+
+The daemon implementation and generic notifier are owned by the sibling `notifications` skill;
+the skill-local scripts here are compatibility wrappers. Enabling `notifications.prActivity`
+adds authored-PR review events to the same GraphQL poll without duplicating the daemon.
 
 ## Error Handling
 

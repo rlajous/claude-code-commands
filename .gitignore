@@ -7,3 +7,7 @@
 .git-workflow/status.html
 .git-workflow/git-workflow.local.md
 .git-workflow/.git-workflow-reviewed-shas
+
+# Python helper bytecode
+__pycache__/
+*.py[cod]

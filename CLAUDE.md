@@ -43,6 +43,7 @@ skills/                    # Skills (each an invocable slash command via SKILL.m
 ├── clean-gone/SKILL.md    # Delete local branches gone on the remote
 ├── status/SKILL.md        # Show workflow position and next step
 ├── review-watch/SKILL.md  # Auto-review PRs that request your review, in a loop
+├── notifications/SKILL.md # Opt-in agent and authored-PR activity alerts
 └── change-brief/SKILL.md  # Self-contained HTML explainer of a change
 
 agents/                    # Subagents for specialized tasks
@@ -138,6 +139,7 @@ Users can install via:
 | `/clean-gone`    | Delete local branches gone on the remote and their worktrees |
 | `/status`        | Show workflow position and the recommended next step         |
 | `/review-watch`  | Auto-review PRs that request your review, in a loop (REQUEST_CHANGES / APPROVE) |
+| `/notifications` | Diagnose opt-in main-agent and authored-PR review notifications               |
 | `/change-brief`  | Generate a self-contained HTML explainer of a change         |
 
 ## Subagents
@@ -178,7 +180,12 @@ Hooks automate actions during Claude Code execution. Configure in `settings.json
 - `PreToolUse`: Validate before execution (block dangerous commands)
 - `SessionStart/End`: Setup and logging
 
-The repo also ships an **opt-in** background review hook. Claude selects `hooks/claude-hooks.json`; Codex discovers `hooks/hooks.json`; both call `hooks/review-commit.sh`. Enable it with `review-on-commit: true` in `.git-workflow/git-workflow.local.md`. The old `.claude/git-workflow.local.md` path remains a read-only fallback.
+The repo also ships opt-in hooks. Claude selects `hooks/claude-hooks.json`; Codex discovers
+`hooks/hooks.json`. Both call `hooks/review-commit.sh` after eligible Git commands and the
+notification adapter after the main turn stops. Enable commit review with `review-on-commit: true`
+in `.git-workflow/git-workflow.local.md`; enable completion alerts with
+`notifications.agentComplete: true` in `.git-workflow/config.yaml`. The old `.claude/` paths remain
+read-only fallbacks.
 
 See [HOOKS.md](./HOOKS.md) for complete documentation.
 

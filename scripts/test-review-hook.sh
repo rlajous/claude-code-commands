@@ -193,11 +193,19 @@ import json
 import pathlib
 import sys
 root = pathlib.Path(sys.argv[1])
-claude = json.loads((root / "hooks/claude-hooks.json").read_text())["hooks"]["PostToolUse"]
-codex = json.loads((root / "hooks/hooks.json").read_text())["hooks"]["PostToolUse"]
+claude_descriptor = json.loads((root / "hooks/claude-hooks.json").read_text())["hooks"]
+codex_descriptor = json.loads((root / "hooks/hooks.json").read_text())["hooks"]
+claude = claude_descriptor["PostToolUse"]
+codex = codex_descriptor["PostToolUse"]
 assert all(hook.get("asyncRewake") is True and "--host claude" in hook["command"] for entry in claude for hook in entry["hooks"])
 assert all("async" not in hook and "--host codex" in hook["command"] for entry in codex for hook in entry["hooks"])
 assert all(entry.get("matcher") == "Bash" for entry in codex)
+for descriptor, host in ((claude_descriptor, "claude"), (codex_descriptor, "codex")):
+    stop = descriptor["Stop"]
+    commands = [hook["command"] for entry in stop for hook in entry["hooks"]]
+    assert len(commands) == 1
+    assert "agent-complete.py" in commands[0] and f"--host {host}" in commands[0]
+    assert "SubagentStop" not in descriptor
 PY
 
 printf 'ok: review hook behavior\n'

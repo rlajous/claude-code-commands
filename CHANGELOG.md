@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.6.0
+
+### Added
+
+- Add the opt-in `/notifications` and `$notifications` skill for main-agent completion alerts and
+  new `APPROVED`, `CHANGES_REQUESTED`, or `COMMENTED` reviews on pull requests you authored.
+- Register Claude Code and Codex `Stop` hooks without modifying user-global configuration, with
+  project-local Codex checkout registration and concurrent per-turn deduplication.
+- Add `notifications --doctor` and `notifications --daemon-command`, plus a unified GraphQL daemon
+  that shares polling with Review Watch and creates a silent first-run review baseline.
+
+### Changed
+
+- Move ownership of the notifier, configuration parser, and GitHub watcher to the `notifications`
+  skill while retaining root and `review-watch` compatibility wrappers.
+- Store PR review node IDs in local XDG state with a 2,000-entry cap and continue storing Review
+  Watch requests by head SHA.
+
 ## 2.5.2
 
 - Resolve deterministic resources from each loaded skill directory so installed and checkout-local

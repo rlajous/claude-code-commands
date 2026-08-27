@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Cross-agent Git workflow automation skills",
-    "version": "2.5.2"
+    "version": "2.6.0"
   },
   "plugins": [
     {
       "name": "git-workflow",
       "source": "./",
-      "description": "Production-ready Git workflow automation for pull requests, releases, QA, and code review",
-      "version": "2.5.2",
+      "description": "Production-ready Git workflow automation for pull requests, releases, QA, code review, and local notifications",
+      "version": "2.6.0",
       "author": {
         "name": "rlajous",
         "url": "https://github.com/rlajous"
@@ -20,7 +20,7 @@
       "homepage": "https://github.com/rlajous/claude-code-commands",
       "repository": "https://github.com/rlajous/claude-code-commands",
       "license": "MIT",
-      "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation"],
+      "keywords": ["git", "workflow", "pr", "release", "qa", "testing", "automation", "notifications"],
       "category": "productivity"
     }
   ]

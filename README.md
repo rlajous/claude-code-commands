@@ -1,6 +1,6 @@
 # Git Workflow
 
-An agent-neutral package of 19 skills, eight specialized agents, and an opt-in commit-review hook for Git, pull requests, releases, and QA. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
+An agent-neutral package of 20 skills, eight specialized agents, and opt-in hooks for Git, pull requests, releases, QA, and desktop notifications. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
 ## What it includes
 
@@ -11,6 +11,7 @@ An agent-neutral package of 19 skills, eight specialized agents, and an opt-in c
 - Canonical runtime-neutral configuration and state in `.git-workflow/`
 - Backward-compatible reads from legacy `.claude/` state
 - An opt-in review hook for new commits and pushes, with host-specific delivery
+- Opt-in local alerts for main-agent completion and new reviews on your pull requests
 
 ## Install for Claude Code
 
@@ -33,7 +34,7 @@ For unprefixed project skills, copy `skills/` to `.claude/skills/`, `agents/` to
 
 ## Install for Codex
 
-Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 19 directories under `skills/`. Then run the setup skill in the target project:
+Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 20 directories under `skills/`. Then run the setup skill in the target project:
 
 ```text
 $setup
@@ -45,7 +46,7 @@ Use `$setup --host codex`, `$setup --host both`, or `$setup --dry-run` to make h
 
 During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
-For checkout-local development, Codex also discovers the same 19 skills through the committed
+For checkout-local development, Codex also discovers the same 20 skills through the committed
 `.agents/skills -> ../skills` symlink. Use either the installed plugin or checkout-local discovery
 in a session, not both, because duplicate skill names appear as separate entries.
 
@@ -93,6 +94,7 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `finish` | Push and open a pull request |
 | `review` | Fan out a comprehensive PR review |
 | `review-watch` | Auto-review PRs that request your review, in a loop (linters + fan-out; REQUEST_CHANGES / APPROVE) |
+| `notifications` | Diagnose and run opt-in main-agent and authored-PR activity notifications |
 | `change-brief` | Generate a sub-10-minute HTML decision brief with business logic and contextual evidence |
 | `release` | Prepare and validate a release |
 | `release-notes` | Generate release notes |
@@ -106,6 +108,31 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `clean-gone` | Remove gone branches and linked worktrees safely |
 
 Detailed examples are in [COMMANDS.md](COMMANDS.md).
+
+### Unified notifications
+
+Agent completion and GitHub review activity use one opt-in notification system. The packaged
+`Stop` hook announces only the main Claude Code or Codex turn; one daemon shared with Review Watch
+announces new approvals, requested changes, and review feedback on PRs you authored.
+
+```yaml
+notifications:
+  agentComplete: true
+  prActivity: true
+  sound: Glass
+```
+
+```text
+/notifications --doctor          # Claude Code
+/notifications --daemon-command
+$notifications --doctor          # Codex
+$notifications --daemon-command
+```
+
+The first PR-activity run establishes a silent baseline. Later events deduplicate by GitHub review
+ID, while completion alerts deduplicate by host, session, and turn without storing the assistant's
+full message. Read the [Notifications guide](docs/NOTIFICATIONS.md) for installation modes, exact
+formats, privacy, local state, and troubleshooting.
 
 ### Review watcher (console)
 

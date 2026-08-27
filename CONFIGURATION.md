@@ -74,9 +74,14 @@ review:
 reviewWatch:
   enabled: false
   intervalSeconds: 60
-  sound: Glass
   linters: auto
   knownIssues: references/known-issues.md
+
+# Local agent and authored-PR review notifications
+notifications:
+  agentComplete: false
+  prActivity: false
+  sound: Glass
 
 # Self-contained HTML decision briefs
 changeBrief:
@@ -335,9 +340,6 @@ reviewWatch:
   # Poll interval in seconds; a daemon CLI option can override it
   intervalSeconds: 60
 
-  # macOS system sound name
-  sound: Glass
-
   # Auto-detect changed-file linters, or provide one explicit command
   linters: auto
 
@@ -352,6 +354,26 @@ stored in `.git-workflow/.review-watch-reviewed`.
 
 See the [Review Watch guide](docs/REVIEW_WATCH.md) for notifications, queue schema, commands, and
 posting behavior.
+
+### Notifications
+
+```yaml
+notifications:
+  # Notify when the main Claude Code or Codex turn finishes
+  agentComplete: false
+
+  # Notify for new submitted reviews on open PRs you authored
+  prActivity: false
+
+  # macOS system sound name used by all Git Workflow notifications
+  sound: Glass
+```
+
+Both channels are explicit opt-ins. Agent completion uses the host's packaged `Stop` hook. PR
+activity uses the daemon shared with Review Watch, queries up to 50 authored open PRs and their
+latest 20 reviews, and establishes a silent first-run baseline. See the
+[Notifications guide](docs/NOTIFICATIONS.md) for exact formats, local state, privacy, and manual
+hook installation.
 
 ### Change Brief
 
@@ -451,7 +473,9 @@ qa:
 | `review.postEvent` | `auto` |
 | `reviewWatch.enabled` | `false` |
 | `reviewWatch.intervalSeconds` | `60` |
-| `reviewWatch.sound` | `Glass` |
+| `notifications.agentComplete` | `false` |
+| `notifications.prActivity` | `false` |
+| `notifications.sound` | `Glass` |
 | `reviewWatch.linters` | `auto` |
 | `reviewWatch.knownIssues` | `references/known-issues.md` |
 | `changeBrief.outputDir` | `.git-workflow/change-brief` |
@@ -459,7 +483,11 @@ qa:
 
 ## Hooks Configuration
 
-The packaged commit-review hook is configured separately from `config.yaml`: Claude loads `hooks/claude-hooks.json`, while Codex discovers `hooks/hooks.json`. Project opt-in is stored in `.git-workflow/git-workflow.local.md`.
+The packaged commit-review and agent-completion hooks are registered by host-specific descriptors:
+Claude loads `hooks/claude-hooks.json`, while Codex plugins discover `hooks/hooks.json`. The source
+checkout includes project-local `.codex/hooks.json`. Commit review opts in through
+`.git-workflow/git-workflow.local.md`; agent completion opts in through
+`notifications.agentComplete`. Git Workflow does not modify global host settings.
 
 Host-specific custom hooks can also be configured in host settings. For example, Claude supports `~/.claude/settings.json` (global) or `.claude/settings.json` (project):
 

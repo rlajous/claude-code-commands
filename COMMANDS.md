@@ -1,6 +1,6 @@
 # Skills reference
 
-Git Workflow provides the same 19 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
+Git Workflow provides the same 20 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
 
 ## Skill format
 
@@ -109,6 +109,7 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 | `/status` | Show where you are in the workflow and the recommended next step | `[--html]` |
 | `/update` | Update commands and agents from the source repository | `[--host <claude\|codex\|both>] [--dry-run] [--prune] [--force] [--source <path-or-git-url>]` |
 | `/clean-gone` | Delete local branches whose upstream is gone on the remote, and remove their worktrees | `[--dry-run]` |
+| `/notifications` | Diagnose opt-in agent-complete and authored-PR review notifications | `[--doctor] [--daemon-command]` |
 
 ### PR Workflow
 
@@ -244,6 +245,17 @@ verification in a sub-10-minute reading path.
 See [Review Watch](docs/REVIEW_WATCH.md) and [Change Brief](docs/CHANGE_BRIEF.md) for the complete
 behavior and visual examples.
 
+### Notification flow
+
+Enable either or both notification channels in `.git-workflow/config.yaml`, then use
+`/notifications --doctor` in Claude or `$notifications --doctor` in Codex. Agent completion uses
+the packaged `Stop` hook. PR activity uses the daemon printed by `--daemon-command`; the same daemon
+also handles Review Watch requests, so enabling both does not duplicate polling.
+
+The first PR-activity poll is a silent baseline. Later `APPROVED`, `CHANGES_REQUESTED`, and
+`COMMENTED` reviews notify once per GitHub review ID. See [Notifications](docs/NOTIFICATIONS.md) for
+formats, state, privacy, repository filtering, and troubleshooting.
+
 ### TDD Flow
 
 ```text
@@ -326,6 +338,7 @@ skills/                 # Shared host-neutral skills
 ├── update/SKILL.md
 ├── clean-gone/SKILL.md
 ├── review-watch/SKILL.md
+├── notifications/SKILL.md
 ├── change-brief/SKILL.md
 └── status/SKILL.md
 

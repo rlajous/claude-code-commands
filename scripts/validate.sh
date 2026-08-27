@@ -9,7 +9,7 @@ err() { printf 'FAIL: %s\n' "$1"; fail=$((fail + 1)); }
 warns() { printf 'WARN: %s\n' "$1"; warn=$((warn + 1)); }
 ok() { printf 'ok:   %s\n' "$1"; }
 
-for file in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json hooks/claude-hooks.json hooks/hooks.json; do
+for file in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .codex/hooks.json hooks/claude-hooks.json hooks/hooks.json; do
   if [ ! -f "$file" ]; then
     err "$file missing"
   elif python3 -m json.tool "$file" >/dev/null 2>&1; then
@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.5.2"}, versions
+assert versions == {"2.6.0"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
@@ -41,6 +41,11 @@ codex_hooks = json.loads(Path("hooks/hooks.json").read_text())["hooks"]["PostToo
 assert any(entry.get("matcher") == "Bash" and all("async" not in hook and "--host codex" in hook["command"] for hook in entry.get("hooks", [])) for entry in codex_hooks)
 claude_hooks = json.loads(Path("hooks/claude-hooks.json").read_text())["hooks"]["PostToolUse"]
 assert all(hook.get("asyncRewake") is True and "--host claude" in hook["command"] for entry in claude_hooks for hook in entry["hooks"])
+for path, host in (("hooks/hooks.json", "codex"), ("hooks/claude-hooks.json", "claude")):
+    stop = json.loads(Path(path).read_text())["hooks"]["Stop"]
+    commands = [hook["command"] for entry in stop for hook in entry["hooks"]]
+    assert len(commands) == 1 and "agent-complete.py" in commands[0] and f"--host {host}" in commands[0]
+    assert "SubagentStop" not in json.loads(Path(path).read_text())["hooks"]
 PY
 then ok "manifest versions, paths, and Codex hook registration aligned"
 else err "manifest versions, paths, or hook registration are inconsistent"
@@ -97,7 +102,7 @@ import re
 from pathlib import Path
 
 skills = sorted(Path("skills").glob("*/SKILL.md"))
-assert len(skills) == 19, len(skills)
+assert len(skills) == 20, len(skills)
 for path in skills:
     text = path.read_text()
     match = re.match(r"^---\n(.*?)\n---\n+(.*)$", text, re.S)
@@ -113,7 +118,7 @@ for path in skills:
     if lines > 500:
         print(f"WARN {path} has {lines} lines")
 PY
-then ok "19 shared skills have valid neutral instructions"
+then ok "20 shared skills have valid neutral instructions"
 else err "skill count, frontmatter, or runtime-neutral wording failed validation"
 fi
 
@@ -123,13 +128,19 @@ from pathlib import Path
 root = Path.cwd()
 link = root / ".agents" / "skills"
 assert link.is_symlink() and link.readlink() == Path("../skills")
-assert len(list(link.resolve().glob("*/SKILL.md"))) == 19
+assert len(list(link.resolve().glob("*/SKILL.md"))) == 20
 
 resources = (
     "skills/review-watch/scripts/review-watch.sh",
     "skills/review-watch/scripts/notify.sh",
     "skills/review-watch/scripts/review-watch-tools.sh",
     "skills/review-watch/references/known-issues.md",
+    "skills/notifications/scripts/activity-watch.sh",
+    "skills/notifications/scripts/activity-events.py",
+    "skills/notifications/scripts/agent-complete.py",
+    "skills/notifications/scripts/notification-tools.sh",
+    "skills/notifications/scripts/notification_config.py",
+    "skills/notifications/scripts/notify.sh",
     "skills/review/scripts/review-event.sh",
     "skills/review/scripts/to-sarif.mjs",
     "skills/change-brief/scripts/validate-self-contained-html.py",
@@ -184,10 +195,16 @@ assert '"{owner}/{repo} · PR #{PR}"' in review_watch
 assert '"{AUTHOR_LABEL} — Ready for merge: {title}"' in review_watch
 assert "/change-brief {PR}" in review_watch and "$change-brief {PR}" in review_watch
 
-watcher_script = read("skills/review-watch/scripts/review-watch.sh")
+watcher_script = read("skills/notifications/scripts/activity-watch.sh")
 assert "gh api graphql" in watcher_script
 assert "author { login }" in watcher_script
 assert "REVIEW_WATCH_NOTIFY_SCRIPT" in watcher_script
+assert "requested: search" in watcher_script and "authored: search" in watcher_script
+
+notifications = read("skills/notifications/SKILL.md")
+assert "agentComplete: false" in notifications and "prActivity: false" in notifications
+assert "Stop" in notifications and "SubagentStop" in notifications
+assert "--doctor" in notifications and "--daemon-command" in notifications
 
 change_brief = read("skills/change-brief/SKILL.md")
 assert "validate-self-contained-html.py" in change_brief
@@ -204,7 +221,7 @@ assert "warnings" in status and "Ignored stale" in status
 release_validator = read("agents/release-validator.md")
 assert "obtain explicit user confirmation immediately before running `git fetch origin`" in release_validator
 changelog = read("CHANGELOG.md")
-assert "## 2.5.2" in changelog and "2.5.1" in changelog
+assert "## 2.6.0" in changelog and "## 2.5.2" in changelog
 
 for path in ("skills/start/SKILL.md", "skills/rfc/SKILL.md", "skills/start-qa/SKILL.md"):
     text = read(path)
@@ -240,6 +257,8 @@ assert '"mcpServers"' in template
 assert "[mcp_servers.linear]" in template
 assert "[mcp_servers.jira]" in template
 assert "changeBrief:\n" in template
+assert "notifications:\n" in template
+assert "agentComplete: false" in template and "prActivity: false" in template
 
 known_issues = read("skills/review-watch/references/known-issues.md")
 assert "| `TODO|FIXME` |" not in known_issues
@@ -282,7 +301,7 @@ assert example.count("data:image/png;base64,") == 2
 assert "__REQUESTED_IMAGE_DATA__" not in example and "__READY_IMAGE_DATA__" not in example
 
 readme = read("README.md")
-for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md"):
+for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md", "docs/NOTIFICATIONS.md"):
     assert path in readme, path
 
 review_watch_docs = read("docs/REVIEW_WATCH.md")
@@ -292,16 +311,20 @@ assert "REVIEW_WATCH_NOTIFY_SCRIPT" in review_watch_docs
 change_brief_docs = read("docs/CHANGE_BRIEF.md")
 assert "less than 10 minutes" in change_brief_docs
 assert "zero\nautomatic external requests" in change_brief_docs
+notification_docs = read("docs/NOTIFICATIONS.md")
+for requirement in ("agentComplete", "prActivity", "first run", "2,000", "privacy", "--doctor", "--daemon-command"):
+    assert requirement.lower() in notification_docs.lower(), requirement
 PY
 then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-notifications.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh skills/notifications/scripts/activity-watch.sh skills/notifications/scripts/notification-tools.sh skills/notifications/scripts/notify.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
 if bash scripts/test-review-hook.sh >/dev/null; then ok "review hook behavior"; else err "review hook behavior"; fi
+if bash scripts/test-notifications.sh >/dev/null; then ok "notification configuration, Stop hooks, and diagnostics"; else err "notification configuration, Stop hooks, or diagnostics"; fi
 if bash scripts/test-review-watch.sh >/dev/null; then ok "review watcher configuration and queue behavior"; else err "review watcher configuration and queue behavior"; fi
 if bash scripts/test-review-event.sh >/dev/null; then ok "review event configuration modes"; else err "review event configuration modes"; fi
 if bash scripts/test-self-contained-html.sh >/dev/null; then ok "self-contained HTML network guard"; else err "self-contained HTML network guard"; fi

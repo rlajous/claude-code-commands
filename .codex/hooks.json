@@ -1,0 +1,16 @@
+{
+  "description": "Git Workflow local development hooks",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/skills/notifications/scripts/agent-complete.py\" --host codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
