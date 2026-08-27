@@ -3,6 +3,18 @@ import { expect, test } from '@playwright/test';
 
 const primaryRoutes = ['/', '/git-workflow/', '/git-workflow/review-watch/'];
 
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (color: string) => {
+    const [red, green, blue] = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
 for (const route of primaryRoutes) {
   test(`${route} has no horizontal overflow`, async ({ page }) => {
     await page.goto(route);
@@ -46,6 +58,26 @@ test('landing hero starts directly below the header without a duplicate navigati
   expect(Math.abs(message!.y - visual!.y)).toBeLessThan(2);
   await expect(page.locator('.product-hero > .runtime-intake')).toHaveCount(0);
   await expect(page.locator('.playground-toolbar .runtime-intake')).toBeVisible();
+});
+
+test('primary call to action maintains AA contrast in every theme and hover state', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers the shared button tokens.');
+
+  for (const theme of ['light', 'dark']) {
+    await page.addInitScript((preference) => localStorage.setItem('starlight-theme', preference), theme);
+    await page.goto('/');
+    const button = page.getByRole('link', { name: 'Install Git Workflow' }).first();
+
+    for (const hovered of [false, true]) {
+      if (hovered) await button.hover();
+      const colors = await button.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { foreground: style.color, background: style.backgroundColor };
+      });
+      expect(contrastRatio(colors.foreground, colors.background)).toBeGreaterThanOrEqual(4.5);
+      if (hovered) await page.mouse.move(0, 0);
+    }
+  }
 });
 
 test('host quick start supports mouse, keyboard, and copy feedback', async ({ page, context }) => {
