@@ -35,13 +35,66 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.getByLabel('Claude Code and Codex use one shared workflow')).toContainText('One shared workflow');
   await expect(page.getByRole('heading', { name: 'Ready for review' })).toBeVisible();
   await expect(page.getByText('20 shared skills', { exact: true }).first()).toBeVisible();
-  const notificationImages = page.locator('.notification-stack img');
+  const notificationImages = page.locator('[data-notification-image]');
   await expect(notificationImages).toHaveCount(3);
   await notificationImages.last().scrollIntoViewIfNeeded();
   await expect.poll(async () => notificationImages.evaluateAll((images) => (
     images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)
   ))).toBe(true);
   await expect(page.locator('.brief-preview')).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
+});
+
+test('notification evidence plays once, pauses, replays, and supports direct selection', async ({ page }) => {
+  await page.goto('/');
+  const stage = page.locator('[data-notification-stage]');
+  const agent = page.locator('[data-notification-image="agent-finished"]');
+  const changes = page.locator('[data-notification-image="changes-requested"]');
+  const approved = page.locator('[data-notification-image="approved"]');
+  const playback = page.getByRole('button', { name: 'Pause notification sequence' });
+
+  await expect(agent).toHaveAttribute('data-active', 'true');
+  await expect(changes).toHaveAttribute('data-active', 'true', { timeout: 2_000 });
+  await expect(approved).toHaveAttribute('data-active', 'true', { timeout: 2_000 });
+  await expect(stage).toHaveAttribute('data-playback', 'complete', { timeout: 2_000 });
+
+  await page.getByRole('button', { name: 'Changes requested' }).click();
+  await expect(stage).toHaveAttribute('data-playback', 'paused');
+  await expect(changes).toHaveAttribute('data-active', 'true');
+  await page.waitForTimeout(1_300);
+  await expect(changes).toHaveAttribute('data-active', 'true');
+
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(0, 0);
+  await page.getByRole('button', { name: 'Play notification sequence' }).click();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(0, 0);
+  await expect(approved).toHaveAttribute('data-active', 'true', { timeout: 2_000 });
+
+  await page.getByRole('button', { name: 'Replay notification sequence' }).click();
+  await expect(agent).toHaveAttribute('data-active', 'true');
+  await playback.click();
+  await expect(stage).toHaveAttribute('data-playback', 'paused');
+});
+
+test('notification evidence respects reduced motion and document visibility', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const stage = page.locator('[data-notification-stage]');
+  const agent = page.locator('[data-notification-image="agent-finished"]');
+  await expect(stage).toHaveAttribute('data-playback', 'paused');
+  await page.waitForTimeout(1_300);
+  await expect(agent).toHaveAttribute('data-active', 'true');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(stage).toHaveAttribute('data-blocked', 'true');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(stage).toHaveAttribute('data-blocked', 'false');
 });
 
 test('landing hero starts directly below the header without a duplicate navigation band', async ({ page }, testInfo) => {

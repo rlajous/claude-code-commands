@@ -291,6 +291,7 @@ documentation_assets = (
     "docs/assets/agent-finished-macos.png",
     "docs/assets/pr-approved-macos.png",
     "docs/assets/pr-changes-requested-macos.png",
+    "docs/assets/notifications-macos.apng",
     "docs/assets/change-brief-pr-23.png",
 )
 legacy_review_assets = (
@@ -312,7 +313,7 @@ assert example.count("data:image/png;base64,") == 2
 assert "__REQUESTED_IMAGE_DATA__" not in example and "__READY_IMAGE_DATA__" not in example
 
 readme = read("README.md")
-for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md", "docs/NOTIFICATIONS.md"):
+for path in ("docs/assets/notifications-macos.apng", "docs/assets/change-brief-pr-23.png", "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md", "docs/NOTIFICATIONS.md"):
     assert path in readme, path
 
 review_watch_docs = read("docs/REVIEW_WATCH.md")
@@ -326,6 +327,8 @@ change_brief_docs = read("docs/CHANGE_BRIEF.md")
 assert "less than 10 minutes" in change_brief_docs
 assert "zero\nautomatic external requests" in change_brief_docs
 notification_docs = read("docs/NOTIFICATIONS.md")
+for path in documentation_assets[:3]:
+    assert path.removeprefix("docs/") in notification_docs, path
 for requirement in ("agentComplete", "prActivity", "first run", "2,000", "privacy", "--doctor", "--daemon-command"):
     assert requirement.lower() in notification_docs.lower(), requirement
 PY

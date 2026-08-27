@@ -15,8 +15,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare evidence tooling
+        run: |
+          npm ci --prefix site
+          command -v ffmpeg >/dev/null 2>&1 || brew install ffmpeg
+
       - name: Capture real Notification Center banners
-        run: bash site/scripts/capture-macos-notifications.sh .artifacts/macos-notifications
+        run: >-
+          bash site/scripts/capture-macos-notifications.sh
+          --mode runner
+          --output .artifacts/macos-notifications
 
       - name: Summarize captures
         if: success()
@@ -25,6 +33,10 @@ jobs:
             printf '### `%s`\n\n' "$(basename "$image")" >> "$GITHUB_STEP_SUMMARY"
             sips -g pixelWidth -g pixelHeight "$image" >> "$GITHUB_STEP_SUMMARY"
           done
+          printf '### `notifications-macos.apng`\n\n' >> "$GITHUB_STEP_SUMMARY"
+          ffprobe -v error -count_frames -select_streams v:0 \
+            -show_entries stream=codec_name,width,height,nb_read_frames \
+            .artifacts/macos-notifications/notifications-macos.apng >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload captures and diagnostics
         if: always()

@@ -163,17 +163,11 @@ API cURL evidence when relevant, and pings you. Opt in with
 
 Unified notifications identify the repository and host or pull request before the event itself:
 
-**Agent finished**
+![A single-play sequence of three real macOS notifications: agent finished, changes requested, and review approved.](docs/assets/notifications-macos.apng)
 
-![A real macOS notification showing that a Codex turn completed in the Git Workflow repository.](docs/assets/agent-finished-macos.png)
-
-**Review approved**
-
-![A real macOS notification identifying the repository, pull request, reviewer, and approval.](docs/assets/pr-approved-macos.png)
-
-**Changes requested**
-
-![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](docs/assets/pr-changes-requested-macos.png)
+The sequence is assembled from three real Notification Center captures and plays once in under five
+seconds. The [Notifications guide](docs/NOTIFICATIONS.md) keeps each original frame available for
+closer inspection.
 
 Linux uses the active desktop's native `notify-send` appearance. The daemon only discovers,
 de-duplicates, queues, and notifies; the active Claude or Codex session performs the review.

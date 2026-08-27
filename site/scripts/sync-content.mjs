@@ -63,10 +63,12 @@ async function copyAsset(sourcePath, publicPath) {
   await mkdir(dirname(targetAbsolute), { recursive: true });
   if (!copiedAssets.has(sourcePath)) {
     await copyFile(sourceAbsolute, targetAbsolute);
-    if (/\.(?:png|jpe?g)$/i.test(sourcePath)) {
+    if (/\.(?:apng|png|jpe?g)$/i.test(sourcePath)) {
       const metadata = await sharp(sourceAbsolute).metadata();
       if (!metadata.width || !metadata.height) throw new Error(`Unable to read image dimensions: ${sourcePath}`);
-      const widths = [...new Set([480, 960, metadata.width].filter((width) => width <= metadata.width))].sort((a, b) => a - b);
+      const widths = /\.apng$/i.test(sourcePath)
+        ? []
+        : [...new Set([480, 960, metadata.width].filter((width) => width <= metadata.width))].sort((a, b) => a - b);
       const variants = [];
       for (const width of widths) {
         const variantPath = publicPath.replace(/\.[^.]+$/, `-${width}.webp`);
@@ -137,7 +139,10 @@ function responsiveImage(alt, source) {
   if (!info) throw new Error(`Responsive image metadata was not generated for ${source}`);
   const fallback = info.variants.at(-1)?.path ?? source;
   const srcset = info.variants.map(({ width, path }) => `${path} ${width}w`).join(', ');
-  return `<img src="${fallback}" srcset="${srcset}" sizes="(max-width: 52rem) calc(100vw - 2rem), 48rem" width="${info.width}" height="${info.height}" loading="lazy" decoding="async" alt="${escapeHtml(alt)}">`;
+  const responsiveAttributes = srcset
+    ? ` srcset="${srcset}" sizes="(max-width: 52rem) calc(100vw - 2rem), 48rem"`
+    : '';
+  return `<img src="${fallback}"${responsiveAttributes} width="${info.width}" height="${info.height}" loading="lazy" decoding="async" alt="${escapeHtml(alt)}">`;
 }
 
 function responsiveMarkdownImages(markdown) {

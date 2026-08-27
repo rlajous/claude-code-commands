@@ -1,0 +1,190 @@
+---
+import Badge from './ui/Badge.astro';
+import IconGlyph from './ui/IconGlyph.astro';
+
+const notifications = [
+  {
+    id: 'agent-finished',
+    label: 'Agent finished',
+    src: '/assets/agent-finished-macos-720.webp',
+    srcset: '/assets/agent-finished-macos-480.webp 480w, /assets/agent-finished-macos-720.webp 720w',
+    alt: 'A real macOS notification showing that a Codex turn completed in the Git Workflow repository.',
+  },
+  {
+    id: 'changes-requested',
+    label: 'Changes requested',
+    src: '/assets/pr-changes-requested-macos-720.webp',
+    srcset: '/assets/pr-changes-requested-macos-480.webp 480w, /assets/pr-changes-requested-macos-720.webp 720w',
+    alt: 'A real macOS notification identifying the repository, pull request, reviewer, and requested changes.',
+  },
+  {
+    id: 'approved',
+    label: 'Approved',
+    src: '/assets/pr-approved-macos-720.webp',
+    srcset: '/assets/pr-approved-macos-480.webp 480w, /assets/pr-approved-macos-720.webp 720w',
+    alt: 'A real macOS notification identifying the repository, pull request, reviewer, and approval.',
+  },
+];
+---
+
+<figure class="notification-stage" data-notification-stage data-playback="playing">
+  <figcaption>
+    <span>Real macOS notifications</span>
+    <Badge variant="success">Observed</Badge>
+  </figcaption>
+
+  <div class="notification-viewport" aria-label="Three real Git Workflow notification states">
+    <span class="notification-origin" aria-hidden="true">Notification Center · local only</span>
+    {notifications.map((notification, index) => (
+      <img
+        src={notification.src}
+        srcset={notification.srcset}
+        sizes="(max-width: 50rem) calc(100vw - 3rem), 38rem"
+        width="720"
+        height="160"
+        loading="lazy"
+        decoding="async"
+        alt={notification.alt}
+        data-notification-image={notification.id}
+        data-active={index === 0 ? 'true' : 'false'}
+        aria-hidden={index === 0 ? 'false' : 'true'}
+      />
+    ))}
+  </div>
+
+  <div class="notification-stage-controls">
+    <div class="notification-selectors" role="group" aria-label="Choose a notification state">
+      {notifications.map((notification, index) => (
+        <button
+          type="button"
+          data-notification-select={notification.id}
+          aria-pressed={index === 0 ? 'true' : 'false'}
+        >
+          <span>{String(index + 1).padStart(2, '0')}</span>{notification.label}
+        </button>
+      ))}
+    </div>
+    <button class="notification-playback" type="button" data-notification-playback aria-label="Pause notification sequence">
+      <span class="notification-playback-icons" aria-hidden="true">
+        <IconGlyph name="pause" size={14} />
+        <IconGlyph name="play" size={14} />
+        <IconGlyph name="replay" size={14} />
+      </span>
+      <span data-playback-label>Pause</span>
+    </button>
+  </div>
+</figure>
+
+<script>
+  const initializeNotificationStages = () => {
+    document.querySelectorAll<HTMLElement>('[data-notification-stage]').forEach((stage) => {
+      if (stage.dataset.initialized === 'true') return;
+      stage.dataset.initialized = 'true';
+
+      const images = Array.from(stage.querySelectorAll<HTMLImageElement>('[data-notification-image]'));
+      const selectors = Array.from(stage.querySelectorAll<HTMLButtonElement>('[data-notification-select]'));
+      const playback = stage.querySelector<HTMLButtonElement>('[data-notification-playback]');
+      const playbackLabel = playback?.querySelector<HTMLElement>('[data-playback-label]');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const blockers = new Set<string>();
+      let currentIndex = 0;
+      let intent: 'playing' | 'paused' | 'complete' = reducedMotion.matches ? 'paused' : 'playing';
+      let timer = 0;
+      let transitionTimer = 0;
+
+      const updatePlayback = () => {
+        const visibleState = intent === 'complete' ? 'Replay' : intent === 'playing' ? 'Pause' : 'Play';
+        stage.dataset.playback = intent;
+        if (playbackLabel) playbackLabel.textContent = visibleState;
+        if (playback) playback.setAttribute('aria-label', `${visibleState} notification sequence`);
+      };
+
+      const clearTimer = () => {
+        window.clearTimeout(timer);
+        timer = 0;
+      };
+
+      const show = (index: number, userSelected = false) => {
+        clearTimer();
+        window.clearTimeout(transitionTimer);
+        const previous = images[currentIndex];
+        const next = images[index];
+        currentIndex = index;
+        images.forEach((image) => {
+          image.dataset.active = 'false';
+          image.dataset.exiting = image === previous && image !== next ? 'true' : 'false';
+          image.setAttribute('aria-hidden', 'true');
+        });
+        selectors.forEach((selector, selectorIndex) => {
+          selector.setAttribute('aria-pressed', selectorIndex === index ? 'true' : 'false');
+        });
+        stage.dataset.transitioning = previous === next ? 'false' : 'true';
+        transitionTimer = window.setTimeout(() => {
+          next.dataset.active = 'true';
+          next.setAttribute('aria-hidden', 'false');
+          previous.dataset.exiting = 'false';
+          stage.dataset.transitioning = 'false';
+        }, previous === next ? 0 : 180);
+        if (userSelected) intent = 'paused';
+        updatePlayback();
+      };
+
+      const schedule = () => {
+        clearTimer();
+        if (intent !== 'playing' || blockers.size > 0) return;
+        timer = window.setTimeout(() => {
+          if (currentIndex >= images.length - 1) {
+            intent = 'complete';
+            updatePlayback();
+            return;
+          }
+          show(currentIndex + 1);
+          schedule();
+        }, 1150);
+      };
+
+      const setBlocker = (name: string, blocked: boolean) => {
+        if (blocked) blockers.add(name);
+        else blockers.delete(name);
+        stage.dataset.blocked = blockers.size > 0 ? 'true' : 'false';
+        if (blockers.size > 0) clearTimer();
+        else schedule();
+      };
+
+      selectors.forEach((selector, index) => {
+        selector.addEventListener('click', () => show(index, true));
+      });
+      playback?.addEventListener('click', () => {
+        if (intent === 'playing') intent = 'paused';
+        else {
+          if (intent === 'complete' || currentIndex === images.length - 1) show(0);
+          intent = 'playing';
+        }
+        updatePlayback();
+        schedule();
+      });
+      stage.addEventListener('mouseenter', () => setBlocker('hover', true));
+      stage.addEventListener('mouseleave', () => setBlocker('hover', false));
+      stage.addEventListener('focusin', () => setBlocker('focus', true));
+      stage.addEventListener('focusout', (event) => {
+        const next = event.relatedTarget;
+        if (!(next instanceof Node) || !stage.contains(next)) setBlocker('focus', false);
+      });
+      document.addEventListener('visibilitychange', () => setBlocker('hidden', document.hidden));
+      reducedMotion.addEventListener('change', (event) => {
+        if (event.matches) {
+          intent = 'paused';
+          clearTimer();
+        }
+        updatePlayback();
+        schedule();
+      });
+
+      updatePlayback();
+      schedule();
+    });
+  };
+
+  initializeNotificationStages();
+  document.addEventListener('astro:page-load', initializeNotificationStages);
+</script>

@@ -86,15 +86,30 @@ theme.
 
 ![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
 
-The repository includes two reproducible ways to refresh these screenshots on a clean remote Mac:
-after the repository is connected to Cirrus CI, its
+The repository includes a side-effect-safe local capture path and two reproducible remote paths.
+On a Mac already using Dark appearance, install the site dependencies and run:
+
+```bash
+npm ci --prefix site
+bash site/scripts/capture-macos-notifications.sh \
+  --mode local \
+  --output .artifacts/macos-notifications
+```
+
+Local mode launches Script Editor hidden only when needed, opens a Ceibo blue-black surface above
+every personal window, and captures only Notification Center's 360×80-point banner region. It does
+not change appearance or notification preferences, never writes a desktop-sized diagnostic, and
+restores Script Editor's previous running state. The postprocessor refuses non-uniform corner
+pixels before converting only the controlled background to alpha. It then emits the three PNGs and
+a single-play APNG; no generative image editing is involved.
+
+For remote regeneration, after the repository is connected to Cirrus CI, its
 [Cirrus task](https://cirrus-ci.com/github/rlajous/claude-code-commands) runs in a managed Tart VM
 using the free public open-source allocation. The
 [`Capture macOS notification evidence`](https://github.com/rlajous/claude-code-commands/actions/workflows/capture-macos-notifications.yml)
-workflow supports a dedicated runner. Both call the same packaged notifier used at runtime,
-capture the real Notification Center windows against a deterministic background, and upload both
-the banners and full-screen diagnostics. No personal desktop, open application, or fabricated
-browser mockup is involved.
+workflow supports a dedicated runner. Both use `--mode runner`, call the same packaged notifier used
+at runtime, and may upload full-screen diagnostics because their macOS users are disposable. No
+personal desktop, open application, or fabricated browser mockup is involved.
 
 The GitHub Actions fallback targets a dedicated self-hosted runner labeled `macOS` and
 `notification-capture`.

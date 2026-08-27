@@ -7,6 +7,7 @@ import CardHeader from './ui/CardHeader.astro';
 import IconGlyph from './ui/IconGlyph.astro';
 import Item from './ui/Item.astro';
 import Kbd from './ui/Kbd.astro';
+import NotificationStage from './NotificationStage.astro';
 import TabPanel from './ui/TabPanel.astro';
 import Tabs from './ui/Tabs.astro';
 
@@ -204,12 +205,7 @@ $status</code></pre>
       <p>Local notifications identify the repository, pull request, and person. Decision briefs turn a clean review into business logic, risks, diagrams, and proof.</p>
     </header>
     <div class="evidence-layout">
-      <figure class="notification-stack">
-        <figcaption><span>Real macOS notifications</span><Badge variant="success">Observed</Badge></figcaption>
-        <img src="/assets/agent-finished-macos-720.webp" srcset="/assets/agent-finished-macos-480.webp 480w, /assets/agent-finished-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification showing that a Codex turn completed in the Git Workflow repository." loading="lazy" decoding="async" width="720" height="160" />
-        <img src="/assets/pr-approved-macos-720.webp" srcset="/assets/pr-approved-macos-480.webp 480w, /assets/pr-approved-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and approval." loading="lazy" decoding="async" width="720" height="160" />
-        <img src="/assets/pr-changes-requested-macos-720.webp" srcset="/assets/pr-changes-requested-macos-480.webp 480w, /assets/pr-changes-requested-macos-720.webp 720w" sizes="(max-width: 50rem) calc(100vw - 2rem), 38rem" alt="A real macOS notification identifying the repository, pull request, reviewer, and requested changes." loading="lazy" decoding="async" width="720" height="160" />
-      </figure>
+      <NotificationStage />
       <a class="brief-preview" href="/git-workflow/examples/pr-23/">
         <div class="brief-browser"><span></span><span></span><span></span><code>decision-brief / PR #23</code></div>
         <img src="/assets/change-brief-pr-23-960.webp" srcset="/assets/change-brief-pr-23-480.webp 480w, /assets/change-brief-pr-23-960.webp 960w, /assets/change-brief-pr-23-1440.webp 1440w" sizes="(max-width: 50rem) calc(100vw - 2rem), 44rem" alt="A Git Workflow decision brief with summary, business rules, workflow diagram, and notification evidence." loading="lazy" decoding="async" width="1440" height="2400" />
