@@ -34,10 +34,12 @@ const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.pr
 </ui-tabs>
 
 <script>
+  /** Keyboard-accessible tab controller with a shared active-index indicator. */
   class UiTabs extends HTMLElement {
     private triggers: HTMLButtonElement[] = [];
     private panels: HTMLElement[] = [];
 
+    /** Bind tab interactions and normalize the initial selected panel. */
     connectedCallback(): void {
       this.triggers = Array.from(this.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
       this.panels = Array.from(this.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
@@ -49,6 +51,7 @@ const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.pr
       if (active) this.select(active, false);
     }
 
+    /** Select one tab, synchronize panels, and optionally move keyboard focus. */
     private select(trigger: HTMLButtonElement, focus = false): void {
       const tab = trigger.dataset.tab;
       const activeIndex = this.triggers.indexOf(trigger);
@@ -64,6 +67,7 @@ const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.pr
       if (focus) trigger.focus();
     }
 
+    /** Implement wrapping horizontal tab navigation plus Home and End. */
     private onKeydown(event: KeyboardEvent, trigger: HTMLButtonElement): void {
       const index = this.triggers.indexOf(trigger);
       let next = index;

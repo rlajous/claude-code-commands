@@ -62,25 +62,31 @@ const themes = [
 	const mediaQuery = matchMedia('(prefers-color-scheme: light)');
 	const labels: Record<Theme, string> = { auto: 'System', dark: 'Dark', light: 'Light' };
 
+	/** Normalize storage and dataset input to the three supported theme values. */
 	const parseTheme = (theme: unknown): Theme =>
 		theme === 'auto' || theme === 'dark' || theme === 'light' ? theme : 'auto';
 
+	/** Load the explicit theme preference, treating an empty value as System. */
 	const loadTheme = (): Theme => parseTheme(localStorage.getItem(storageKey));
 
+	/** Persist only explicit themes so System continues following the media query. */
 	function storeTheme(theme: Theme): void {
 		localStorage.setItem(storageKey, theme === 'light' || theme === 'dark' ? theme : '');
 	}
 
+	/** Resolve System to the currently effective light or dark document theme. */
 	function resolvedTheme(theme: Theme): Exclude<Theme, 'auto'> {
 		return theme === 'auto' ? (mediaQuery.matches ? 'light' : 'dark') : theme;
 	}
 
+	/** Synchronize desktop and mobile custom theme-picker instances. */
 	function syncCustomPickers(theme: Theme): void {
 		document.querySelectorAll<StarlightThemeSelect>('starlight-theme-select').forEach((picker) => {
 			picker.sync(theme);
 		});
 	}
 
+	/** Apply, persist, and broadcast one theme selection without a page reload. */
 	function onThemeChange(theme: Theme): void {
 		themeProvider.updatePickers(theme);
 		document.documentElement.dataset.theme = resolvedTheme(theme);
@@ -88,12 +94,14 @@ const themes = [
 		syncCustomPickers(theme);
 	}
 
+	/** Accessible popover controller that preserves Starlight's storage contract. */
 	class StarlightThemeSelect extends HTMLElement {
 		private trigger: HTMLButtonElement | null = null;
 		private menu: HTMLElement | null = null;
 		private options: HTMLButtonElement[] = [];
 		private wasOpenOnPointerDown = false;
 
+		/** Bind idempotent picker interaction and synchronize its initial state. */
 		connectedCallback(): void {
 			this.trigger = this.querySelector<HTMLButtonElement>('.theme-trigger');
 			this.menu = this.querySelector<HTMLElement>('.theme-menu');
@@ -118,11 +126,13 @@ const themes = [
 			this.sync(loadTheme());
 		}
 
+		/** Remove global positioning listeners when Astro replaces the element. */
 		disconnectedCallback(): void {
 			window.removeEventListener('resize', this.positionMenu);
 			window.removeEventListener('scroll', this.positionMenu, true);
 		}
 
+		/** Update labels, radio state, tab stops, and the native fallback select. */
 		sync(theme: Theme): void {
 			const label = labels[theme];
 			const select = this.querySelector<HTMLSelectElement>('select');
@@ -138,6 +148,7 @@ const themes = [
 			});
 		}
 
+		/** Open, position, and focus the currently selected menu option. */
 		private openMenu(): void {
 			if (!this.menu || this.menu.matches(':popover-open')) return;
 			this.menu.showPopover();
@@ -145,6 +156,7 @@ const themes = [
 			this.options.find((option) => option.getAttribute('aria-checked') === 'true')?.focus();
 		}
 
+		/** Toggle once per activation while avoiding pointerdown popover races. */
 		private toggleMenu(): void {
 			if (this.wasOpenOnPointerDown) {
 				this.wasOpenOnPointerDown = false;
@@ -155,16 +167,19 @@ const themes = [
 			else this.openMenu();
 		}
 
+		/** Close the popover and optionally return focus to its trigger. */
 		private closeMenu(restoreFocus = false): void {
 			if (this.menu?.matches(':popover-open')) this.menu.hidePopover();
 			if (restoreFocus) this.trigger?.focus();
 		}
 
+		/** Apply the selected radio option and restore trigger focus. */
 		private chooseOption(option: HTMLButtonElement): void {
 			onThemeChange(parseTheme(option.dataset.themeValue));
 			this.closeMenu(true);
 		}
 
+		/** Open from arrow keys and focus the first or last radio option. */
 		private onTriggerKeydown(event: KeyboardEvent): void {
 			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 				event.preventDefault();
@@ -174,6 +189,7 @@ const themes = [
 			}
 		}
 
+		/** Implement wrapping radio-menu navigation plus Home, End, and Escape. */
 		private onMenuKeydown(event: KeyboardEvent): void {
 			const currentIndex = this.options.indexOf(document.activeElement as HTMLButtonElement);
 			let nextIndex: number | undefined;
@@ -203,12 +219,14 @@ const themes = [
 			this.options[nextIndex]?.focus();
 		}
 
+		/** Reflect native popover state in ARIA and refresh viewport positioning. */
 		private onMenuToggle(): void {
 			const open = Boolean(this.menu?.matches(':popover-open'));
 			this.trigger?.setAttribute('aria-expanded', String(open));
 			if (open) this.positionMenu();
 		}
 
+		/** Anchor the menu to its trigger while keeping it inside the viewport. */
 		private positionMenu = (): void => {
 			if (!this.trigger || !this.menu?.matches(':popover-open')) return;
 

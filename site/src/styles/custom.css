@@ -550,14 +550,14 @@ body:has(.hub-landing) main > .content-panel:first-child {
   .hero-kicker > span { width: 100%; }
   .playground-toolbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.55rem; padding-inline: 0.65rem; }
   .runtime-intake { gap: 0.3rem; }
-  .runtime-intake b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .runtime-intake b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .runtime-path strong { font-size: 0.6rem; }
   .runtime-path i { display: none; }
   .playground-toolbar code { display: none; }
   .review-card .ui-card-header { align-items: flex-start; flex-wrap: wrap; }
   .review-card .ui-badge { margin-left: 2.8rem; }
   .ui-item { align-items: start; grid-template-columns: 1.5rem minmax(0, 1fr) auto; }
-  .copy-command span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .copy-command span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .notification-stage-controls { display: grid; }
   .notification-selectors button { display: grid; justify-items: center; gap: 0.25rem; padding-inline: 0.25rem; }
   .notification-playback { justify-self: stretch; }

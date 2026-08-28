@@ -4,6 +4,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import sharp from 'sharp';
+import { parseApng } from './lib/apng.mjs';
 
 const filenames = [
   'agent-finished-macos.png',
@@ -27,12 +28,16 @@ inputDirectory = resolve(inputDirectory);
 outputDirectory = resolve(outputDirectory);
 await mkdir(outputDirectory, { recursive: true });
 
+/** Keep one numeric channel or animation value inside its supported range. */
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+
+/** Produce a soft alpha transition without changing fully transparent or opaque pixels. */
 const smoothstep = (minimum, maximum, value) => {
   const progress = clamp((value - minimum) / (maximum - minimum), 0, 1);
   return progress * progress * (3 - (2 * progress));
 };
 
+/** Convert only a verified uniform capture surface to alpha and preserve banner pixels. */
 async function removeControlledBackground(filename) {
   const sourcePath = join(inputDirectory, filename);
   const { data, info } = await sharp(sourcePath)
@@ -136,6 +141,7 @@ let frameNumber = 0;
 const canvasWidth = Math.max(...results.map(({ width }) => width)) + 48;
 const canvasHeight = Math.max(...results.map(({ height }) => height)) + 40;
 
+/** Render one transparent APNG frame and record its variable display duration. */
 async function addFrame(filename, x, opacity, duration) {
   const source = await sharp(join(outputDirectory, filename)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const pixels = Buffer.from(source.data);
@@ -188,33 +194,9 @@ if (ffmpeg.status !== 0) {
 
 const animationBuffer = await readFile(animationPath);
 const animationMetadata = await sharp(animationBuffer).metadata();
-let cursor = 8;
-let animationControl = null;
-let frameControlCount = 0;
-let animationDurationMilliseconds = 0;
-while (cursor + 12 <= animationBuffer.length) {
-  const length = animationBuffer.readUInt32BE(cursor);
-  const type = animationBuffer.subarray(cursor + 4, cursor + 8).toString('ascii');
-  if (type === 'acTL' && length === 8) {
-    animationControl = {
-      frames: animationBuffer.readUInt32BE(cursor + 8),
-      plays: animationBuffer.readUInt32BE(cursor + 12),
-    };
-  }
-  if (type === 'fcTL') {
-    frameControlCount += 1;
-    const numerator = animationBuffer.readUInt16BE(cursor + 28);
-    const denominator = animationBuffer.readUInt16BE(cursor + 30) || 100;
-    animationDurationMilliseconds += (numerator / denominator) * 1000;
-  }
-  cursor += length + 12;
-  if (type === 'IEND') break;
-}
-if (!animationControl || animationControl.frames < 3 || animationControl.plays !== 1) {
+const animationControl = parseApng(animationBuffer, 'notifications-macos.apng');
+if (animationControl.frames < 3 || animationControl.plays !== 1) {
   throw new Error(`Invalid APNG animation control: ${JSON.stringify(animationControl)}`);
-}
-if (frameControlCount !== animationControl.frames) {
-  throw new Error(`APNG frame mismatch: acTL=${animationControl.frames}, fcTL=${frameControlCount}`);
 }
 
 await writeFile(join(outputDirectory, 'manifest.json'), `${JSON.stringify({
@@ -227,7 +209,7 @@ await writeFile(join(outputDirectory, 'manifest.json'), `${JSON.stringify({
     height: animationMetadata.height,
     pages: animationControl.frames,
     loop: animationControl.plays,
-    durationMilliseconds: Math.round(animationDurationMilliseconds),
+    durationMilliseconds: Math.round(animationControl.durationMilliseconds),
   },
   images: results,
 }, null, 2)}\n`);

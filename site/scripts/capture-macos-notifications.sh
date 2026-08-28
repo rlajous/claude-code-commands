@@ -5,13 +5,16 @@ set -euo pipefail
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
 package_root="$(CDPATH= cd -- "$script_dir/../.." && pwd -P)"
-mode="runner"
+mode="local"
 output_dir="$package_root/.artifacts/macos-notifications"
 notify_script="$package_root/skills/notifications/scripts/notify.sh"
+preference_script="$script_dir/enable-macos-notification-banners.py"
 temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/git-workflow-notifications.XXXXXX")"
+runner_snapshot="$temporary_dir/capture-preferences.json"
 surface_pid=""
 preferences_before=""
 script_editor_started=0
+runner_snapshot_created=0
 
 usage() {
   cat <<'EOF'
@@ -19,8 +22,8 @@ Usage: capture-macos-notifications.sh [OUTPUT_DIR]
        capture-macos-notifications.sh --mode local|runner [--output OUTPUT_DIR]
 
 Modes:
-  local   Capture from the current Mac without changing notification or appearance preferences.
-  runner  Prepare the disposable runner user before capturing. This is the default for compatibility.
+  local   Capture from the current Mac without changing notification or appearance preferences (default).
+  runner  Temporarily prepare a dedicated runner, then restore and verify its preferences.
 EOF
 }
 
@@ -70,12 +73,41 @@ snapshot_preferences() {
   } | shasum -a 256 | awk '{ print $1 }'
 }
 
+# Refresh the macOS agents that cache appearance and Notification Center preferences.
+restart_notification_services() {
+  killall cfprefsd usernoted >/dev/null 2>&1 || true
+  launchctl bootstrap \
+    "gui/$(id -u)" \
+    /System/Library/LaunchAgents/com.apple.notificationcenterui.plist \
+    >>"$output_dir/notification-preferences.log" 2>&1 || true
+  launchctl kickstart -k "gui/$(id -u)/com.apple.notificationcenterui.agent" \
+    >>"$output_dir/notification-preferences.log" 2>&1 || true
+  open -gja /System/Library/CoreServices/NotificationCenter.app \
+    >>"$output_dir/notification-preferences.log" 2>&1 || true
+}
+
+# Restore every temporary process and preference while preserving the original exit status.
 cleanup() {
-  local exit_code=$?
+  local exit_code="${1:-$?}"
+  trap - EXIT INT TERM
   if [ -n "$surface_pid" ]; then
     kill "$surface_pid" >/dev/null 2>&1 || true
     wait "$surface_pid" >/dev/null 2>&1 || true
   fi
+
+  if [ "$runner_snapshot_created" -eq 1 ]; then
+    if ! python3 "$preference_script" restore --snapshot "$runner_snapshot" \
+      >>"$output_dir/notification-preferences.log" 2>&1; then
+      printf '%s\n' 'Unable to restore the runner macOS preferences; see notification-preferences.log.' >&2
+      exit_code=1
+    fi
+    restart_notification_services
+    if ! launchctl print "gui/$(id -u)/com.apple.notificationcenterui.agent" >/dev/null 2>&1; then
+      printf '%s\n' 'Notification Center did not recover after restoring runner preferences.' >&2
+      exit_code=1
+    fi
+  fi
+
   if [ "$script_editor_started" -eq 1 ]; then
     osascript -e 'tell application id "com.apple.ScriptEditor2" to quit' >/dev/null 2>&1 || true
   fi
@@ -91,7 +123,9 @@ cleanup() {
   fi
   exit "$exit_code"
 }
-trap cleanup EXIT INT TERM
+trap 'cleanup $?' EXIT
+trap 'cleanup 130' INT
+trap 'cleanup 143' TERM
 
 if [ "$(uname -s)" != "Darwin" ]; then
   printf 'capture-macos-notifications.sh requires macOS.\n' >&2
@@ -116,6 +150,7 @@ if [ ! -d "$package_root/site/node_modules/sharp" ]; then
 fi
 
 mkdir -p "$raw_dir"
+# Remove full-screen diagnostics left by older versions; this script never recreates them.
 rm -f \
   "$output_dir/agent-finished-macos.png" \
   "$output_dir/pr-approved-macos.png" \
@@ -132,25 +167,18 @@ swiftc "$script_dir/macos-notification-surface.swift" -o "$temporary_dir/notific
 swiftc "$script_dir/macos-notification-window.swift" -o "$temporary_dir/notification-region"
 
 if [ "$mode" = "runner" ]; then
-  defaults write NSGlobalDomain AppleInterfaceStyle -string Dark >/dev/null 2>&1 || true
-  defaults write NSGlobalDomain AppleInterfaceStyleSwitchesAutomatically -bool false >/dev/null 2>&1 || true
-
-  # Register Script Editor as a notification source, then enable its temporary
-  # banner style for this disposable CI user. Never run this branch on a personal account.
+  # Snapshot first so even Script Editor's initial notification registration is reversible.
+  python3 "$preference_script" snapshot --snapshot "$runner_snapshot"
+  runner_snapshot_created=1
   "$notify_script" 'Git Workflow capture' 'Preparing notification evidence' Glass
-  python3 "$script_dir/enable-macos-notification-banners.py" | tee "$output_dir/notification-preferences.log"
-  killall cfprefsd usernoted >/dev/null 2>&1 || true
-  launchctl bootstrap \
-    "gui/$(id -u)" \
-    /System/Library/LaunchAgents/com.apple.notificationcenterui.plist \
-    >>"$output_dir/notification-preferences.log" 2>&1 || true
-  launchctl kickstart -k "gui/$(id -u)/com.apple.notificationcenterui.agent" \
-    >>"$output_dir/notification-preferences.log" 2>&1 || true
-  open -gja /System/Library/CoreServices/NotificationCenter.app \
-    >>"$output_dir/notification-preferences.log" 2>&1 || true
-  open -gja '/System/Applications/Utilities/Script Editor.app' \
-    >>"$output_dir/notification-preferences.log" 2>&1 || true
-  script_editor_started=1
+  python3 "$preference_script" prepare --snapshot "$runner_snapshot" \
+    | tee "$output_dir/notification-preferences.log"
+  restart_notification_services
+  if ! pgrep -x 'Script Editor' >/dev/null 2>&1; then
+    open -gja '/System/Applications/Utilities/Script Editor.app' \
+      >>"$output_dir/notification-preferences.log" 2>&1 || true
+    script_editor_started=1
+  fi
   sleep 3
 else
   # Recent macOS releases deliver `osascript display notification` banners only after
@@ -198,12 +226,6 @@ capture_banner() {
   fi
   "$notify_script" "$title" "$message" Glass
   sleep 0.45
-
-  # Full-screen diagnostics are useful on disposable runners only. Local mode
-  # never writes a desktop-sized image, even though the clean surface covers it.
-  if [ "$mode" = "runner" ]; then
-    screencapture -x "$output_dir/${filename%.png}-diagnostic.png" || true
-  fi
 
   if ! screencapture -x -R"$capture_region" "$raw_dir/$filename"; then
     printf 'macOS denied the banner-region capture. Allow Screen Recording for the terminal host.\n' >&2

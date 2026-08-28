@@ -4,6 +4,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import sharp from 'sharp';
+import { parseApng } from './lib/apng.mjs';
 
 const siteRoot = fileURLToPath(new URL('../', import.meta.url));
 const repoRoot = resolve(siteRoot, '..');
@@ -46,25 +47,11 @@ for (const filename of filenames) {
 const animationPath = resolve(assetRoot, 'notifications-macos.apng');
 const animation = await readFile(animationPath);
 const animationStats = await stat(animationPath);
-let cursor = 8;
-let frameCount = 0;
-let plays = -1;
-let durationMilliseconds = 0;
-while (cursor + 12 <= animation.length) {
-  const length = animation.readUInt32BE(cursor);
-  const type = animation.subarray(cursor + 4, cursor + 8).toString('ascii');
-  if (type === 'acTL' && length === 8) {
-    frameCount = animation.readUInt32BE(cursor + 8);
-    plays = animation.readUInt32BE(cursor + 12);
-  }
-  if (type === 'fcTL' && length === 26) {
-    const numerator = animation.readUInt16BE(cursor + 28);
-    const denominator = animation.readUInt16BE(cursor + 30) || 100;
-    durationMilliseconds += (numerator / denominator) * 1000;
-  }
-  cursor += length + 12;
-  if (type === 'IEND') break;
-}
+const {
+  frames: frameCount,
+  plays,
+  durationMilliseconds,
+} = parseApng(animation, 'notifications-macos.apng');
 if (frameCount < 3 || plays !== 1) {
   throw new Error(`notifications-macos.apng must play one ${frameCount}-frame sequence; plays=${plays}.`);
 }

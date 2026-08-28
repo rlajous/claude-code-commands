@@ -2,10 +2,12 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { fetchWithTimeout } from './lib/http.mjs';
 
 const siteRoot = fileURLToPath(new URL('../', import.meta.url));
 const astroCli = fileURLToPath(new URL('../node_modules/astro/bin/astro.mjs', import.meta.url));
 
+/** Reserve and release an ephemeral loopback port for an isolated Astro server. */
 async function availablePort() {
   const server = createServer();
   server.listen(0, '127.0.0.1');
@@ -38,7 +40,7 @@ try {
   let response;
   for (let attempt = 0; attempt < 80; attempt += 1) {
     try {
-      response = await fetch(route);
+      response = await fetchWithTimeout(route, 1_000);
       if (response.ok) break;
     } catch {
       // The dev server is still starting.

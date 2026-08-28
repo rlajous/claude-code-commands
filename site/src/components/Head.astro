@@ -46,6 +46,7 @@ const safeStructuredData = structuredData
 {safeStructuredData && <script is:inline type="application/ld+json" set:html={safeStructuredData} />}
 <script is:inline>
   (() => {
+    /** Add accessible labels to interactive content injected after the initial render. */
     const labelInteractiveContent = () => {
       document.querySelectorAll('.expressive-code pre[role="region"]').forEach((block, index) => {
         if (!block.hasAttribute('aria-label')) block.setAttribute('aria-label', `Scrollable code example ${index + 1}`);

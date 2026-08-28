@@ -76,6 +76,7 @@ const notifications = [
 </figure>
 
 <script>
+  /** Initialize every notification sequence once across initial and client-side navigation. */
   const initializeNotificationStages = () => {
     document.querySelectorAll<HTMLElement>('[data-notification-stage]').forEach((stage) => {
       if (stage.dataset.initialized === 'true') return;
@@ -92,6 +93,7 @@ const notifications = [
       let timer = 0;
       let transitionTimer = 0;
 
+      /** Synchronize the visible and accessible playback state. */
       const updatePlayback = () => {
         const visibleState = intent === 'complete' ? 'Replay' : intent === 'playing' ? 'Pause' : 'Play';
         stage.dataset.playback = intent;
@@ -99,11 +101,13 @@ const notifications = [
         if (playback) playback.setAttribute('aria-label', `${visibleState} notification sequence`);
       };
 
+      /** Cancel the pending automatic advance without changing playback intent. */
       const clearTimer = () => {
         window.clearTimeout(timer);
         timer = 0;
       };
 
+      /** Transition to one observed banner and optionally pause after direct selection. */
       const show = (index: number, userSelected = false) => {
         clearTimer();
         window.clearTimeout(transitionTimer);
@@ -129,6 +133,7 @@ const notifications = [
         updatePlayback();
       };
 
+      /** Schedule the next banner only while playback is active and unblocked. */
       const schedule = () => {
         clearTimer();
         if (intent !== 'playing' || blockers.size > 0) return;
@@ -143,6 +148,7 @@ const notifications = [
         }, 1150);
       };
 
+      /** Track independent hover, focus, and document-visibility pause reasons. */
       const setBlocker = (name: string, blocked: boolean) => {
         if (blocked) blockers.add(name);
         else blockers.delete(name);

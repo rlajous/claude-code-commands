@@ -3,7 +3,9 @@ import { expect, test } from '@playwright/test';
 
 const primaryRoutes = ['/', '/git-workflow/', '/git-workflow/review-watch/'];
 
+/** Calculate the WCAG contrast ratio for two computed RGB colors. */
 function contrastRatio(foreground: string, background: string) {
+  /** Convert a computed RGB color to relative luminance. */
   const luminance = (color: string) => {
     const [red, green, blue] = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((channel) => {
       const value = channel / 255;

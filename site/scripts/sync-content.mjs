@@ -13,10 +13,16 @@ const productPublic = join(publicRoot, 'git-workflow');
 const repositoryUrl = 'https://github.com/rlajous/claude-code-commands';
 const productionOrigin = 'https://agents.navarrolajous.com';
 
+/** Normalize repository-relative paths to stable forward-slash identifiers. */
 const normalizeRelative = (value) => normalize(value).split(sep).join('/').replace(/^\.\//, '');
+
+/** Convert one configured slug to its canonical trailing-slash public route. */
 const routeForSlug = (slug) => `/${slug.replace(/^\/+|\/+$/g, '')}/`;
+
+/** Serialize frontmatter values without introducing YAML quoting ambiguity. */
 const quote = (value) => JSON.stringify(value);
 
+/** Reject any generated-content access that escapes the repository boundary. */
 function ensureInsideRepo(path) {
   const fromRoot = relative(repoRoot, path);
   if (fromRoot.startsWith('..') || fromRoot.includes(`${sep}..${sep}`)) {
@@ -24,10 +30,12 @@ function ensureInsideRepo(path) {
   }
 }
 
+/** Remove canonical source frontmatter before generating Starlight frontmatter. */
 function stripFrontmatter(markdown) {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
 }
 
+/** Remove the source H1 because the generated page supplies its own title. */
 function stripFirstHeading(markdown) {
   return markdown.replace(/^#\s+[^\n]+\r?\n+/, '');
 }
@@ -56,6 +64,7 @@ await mkdir(productPublic, { recursive: true });
 const copiedAssets = new Map();
 const assetInfo = new Map();
 
+/** Copy one referenced asset and generate bounded responsive image variants. */
 async function copyAsset(sourcePath, publicPath) {
   const sourceAbsolute = resolve(repoRoot, sourcePath);
   const targetAbsolute = resolve(publicRoot, publicPath.replace(/^\//, ''));
@@ -83,6 +92,7 @@ async function copyAsset(sourcePath, publicPath) {
   return publicPath;
 }
 
+/** Map one canonical Markdown link to a validated public route or copied asset. */
 async function resolveLocalLink(rawTarget, source) {
   const cleaned = rawTarget.trim().replace(/^<|>$/g, '');
   if (/^(?:https?:|mailto:|tel:)/.test(cleaned) || cleaned.startsWith('#')) return cleaned;
@@ -115,6 +125,7 @@ async function resolveLocalLink(rawTarget, source) {
   throw new Error(`Unmapped internal link in ${source}: ${rawTarget} resolves to ${resolvedSource}`);
 }
 
+/** Rewrite every local Markdown link while preserving external and anchor targets. */
 async function rewriteMarkdown(markdown, source) {
   const matches = [...markdown.matchAll(/\]\(([^)]+)\)/g)];
   let output = '';
@@ -128,12 +139,14 @@ async function rewriteMarkdown(markdown, source) {
   return responsiveMarkdownImages(output + markdown.slice(cursor));
 }
 
+/** Escape attribute text used in generated responsive image markup. */
 const escapeHtml = (value) => value
   .replaceAll('&', '&amp;')
   .replaceAll('"', '&quot;')
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;');
 
+/** Render one intrinsic-size responsive image from generated asset metadata. */
 function responsiveImage(alt, source) {
   const info = assetInfo.get(source);
   if (!info) throw new Error(`Responsive image metadata was not generated for ${source}`);
@@ -145,6 +158,7 @@ function responsiveImage(alt, source) {
   return `<img src="${fallback}"${responsiveAttributes} width="${info.width}" height="${info.height}" loading="lazy" decoding="async" alt="${escapeHtml(alt)}">`;
 }
 
+/** Replace local Markdown images, including linked images, with responsive HTML. */
 function responsiveMarkdownImages(markdown) {
   const nestedImages = markdown.replace(
     /\[!\[([^\]]*)\]\((\/assets\/[^)]+)\)\]\(([^)]+)\)/g,
@@ -156,6 +170,7 @@ function responsiveMarkdownImages(markdown) {
   );
 }
 
+/** Build deterministic Starlight frontmatter for one declarative content entry. */
 function frontmatter(entry) {
   const values = [
     '---',

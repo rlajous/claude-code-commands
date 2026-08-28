@@ -242,6 +242,7 @@ $status</code></pre>
 </div>
 
 <script>
+  /** Initialize idempotent copy feedback and one-time reduced-motion-safe reveals. */
   const initializeHubInteractions = () => {
     document.querySelectorAll<HTMLButtonElement>('[data-copy-target]').forEach((button) => {
       if (button.dataset.initialized === 'true') return;

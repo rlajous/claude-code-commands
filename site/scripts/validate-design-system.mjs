@@ -7,6 +7,7 @@ const sourceRoot = join(siteRoot, 'src');
 const tokenPath = join(sourceRoot, 'styles', 'tokens.css');
 const customPath = join(sourceRoot, 'styles', 'custom.css');
 
+/** Recursively collect token-consuming source files in deterministic path order. */
 async function collectFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(entries.map(async (entry) => {
