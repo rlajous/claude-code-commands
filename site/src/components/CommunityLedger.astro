@@ -249,7 +249,10 @@ const initialsFor = (login: string) => login.replace(/[^a-z0-9]/gi, '').slice(0,
     private readCache(): CommunityData | undefined {
       try {
         const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as Partial<CachedCommunityData> | null;
-        if (!cached || !validCount(cached.storedAt) || Date.now() - cached.storedAt >= CACHE_DURATION) return undefined;
+        const now = Date.now();
+        if (!cached || !validCount(cached.storedAt) || cached.storedAt > now || now - cached.storedAt >= CACHE_DURATION) {
+          return undefined;
+        }
         return parseCommunityData(cached);
       } catch {
         return undefined;

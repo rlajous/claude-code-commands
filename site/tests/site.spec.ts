@@ -182,6 +182,26 @@ test('expired community cache refetches GitHub and replaces stale values', async
   expect(requests).toHaveLength(2);
 });
 
+test('future-dated community cache is rejected and refetched', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers invalid future cache timestamps.');
+  await page.addInitScript(({ key }) => {
+    localStorage.setItem(key, JSON.stringify({
+      storedAt: Date.now() + (60 * 1000),
+      stars: 1,
+      forks: 1,
+      contributors: [{
+        type: 'User', login: 'future', contributions: 1,
+        htmlUrl: 'https://github.com/future', avatarUrl: 'https://avatars.githubusercontent.com/u/1001?v=4',
+      }],
+    }));
+  }, { key: communityCacheKey });
+  const requests = await mockCommunityApi(page, { stars: 92, forks: 12 });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('92');
+  expect(requests).toHaveLength(2);
+});
+
 test('GitHub errors and malformed data preserve the complete static snapshot', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers fallback behavior.');
   await mockCommunityApi(page, { status: 403 });
