@@ -10,6 +10,15 @@ The site is an editorial engineering field guide, not a generic component showca
 - **Shape:** Restrained radii and borders define structure. Light mode may use subtle elevation; dark mode uses surface contrast instead of shadows.
 - **Motion:** Feedback uses 80–140ms, state changes use 240ms, layout transitions use 420ms, and composed entrances use 600ms. Animate only opacity and transforms. Reduced motion removes spatial transitions.
 
+## Brand mark
+
+The Agent Tooling mark is a command splice: a coral prompt chevron feeds into a foreground `T`. The two forms represent an agent invoking a tool while remaining readable as a compact monogram at favicon and header sizes.
+
+- Use the two-color mark on site surfaces: semantic `--primary` for the prompt and `--foreground` for the `T`.
+- Use the blue-black tile, coral prompt, and light `T` for standalone app-icon and favicon contexts.
+- Keep the clear geometry intact. Do not add strokes, gradients, shadows, or workflow nodes inside the mark.
+- Pair it with the Agent Tooling wordmark when space permits; the symbol may stand alone below 24px or where the brand name is already explicit.
+
 ## Token contract
 
 `src/styles/tokens.css` owns primitive and semantic values. Components consume semantic names such as `--action`, `--border`, `--text-lead`, or `--duration-state`; they never introduce raw colors or CSS durations.
