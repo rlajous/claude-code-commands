@@ -58,9 +58,14 @@ try {
   console.log(`Validated Astro dev route: ${route}`);
 } finally {
   server.kill('SIGTERM');
-  await Promise.race([
-    once(server, 'exit'),
-    new Promise((resolve) => setTimeout(resolve, 2_000)),
-  ]);
+  let exitTimer;
+  const exitTimeout = new Promise((resolve) => {
+    exitTimer = setTimeout(resolve, 2_000);
+  });
+  try {
+    await Promise.race([once(server, 'exit'), exitTimeout]);
+  } finally {
+    clearTimeout(exitTimer);
+  }
   if (server.exitCode === null) server.kill('SIGKILL');
 }

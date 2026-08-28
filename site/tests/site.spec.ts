@@ -77,11 +77,10 @@ test('notification evidence plays once, pauses, replays, and supports direct sel
   await page.waitForTimeout(1_300);
   await expect(changes).toHaveAttribute('data-active', 'true');
 
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.mouse.move(0, 0);
   await page.getByRole('button', { name: 'Play notification sequence' }).click();
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.mouse.move(0, 0);
+  await expect(page.getByRole('button', { name: 'Pause notification sequence' })).toBeFocused();
   await expect(approved).toHaveAttribute('data-active', 'true', { timeout: 2_000 });
 
   await page.getByRole('button', { name: 'Replay notification sequence' }).click();
@@ -110,6 +109,26 @@ test('notification evidence respects reduced motion and document visibility', as
     document.dispatchEvent(new Event('visibilitychange'));
   });
   await expect(stage).toHaveAttribute('data-blocked', 'false');
+});
+
+test('notification evidence applies the initial hidden-document blocker', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'One Chromium project covers initialization visibility.');
+  await page.addInitScript(() => {
+    Object.defineProperty(Document.prototype, 'hidden', { configurable: true, get: () => true });
+  });
+  await page.goto('/');
+  const stage = page.locator('[data-notification-stage]');
+  const agent = page.locator('[data-notification-image="agent-finished"]');
+  await expect(stage).toHaveAttribute('data-blocked', 'true');
+  await page.waitForTimeout(1_300);
+  await expect(agent).toHaveAttribute('data-active', 'true');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(stage).toHaveAttribute('data-blocked', 'false');
+  await expect(page.locator('[data-notification-image="changes-requested"]')).toHaveAttribute('data-active', 'true', { timeout: 2_000 });
 });
 
 test('landing hero starts directly below the header without a duplicate navigation band', async ({ page }, testInfo) => {
@@ -165,6 +184,8 @@ test('host quick start supports mouse, keyboard, and copy feedback', async ({ pa
   await expect(page.getByRole('tabpanel', { name: 'Codex' })).toBeVisible();
 
   const copy = page.getByRole('button', { name: 'Copy Codex setup commands' });
+  await page.keyboard.press('Tab');
+  await expect(copy).toBeFocused();
   await copy.click();
   await expect(copy).toContainText('Copied');
   await expect(copy).toHaveAttribute('aria-label', 'Copy Codex setup commands. Copied');

@@ -10,11 +10,11 @@ output_dir="$package_root/.artifacts/macos-notifications"
 notify_script="$package_root/skills/notifications/scripts/notify.sh"
 preference_script="$script_dir/enable-macos-notification-banners.py"
 temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/git-workflow-notifications.XXXXXX")"
-runner_snapshot="$temporary_dir/capture-preferences.json"
+preference_snapshot="$temporary_dir/capture-preferences.json"
 surface_pid=""
 preferences_before=""
 script_editor_started=0
-runner_snapshot_created=0
+preference_snapshot_created=0
 preserve_temporary_dir=0
 
 usage() {
@@ -96,11 +96,15 @@ cleanup() {
     wait "$surface_pid" >/dev/null 2>&1 || true
   fi
 
-  if [ "$runner_snapshot_created" -eq 1 ]; then
-    if ! python3 "$preference_script" restore --snapshot "$runner_snapshot" \
+  if [ "$script_editor_started" -eq 1 ]; then
+    osascript -e 'tell application id "com.apple.ScriptEditor2" to quit' >/dev/null 2>&1 || true
+  fi
+
+  if [ "$preference_snapshot_created" -eq 1 ]; then
+    if ! python3 "$preference_script" restore --snapshot "$preference_snapshot" \
       >>"$output_dir/notification-preferences.log" 2>&1; then
-      printf '%s\n' 'Unable to restore the runner macOS preferences; see notification-preferences.log.' >&2
-      printf 'Recovery snapshot retained at: %s\n' "$runner_snapshot" >&2
+      printf '%s\n' 'Unable to restore the macOS capture preferences; see notification-preferences.log.' >&2
+      printf 'Recovery snapshot retained at: %s\n' "$preference_snapshot" >&2
       preserve_temporary_dir=1
       exit_code=1
     fi
@@ -111,20 +115,20 @@ cleanup() {
     fi
   fi
 
-  if [ "$script_editor_started" -eq 1 ]; then
-    osascript -e 'tell application id "com.apple.ScriptEditor2" to quit' >/dev/null 2>&1 || true
-  fi
-  if [ "$preserve_temporary_dir" -eq 0 ]; then
-    rm -rf "$temporary_dir"
-  fi
-
   if [ "$mode" = "local" ] && [ -n "$preferences_before" ]; then
     local preferences_after
     preferences_after="$(snapshot_preferences)"
     if [ "$preferences_before" != "$preferences_after" ]; then
       printf '%s\n' 'Local capture changed appearance or notification preferences; refusing the evidence.' >&2
+      if [ "$preference_snapshot_created" -eq 1 ]; then
+        printf 'Recovery snapshot retained at: %s\n' "$preference_snapshot" >&2
+        preserve_temporary_dir=1
+      fi
       exit_code=1
     fi
+  fi
+  if [ "$preserve_temporary_dir" -eq 0 ]; then
+    rm -rf "$temporary_dir"
   fi
   exit "$exit_code"
 }
@@ -173,10 +177,10 @@ swiftc "$script_dir/macos-notification-window.swift" -o "$temporary_dir/notifica
 
 if [ "$mode" = "runner" ]; then
   # Snapshot first so even Script Editor's initial notification registration is reversible.
-  python3 "$preference_script" snapshot --snapshot "$runner_snapshot"
-  runner_snapshot_created=1
+  python3 "$preference_script" snapshot --snapshot "$preference_snapshot"
+  preference_snapshot_created=1
   "$notify_script" 'Git Workflow capture' 'Preparing notification evidence' Glass
-  python3 "$preference_script" prepare --snapshot "$runner_snapshot" \
+  python3 "$preference_script" prepare --snapshot "$preference_snapshot" \
     | tee "$output_dir/notification-preferences.log"
   restart_notification_services
   if ! pgrep -x 'Script Editor' >/dev/null 2>&1; then
@@ -189,12 +193,16 @@ else
   # Recent macOS releases deliver `osascript display notification` banners only after
   # Script Editor has joined the current GUI session. Launch it hidden and restore its
   # previous running state during cleanup; notification delivery still uses notify.sh.
+  preferences_before="$(snapshot_preferences)"
   if ! pgrep -x 'Script Editor' >/dev/null 2>&1; then
+    # Back up preferences before the first launch can register Script Editor with
+    # Notification Center. Cleanup restores and verifies this exact snapshot.
+    python3 "$preference_script" snapshot --snapshot "$preference_snapshot"
+    preference_snapshot_created=1
     open -gja '/System/Applications/Utilities/Script Editor.app'
     script_editor_started=1
     sleep 2
   fi
-  preferences_before="$(snapshot_preferences)"
   if ! launchctl print "gui/$(id -u)/com.apple.notificationcenterui.agent" >/dev/null 2>&1; then
     printf '%s\n' 'Notification Center is not running for the current macOS user.' >&2
     exit 1
@@ -203,7 +211,7 @@ else
     printf '%s\n' 'Local evidence capture requires the current macOS appearance to be Dark; no setting was changed.' >&2
     exit 1
   fi
-  printf '%s\n' 'Local mode: current appearance and notification preferences will not be changed.'
+  printf '%s\n' 'Local mode: current preferences are preserved and any Script Editor registration is restored.'
 fi
 
 "$temporary_dir/notification-surface" >"$output_dir/surface.log" 2>&1 &

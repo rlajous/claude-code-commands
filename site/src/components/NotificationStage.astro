@@ -165,6 +165,9 @@ const notifications = [
         else {
           if (intent === 'complete' || currentIndex === images.length - 1) show(0);
           intent = 'playing';
+          // An explicit Play action overrides the passive focus pause while the
+          // control retains keyboard focus. Later focus movement can block again.
+          setBlocker('focus', false);
         }
         updatePlayback();
         schedule();
@@ -186,6 +189,7 @@ const notifications = [
         schedule();
       });
 
+      setBlocker('hidden', document.hidden);
       updatePlayback();
       schedule();
     });

@@ -98,10 +98,11 @@ bash site/scripts/capture-macos-notifications.sh \
 Local mode is the default; `--mode local` remains available when an explicit invocation is clearer.
 It launches Script Editor hidden only when needed, opens a Ceibo blue-black surface above
 every personal window, and captures only Notification Center's 360×80-point banner region. It does
-not change appearance or notification preferences, never writes a desktop-sized diagnostic, and
-restores Script Editor's previous running state. The postprocessor refuses non-uniform corner
-pixels before converting only the controlled background to alpha. It then emits the three PNGs and
-a single-play APNG; no generative image editing is involved.
+not change appearance settings and never writes a desktop-sized diagnostic. Before launching Script
+Editor for the first time, it snapshots Notification Center and the relevant appearance preferences;
+cleanup restores and verifies that snapshot together with Script Editor's previous running state.
+The postprocessor refuses non-uniform corner pixels before converting only the controlled background
+to alpha. It then emits the three PNGs and a single-play APNG; no generative image editing is involved.
 
 For remote regeneration, after the repository is connected to Cirrus CI, its
 [Cirrus task](https://cirrus-ci.com/github/rlajous/claude-code-commands) runs in a managed Tart VM

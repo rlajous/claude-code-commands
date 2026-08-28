@@ -9,7 +9,6 @@ const { tabsId, tab, active = false, class: className } = Astro.props;
   id={`${tabsId}-panel-${tab}`}
   aria-labelledby={`${tabsId}-tab-${tab}`}
   hidden={!active}
-  tabindex="0"
   class:list={['ui-tab-panel', className]}
 >
   <slot />
