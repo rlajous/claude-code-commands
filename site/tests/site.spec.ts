@@ -222,6 +222,13 @@ test('documentation exposes canonical, Markdown, llms, and structured data', asy
   expect(structuredData).toContain('SoftwareSourceCode');
 });
 
+test('product documentation prioritizes its above-the-fold evidence image', async ({ page }) => {
+  await page.goto('/git-workflow/');
+  const evidence = page.getByRole('img', { name: /Agent Tooling documentation showing Git Workflow/ });
+  await expect(evidence).toHaveAttribute('loading', 'eager');
+  await expect(evidence).toHaveAttribute('fetchpriority', 'high');
+});
+
 test('standalone decision brief remains available', async ({ page }) => {
   const response = await page.goto('/git-workflow/examples/pr-23/');
   expect(response?.status()).toBe(200);

@@ -146,7 +146,7 @@ const escapeHtml = (value) => value
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;');
 
-/** Render one intrinsic-size responsive image from generated asset metadata. */
+/** Render one intrinsic-size responsive image, prioritizing the product page's LCP evidence. */
 function responsiveImage(alt, source) {
   const info = assetInfo.get(source);
   if (!info) throw new Error(`Responsive image metadata was not generated for ${source}`);
@@ -155,7 +155,10 @@ function responsiveImage(alt, source) {
   const responsiveAttributes = srcset
     ? ` srcset="${srcset}" sizes="(max-width: 52rem) calc(100vw - 2rem), 48rem"`
     : '';
-  return `<img src="${fallback}"${responsiveAttributes} width="${info.width}" height="${info.height}" loading="lazy" decoding="async" alt="${escapeHtml(alt)}">`;
+  const loadingAttributes = source === '/assets/agent-tooling-site.png'
+    ? 'loading="eager" decoding="async" fetchpriority="high"'
+    : 'loading="lazy" decoding="async"';
+  return `<img src="${fallback}"${responsiveAttributes} width="${info.width}" height="${info.height}" ${loadingAttributes} alt="${escapeHtml(alt)}">`;
 }
 
 /** Replace local Markdown images, including linked images, with responsive HTML. */
