@@ -1,0 +1,15 @@
+---
+interface Props { tabsId: string; tab: string; active?: boolean; class?: string; }
+const { tabsId, tab, active = false, class: className } = Astro.props;
+---
+<section
+  data-slot="tabs-content"
+  data-tab-panel={tab}
+  role="tabpanel"
+  id={`${tabsId}-panel-${tab}`}
+  aria-labelledby={`${tabsId}-tab-${tab}`}
+  hidden={!active}
+  class:list={['ui-tab-panel', className]}
+>
+  <slot />
+</section>

@@ -288,11 +288,23 @@ for requirement in (
     assert requirement in evidence_playbook, requirement
 
 documentation_assets = (
-    "docs/assets/review-watch-requested-macos.png",
-    "docs/assets/review-watch-ready-macos.png",
+    "docs/assets/agent-finished-macos.png",
+    "docs/assets/pr-approved-macos.png",
+    "docs/assets/pr-changes-requested-macos.png",
+    "docs/assets/notifications-macos.apng",
     "docs/assets/change-brief-pr-23.png",
 )
-for path in documentation_assets:
+legacy_review_assets = (
+    "docs/assets/review-watch-requested-macos.png",
+    "docs/assets/review-watch-ready-macos.png",
+)
+site_assets = (
+    "docs/assets/agent-tooling-site.png",
+    "docs/assets/agent-tooling-site-mobile.png",
+    "docs/assets/agent-tooling-evidence.png",
+    "docs/assets/agent-tooling-theme-menu.png",
+)
+for path in (*documentation_assets, *legacy_review_assets, *site_assets):
     assert Path(path).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path
 
 example = read("docs/examples/change-brief-pr-23.html")
@@ -301,10 +313,13 @@ assert example.count("data:image/png;base64,") == 2
 assert "__REQUESTED_IMAGE_DATA__" not in example and "__READY_IMAGE_DATA__" not in example
 
 readme = read("README.md")
-for path in (*documentation_assets, "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md", "docs/NOTIFICATIONS.md"):
+for path in ("docs/assets/notifications-macos.apng", "docs/assets/change-brief-pr-23.png", "docs/examples/change-brief-pr-23.html", "docs/REVIEW_WATCH.md", "docs/CHANGE_BRIEF.md", "docs/NOTIFICATIONS.md"):
     assert path in readme, path
 
 review_watch_docs = read("docs/REVIEW_WATCH.md")
+for path in legacy_review_assets:
+    relative_path = path.removeprefix("docs/")
+    assert relative_path in review_watch_docs, path
 assert "up to 50 open PRs" in review_watch_docs
 assert "unknown author" in review_watch_docs
 assert "REVIEW_WATCH_NOTIFY_SCRIPT" in review_watch_docs
@@ -312,6 +327,8 @@ change_brief_docs = read("docs/CHANGE_BRIEF.md")
 assert "less than 10 minutes" in change_brief_docs
 assert "zero\nautomatic external requests" in change_brief_docs
 notification_docs = read("docs/NOTIFICATIONS.md")
+for path in documentation_assets[:3]:
+    assert path.removeprefix("docs/") in notification_docs, path
 for requirement in ("agentComplete", "prActivity", "first run", "2,000", "privacy", "--doctor", "--daemon-command"):
     assert requirement.lower() in notification_docs.lower(), requirement
 PY

@@ -1,0 +1,5 @@
+---
+interface Props { class?: string; }
+const { class: className } = Astro.props;
+---
+<kbd data-slot="kbd" class:list={['ui-kbd', className]}><slot /></kbd>

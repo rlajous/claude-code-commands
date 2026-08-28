@@ -1,0 +1,21 @@
+---
+import briefSource from '../../../../../../docs/examples/change-brief-pr-23.html?raw';
+
+export const prerender = true;
+
+const productionOrigin = 'https://agents.navarrolajous.com';
+const metadata = [
+  briefSource.includes('rel="canonical"')
+    ? ''
+    : `<link rel="canonical" href="${productionOrigin}/git-workflow/examples/pr-23/">`,
+  briefSource.includes('rel="describedby"')
+    ? ''
+    : `<link rel="describedby" href="${productionOrigin}/git-workflow/llms.txt">`,
+].filter(Boolean).join('\n');
+
+const brief = metadata && briefSource.includes('</head>')
+  ? briefSource.replace('</head>', `${metadata}\n</head>`)
+  : briefSource;
+---
+
+<Fragment set:html={brief} />

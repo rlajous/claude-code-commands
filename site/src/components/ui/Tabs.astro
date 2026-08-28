@@ -1,0 +1,85 @@
+---
+interface Tab {
+  id: string;
+  label: string;
+}
+interface Props {
+  id: string;
+  tabs: Tab[];
+  defaultTab?: string;
+  label: string;
+  class?: string;
+}
+const { id, tabs, defaultTab = tabs[0]?.id, label, class: className } = Astro.props;
+---
+
+<ui-tabs data-slot="tabs" data-tabs-id={id} data-active-index="0" class:list={['ui-tabs', className]}>
+  <div data-slot="tabs-list" role="tablist" aria-label={label}>
+    {tabs.map((tab) => (
+      <button
+        data-slot="tabs-trigger"
+        type="button"
+        role="tab"
+        id={`${id}-tab-${tab.id}`}
+        aria-controls={`${id}-panel-${tab.id}`}
+        aria-selected={tab.id === defaultTab ? 'true' : 'false'}
+        tabindex={tab.id === defaultTab ? 0 : -1}
+        data-tab={tab.id}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+  <slot />
+</ui-tabs>
+
+<script>
+  /** Keyboard-accessible tab controller with a shared active-index indicator. */
+  class UiTabs extends HTMLElement {
+    private triggers: HTMLButtonElement[] = [];
+    private panels: HTMLElement[] = [];
+
+    /** Bind tab interactions and normalize the initial selected panel. */
+    connectedCallback(): void {
+      this.triggers = Array.from(this.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+      this.panels = Array.from(this.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+      this.triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => this.select(trigger));
+        trigger.addEventListener('keydown', (event) => this.onKeydown(event, trigger));
+      });
+      const active = this.triggers.find((trigger) => trigger.getAttribute('aria-selected') === 'true') ?? this.triggers[0];
+      if (active) this.select(active, false);
+    }
+
+    /** Select one tab, synchronize panels, and optionally move keyboard focus. */
+    private select(trigger: HTMLButtonElement, focus = false): void {
+      const tab = trigger.dataset.tab;
+      const activeIndex = this.triggers.indexOf(trigger);
+      this.dataset.activeIndex = String(Math.max(0, activeIndex));
+      this.triggers.forEach((candidate) => {
+        const selected = candidate === trigger;
+        candidate.setAttribute('aria-selected', String(selected));
+        candidate.tabIndex = selected ? 0 : -1;
+      });
+      this.panels.forEach((panel) => {
+        panel.hidden = panel.dataset.tabPanel !== tab;
+      });
+      if (focus) trigger.focus();
+    }
+
+    /** Implement wrapping horizontal tab navigation plus Home and End. */
+    private onKeydown(event: KeyboardEvent, trigger: HTMLButtonElement): void {
+      const index = this.triggers.indexOf(trigger);
+      let next = index;
+      if (event.key === 'ArrowRight') next = (index + 1) % this.triggers.length;
+      else if (event.key === 'ArrowLeft') next = (index - 1 + this.triggers.length) % this.triggers.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = this.triggers.length - 1;
+      else return;
+      event.preventDefault();
+      this.select(this.triggers[next], true);
+    }
+  }
+
+  if (!customElements.get('ui-tabs')) customElements.define('ui-tabs', UiTabs);
+</script>

@@ -49,14 +49,14 @@ export default defineConfig({
           tag: 'meta',
           attrs: {
             property: 'og:image',
-            content: 'https://agents.navarrolajous.com/assets/change-brief-pr-23.png',
+            content: 'https://agents.navarrolajous.com/assets/agent-tooling-site.png',
           },
         },
         {
           tag: 'meta',
           attrs: {
             property: 'og:image:alt',
-            content: 'Git Workflow decision brief showing business rules, a workflow diagram, and notification evidence.',
+            content: 'Agent Tooling documentation showing Git Workflow support for Claude Code and Codex.',
           },
         },
       ],
@@ -65,9 +65,12 @@ export default defineConfig({
       pagefind: true,
       customCss: ['./src/styles/custom.css'],
       components: {
+        Header: './src/components/Header.astro',
         Head: './src/components/Head.astro',
         PageTitle: './src/components/PageTitle.astro',
+        Search: './src/components/Search.astro',
         SiteTitle: './src/components/SiteTitle.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
       },
       sidebar: [
         { label: 'Agent Tooling', link: '/' },

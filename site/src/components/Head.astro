@@ -46,14 +46,18 @@ const safeStructuredData = structuredData
 {safeStructuredData && <script is:inline type="application/ld+json" set:html={safeStructuredData} />}
 <script is:inline>
   (() => {
-    const labelScrollableCode = () => {
+    /** Add accessible labels to interactive content injected after the initial render. */
+    const labelInteractiveContent = () => {
       document.querySelectorAll('.expressive-code pre[role="region"]').forEach((block, index) => {
         if (!block.hasAttribute('aria-label')) block.setAttribute('aria-label', `Scrollable code example ${index + 1}`);
       });
+      document.querySelectorAll('#starlight__search input[type="text"]').forEach((input) => {
+        if (!input.hasAttribute('aria-label')) input.setAttribute('aria-label', 'Search documentation');
+      });
     };
-    const observer = new MutationObserver(labelScrollableCode);
+    const observer = new MutationObserver(labelInteractiveContent);
     observer.observe(document.documentElement, { attributes: true, childList: true, subtree: true, attributeFilter: ['role'] });
-    document.addEventListener('astro:page-load', labelScrollableCode);
-    labelScrollableCode();
+    document.addEventListener('astro:page-load', labelInteractiveContent);
+    labelInteractiveContent();
   })();
 </script>

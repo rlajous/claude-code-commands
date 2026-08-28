@@ -33,6 +33,7 @@ if (!productLlms.startsWith('# Git Workflow\n\n> ') || !productLlms.includes('##
 }
 
 const htmlFiles = [];
+/** Recursively collect built HTML documents for metadata and link validation. */
 async function collectHtml(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
@@ -42,6 +43,7 @@ async function collectHtml(directory) {
 }
 await collectHtml(distRoot);
 
+/** Resolve one local HTML reference to its expected static-build filesystem target. */
 function localTarget(rawValue, htmlPath) {
   const value = rawValue.replaceAll('&amp;', '&').split('#')[0].split('?')[0];
   if (!value || /^(?:https?:|mailto:|tel:|data:|javascript:)/.test(value)) return undefined;

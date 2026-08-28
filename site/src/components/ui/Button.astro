@@ -1,0 +1,38 @@
+---
+interface Props {
+  href?: string;
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'link';
+  size?: 'default' | 'sm' | 'icon';
+  class?: string;
+  ariaLabel?: string;
+  target?: string;
+  rel?: string;
+  type?: 'button' | 'submit' | 'reset';
+}
+
+const {
+  href,
+  variant = 'default',
+  size = 'default',
+  class: className,
+  ariaLabel,
+  target,
+  rel,
+  type = 'button',
+} = Astro.props;
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  data-slot="button"
+  data-variant={variant}
+  data-size={size}
+  class:list={['ui-button', className]}
+  href={href}
+  type={href ? undefined : type}
+  aria-label={ariaLabel}
+  target={target}
+  rel={rel}
+>
+  <slot />
+</Tag>

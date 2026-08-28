@@ -1,0 +1,52 @@
+name: Capture macOS notification evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture on a clean remote Mac
+    runs-on: [self-hosted, macOS, notification-capture]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare evidence tooling
+        run: |
+          npm ci --prefix site
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! command -v ffprobe >/dev/null 2>&1; then
+            brew install ffmpeg
+          fi
+          command -v ffmpeg
+          command -v ffprobe
+
+      - name: Capture real Notification Center banners
+        run: >-
+          bash site/scripts/capture-macos-notifications.sh
+          --mode runner
+          --output .artifacts/macos-notifications
+
+      - name: Summarize captures
+        if: success()
+        run: |
+          for image in .artifacts/macos-notifications/*-macos.png; do
+            printf '### `%s`\n\n' "$(basename "$image")" >> "$GITHUB_STEP_SUMMARY"
+            sips -g pixelWidth -g pixelHeight "$image" >> "$GITHUB_STEP_SUMMARY"
+          done
+          printf '### `notifications-macos.apng`\n\n' >> "$GITHUB_STEP_SUMMARY"
+          ffprobe -v error -count_frames -select_streams v:0 \
+            -show_entries stream=codec_name,width,height,nb_read_frames \
+            .artifacts/macos-notifications/notifications-macos.apng >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload captures and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-notification-evidence
+          path: .artifacts/macos-notifications
+          if-no-files-found: warn
+          retention-days: 14

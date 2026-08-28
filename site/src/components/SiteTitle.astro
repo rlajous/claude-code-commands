@@ -1,9 +1,9 @@
+---
+import BrandMark from './BrandMark.astro';
+---
+
 <a class="site-wordmark" href="/" aria-label="Agent Tooling home">
-  <svg viewBox="0 0 40 40" aria-hidden="true">
-    <path d="M6 8h10v10H6zM24 22h10v10H24z" fill="currentColor"></path>
-    <path d="M16 13h4a6 6 0 0 1 6 6v3M20 13v14a5 5 0 0 0 5 5" fill="none" stroke="currentColor" stroke-width="2.5"></path>
-    <circle cx="20" cy="13" r="3" fill="currentColor"></circle>
-  </svg>
+  <BrandMark class="site-wordmark__mark" />
   <span>Agent Tooling</span>
 </a>
 
@@ -13,17 +13,16 @@
     min-height: 2.75rem;
     align-items: center;
     gap: 0.7rem;
-    color: var(--sl-color-text-accent);
-    font-family: var(--at-font-display);
-    font-size: 1.08rem;
-    font-weight: 650;
-    letter-spacing: -0.02em;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
     text-decoration: none;
   }
 
-  svg {
-    width: 1.7rem;
-    height: 1.7rem;
-    color: var(--at-accent);
+  .site-wordmark__mark {
+    width: 1.75rem;
+    height: 1.75rem;
   }
 </style>

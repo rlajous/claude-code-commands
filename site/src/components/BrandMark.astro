@@ -1,0 +1,33 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<svg
+  class:list={["brand-mark", className]}
+  viewBox="0 0 40 40"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path class="brand-mark__prompt" d="M4 7.5h7.25L23.75 20 11.25 32.5H4L16.5 20 4 7.5Z"></path>
+  <path class="brand-mark__tool" d="M20 7.5h16V13h-5v19.5h-6V13h-5V7.5Z"></path>
+</svg>
+
+<style>
+  .brand-mark {
+    display: block;
+    flex: none;
+  }
+
+  .brand-mark__prompt {
+    fill: var(--primary);
+  }
+
+  .brand-mark__tool {
+    fill: var(--foreground);
+  }
+</style>

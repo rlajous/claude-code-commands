@@ -68,6 +68,59 @@ accounts appear as `unknown reviewer`. Reviews submitted by the authenticated us
 General PR comments, issue comments, CI status, merges, commits, dismissed reviews, agent failures,
 and mobile push notifications are outside v2.6.0.
 
+## What it looks like
+
+These banners were emitted by the packaged macOS notifier. They show the exact identity and message
+formats used by v2.6.0; Linux presents the same text through the active desktop's `notify-send`
+theme.
+
+**Main Codex turn completed**
+
+![A real macOS notification showing that a Codex turn completed in the Git Workflow repository.](assets/agent-finished-macos.png)
+
+**A reviewer approved an authored pull request**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and approval.](assets/pr-approved-macos.png)
+
+**A reviewer requested changes**
+
+![A real macOS notification identifying the repository, pull request, reviewer, and requested changes.](assets/pr-changes-requested-macos.png)
+
+The repository includes a side-effect-safe local capture path and two reproducible remote paths.
+On a Mac already using Dark appearance, install the site dependencies and run:
+
+```bash
+npm ci --prefix site
+bash site/scripts/capture-macos-notifications.sh \
+  --output .artifacts/macos-notifications
+```
+
+Local mode is the default; `--mode local` remains available when an explicit invocation is clearer.
+It launches Script Editor hidden only when needed, opens a Ceibo blue-black surface above
+every personal window, and captures only Notification Center's 360×80-point banner region. It does
+not change appearance settings and never writes a desktop-sized diagnostic. Before launching Script
+Editor for the first time, it snapshots Notification Center and the relevant appearance preferences;
+cleanup restores and verifies that snapshot together with Script Editor's previous running state.
+The postprocessor refuses non-uniform corner pixels before converting only the controlled background
+to alpha. It then emits the three PNGs and a single-play APNG; no generative image editing is involved.
+
+For remote regeneration, after the repository is connected to Cirrus CI, its
+[Cirrus task](https://cirrus-ci.com/github/rlajous/claude-code-commands) runs in a managed Tart VM
+using the free public open-source allocation. The
+[`Capture macOS notification evidence`](https://github.com/rlajous/claude-code-commands/actions/workflows/capture-macos-notifications.yml)
+workflow supports a dedicated runner. Both use `--mode runner`, call the same packaged notifier used
+at runtime, and upload only cropped banner evidence, processing logs, and generated assets. Runner
+mode first snapshots the full Notification Center plist and the relevant global appearance keys. Its
+exit trap restores and verifies those values after success, failure, or interruption, so a dedicated
+runner can be reused safely. No personal desktop, open application, or fabricated browser mockup is
+included in the artifacts.
+
+The GitHub Actions fallback targets a dedicated, reusable self-hosted runner labeled `macOS` and
+`notification-capture`.
+GitHub-hosted macOS images are not suitable for this evidence: they expose a graphical desktop but
+do not load the per-user Notification Center LaunchAgent required to render banners. A dedicated
+remote Mac keeps the capture real while isolating it from a contributor's personal computer.
+
 ## One daemon, two GitHub channels
 
 The notifications skill owns one daemon shared with [Review Watch](REVIEW_WATCH.md):

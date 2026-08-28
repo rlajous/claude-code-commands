@@ -13,10 +13,16 @@ const productPublic = join(publicRoot, 'git-workflow');
 const repositoryUrl = 'https://github.com/rlajous/claude-code-commands';
 const productionOrigin = 'https://agents.navarrolajous.com';
 
+/** Normalize repository-relative paths to stable forward-slash identifiers. */
 const normalizeRelative = (value) => normalize(value).split(sep).join('/').replace(/^\.\//, '');
+
+/** Convert one configured slug to its canonical trailing-slash public route. */
 const routeForSlug = (slug) => `/${slug.replace(/^\/+|\/+$/g, '')}/`;
+
+/** Serialize frontmatter values without introducing YAML quoting ambiguity. */
 const quote = (value) => JSON.stringify(value);
 
+/** Reject any generated-content access that escapes the repository boundary. */
 function ensureInsideRepo(path) {
   const fromRoot = relative(repoRoot, path);
   if (fromRoot.startsWith('..') || fromRoot.includes(`${sep}..${sep}`)) {
@@ -24,10 +30,12 @@ function ensureInsideRepo(path) {
   }
 }
 
+/** Remove canonical source frontmatter before generating Starlight frontmatter. */
 function stripFrontmatter(markdown) {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
 }
 
+/** Remove the source H1 because the generated page supplies its own title. */
 function stripFirstHeading(markdown) {
   return markdown.replace(/^#\s+[^\n]+\r?\n+/, '');
 }
@@ -56,6 +64,7 @@ await mkdir(productPublic, { recursive: true });
 const copiedAssets = new Map();
 const assetInfo = new Map();
 
+/** Copy one referenced asset and generate bounded responsive image variants. */
 async function copyAsset(sourcePath, publicPath) {
   const sourceAbsolute = resolve(repoRoot, sourcePath);
   const targetAbsolute = resolve(publicRoot, publicPath.replace(/^\//, ''));
@@ -63,10 +72,12 @@ async function copyAsset(sourcePath, publicPath) {
   await mkdir(dirname(targetAbsolute), { recursive: true });
   if (!copiedAssets.has(sourcePath)) {
     await copyFile(sourceAbsolute, targetAbsolute);
-    if (/\.(?:png|jpe?g)$/i.test(sourcePath)) {
+    if (/\.(?:apng|png|jpe?g)$/i.test(sourcePath)) {
       const metadata = await sharp(sourceAbsolute).metadata();
       if (!metadata.width || !metadata.height) throw new Error(`Unable to read image dimensions: ${sourcePath}`);
-      const widths = [...new Set([480, 960, metadata.width].filter((width) => width <= metadata.width))].sort((a, b) => a - b);
+      const widths = /\.apng$/i.test(sourcePath)
+        ? []
+        : [...new Set([480, 960, metadata.width].filter((width) => width <= metadata.width))].sort((a, b) => a - b);
       const variants = [];
       for (const width of widths) {
         const variantPath = publicPath.replace(/\.[^.]+$/, `-${width}.webp`);
@@ -81,6 +92,7 @@ async function copyAsset(sourcePath, publicPath) {
   return publicPath;
 }
 
+/** Map one canonical Markdown link to a validated public route or copied asset. */
 async function resolveLocalLink(rawTarget, source) {
   const cleaned = rawTarget.trim().replace(/^<|>$/g, '');
   if (/^(?:https?:|mailto:|tel:)/.test(cleaned) || cleaned.startsWith('#')) return cleaned;
@@ -113,6 +125,7 @@ async function resolveLocalLink(rawTarget, source) {
   throw new Error(`Unmapped internal link in ${source}: ${rawTarget} resolves to ${resolvedSource}`);
 }
 
+/** Rewrite every local Markdown link while preserving external and anchor targets. */
 async function rewriteMarkdown(markdown, source) {
   const matches = [...markdown.matchAll(/\]\(([^)]+)\)/g)];
   let output = '';
@@ -126,20 +139,29 @@ async function rewriteMarkdown(markdown, source) {
   return responsiveMarkdownImages(output + markdown.slice(cursor));
 }
 
+/** Escape attribute text used in generated responsive image markup. */
 const escapeHtml = (value) => value
   .replaceAll('&', '&amp;')
   .replaceAll('"', '&quot;')
   .replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;');
 
+/** Render one intrinsic-size responsive image, prioritizing the product page's LCP evidence. */
 function responsiveImage(alt, source) {
   const info = assetInfo.get(source);
   if (!info) throw new Error(`Responsive image metadata was not generated for ${source}`);
   const fallback = info.variants.at(-1)?.path ?? source;
   const srcset = info.variants.map(({ width, path }) => `${path} ${width}w`).join(', ');
-  return `<img src="${fallback}" srcset="${srcset}" sizes="(max-width: 52rem) calc(100vw - 2rem), 48rem" width="${info.width}" height="${info.height}" loading="lazy" decoding="async" alt="${escapeHtml(alt)}">`;
+  const responsiveAttributes = srcset
+    ? ` srcset="${srcset}" sizes="(max-width: 52rem) calc(100vw - 2rem), 48rem"`
+    : '';
+  const loadingAttributes = source === '/assets/agent-tooling-site.png'
+    ? 'loading="eager" decoding="async" fetchpriority="high"'
+    : 'loading="lazy" decoding="async"';
+  return `<img src="${fallback}"${responsiveAttributes} width="${info.width}" height="${info.height}" ${loadingAttributes} alt="${escapeHtml(alt)}">`;
 }
 
+/** Replace local Markdown images, including linked images, with responsive HTML. */
 function responsiveMarkdownImages(markdown) {
   const nestedImages = markdown.replace(
     /\[!\[([^\]]*)\]\((\/assets\/[^)]+)\)\]\(([^)]+)\)/g,
@@ -151,6 +173,7 @@ function responsiveMarkdownImages(markdown) {
   );
 }
 
+/** Build deterministic Starlight frontmatter for one declarative content entry. */
 function frontmatter(entry) {
   const values = [
     '---',
@@ -269,12 +292,5 @@ await writeFile(join(productPublic, 'llms.txt'), productLlms);
 for (const platform of ['nestjs', 'nextjs', 'python', 'react-native', 'monorepo']) {
   await copyAsset(`examples/${platform}/config.yaml`, `/git-workflow/examples/config/${platform}.yaml`);
 }
-
-const briefSource = await readFile(resolve(repoRoot, 'docs/examples/change-brief-pr-23.html'), 'utf8');
-const briefHead = `\n<link rel="canonical" href="${productionOrigin}/git-workflow/examples/pr-23/">\n<link rel="describedby" href="${productionOrigin}/git-workflow/llms.txt">\n`;
-const briefOutput = briefSource.includes('</head>') ? briefSource.replace('</head>', `${briefHead}</head>`) : briefSource;
-const briefTarget = join(productPublic, 'examples/pr-23/index.html');
-await mkdir(dirname(briefTarget), { recursive: true });
-await writeFile(briefTarget, briefOutput);
 
 console.log(`Synced ${generatedEntries.length} canonical documents for Git Workflow ${manifest.version}.`);

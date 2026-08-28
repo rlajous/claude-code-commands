@@ -65,6 +65,10 @@ jobs:
           ASTRO_TELEMETRY_DISABLED: "1"
         run: npm run check && npm run build
 
+      - name: Test Astro development routes
+        working-directory: site
+        run: npm run test:dev-route
+
       - name: Validate self-contained decision brief
         run: python3 scripts/validate-self-contained-html.py docs/examples/change-brief-pr-23.html
 

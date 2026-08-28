@@ -1,7 +1,9 @@
 import { createServer } from 'node:http';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join, relative, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { gzip } from 'node:zlib';
 import { launch } from 'chrome-launcher';
 import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
@@ -12,6 +14,7 @@ const reportRoot = join(siteRoot, '.lighthouseci');
 const routes = ['/', '/git-workflow/', '/git-workflow/review-watch/'];
 const categoryNames = ['performance', 'accessibility', 'best-practices', 'seo'];
 const minimumScore = 0.95;
+const gzipAsync = promisify(gzip);
 
 await access(join(distRoot, 'index.html')).catch(() => {
   throw new Error('Build output is missing. Run npm run build before Lighthouse.');
@@ -31,6 +34,19 @@ const contentTypes = new Map([
   ['.webp', 'image/webp'],
   ['.xml', 'application/xml; charset=utf-8'],
 ]);
+const compressibleExtensions = new Set(['.css', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml']);
+
+/** Encode compressible static assets as the production Pages host does. */
+async function responsePayload(path, body, acceptEncoding) {
+  const extension = extname(path);
+  if (!compressibleExtensions.has(extension) || !acceptEncoding.includes('gzip')) {
+    return { body, headers: {} };
+  }
+  return {
+    body: await gzipAsync(body),
+    headers: { 'content-encoding': 'gzip', vary: 'Accept-Encoding' },
+  };
+}
 
 const server = createServer(async (request, response) => {
   try {
@@ -40,8 +56,12 @@ const server = createServer(async (request, response) => {
     if (relative(distRoot, target).startsWith('..')) throw new Error('Path traversal rejected.');
     if (decodedPath.endsWith('/')) target = join(target, 'index.html');
     const body = await readFile(target);
-    response.writeHead(200, { 'content-type': contentTypes.get(extname(target)) ?? 'application/octet-stream' });
-    response.end(body);
+    const payload = await responsePayload(target, body, String(request.headers['accept-encoding'] ?? ''));
+    response.writeHead(200, {
+      'content-type': contentTypes.get(extname(target)) ?? 'application/octet-stream',
+      ...payload.headers,
+    });
+    response.end(payload.body);
   } catch {
     response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
     response.end('Not found');

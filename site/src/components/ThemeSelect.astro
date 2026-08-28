@@ -1,0 +1,478 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+const themes = [
+	{ value: 'light', label: 'Light', icon: 'sun' },
+	{ value: 'dark', label: 'Dark', icon: 'moon' },
+	{ value: 'auto', label: 'System', icon: 'laptop' },
+] as const;
+---
+
+<starlight-theme-select>
+	<select class="theme-select-native" aria-hidden="true" tabindex="-1">
+		{themes.map(({ value, label }) => <option value={value}>{label}</option>)}
+	</select>
+
+	<button
+		class="theme-trigger"
+		type="button"
+		aria-haspopup="menu"
+		aria-expanded="false"
+		aria-label="Theme: System. Change appearance"
+		title="Change appearance"
+	>
+		<Icon name="laptop" class="label-icon" />
+		<span class="current-label">System</span>
+		<Icon name="down-caret" class="trigger-caret" />
+	</button>
+
+	<div class="theme-menu" popover="auto" role="menu" aria-label="Appearance">
+		<p class="menu-heading">Appearance</p>
+		<div class="menu-rule" aria-hidden="true"></div>
+		{themes.map(({ value, label, icon }) => (
+			<button
+				class="theme-option"
+				type="button"
+				role="menuitemradio"
+				aria-checked={value === 'auto' ? 'true' : 'false'}
+				data-theme-value={value}
+				tabindex={value === 'auto' ? 0 : -1}
+			>
+				<span class="option-icon" aria-hidden="true"><Icon name={icon} /></span>
+				<span>{label}</span>
+				<span class="option-check" aria-hidden="true"><Icon name="approve-check" /></span>
+			</button>
+		))}
+		<p class="menu-note">Stored on this device</p>
+	</div>
+</starlight-theme-select>
+
+{/* Keep the provider's initial picker sync inlined to avoid a mismatched icon during hydration. */}
+<script is:inline>
+	StarlightThemeProvider.updatePickers();
+</script>
+
+<script>
+	type Theme = 'auto' | 'dark' | 'light';
+	type ThemeProvider = { updatePickers: (theme?: Theme) => void };
+	const themeProvider = (window as unknown as Window & { StarlightThemeProvider: ThemeProvider })
+		.StarlightThemeProvider;
+
+	const storageKey = 'starlight-theme';
+	const mediaQuery = matchMedia('(prefers-color-scheme: light)');
+	const labels: Record<Theme, string> = { auto: 'System', dark: 'Dark', light: 'Light' };
+
+	/** Normalize storage and dataset input to the three supported theme values. */
+	const parseTheme = (theme: unknown): Theme =>
+		theme === 'auto' || theme === 'dark' || theme === 'light' ? theme : 'auto';
+
+	/** Load the explicit theme preference, treating an empty value as System. */
+	const loadTheme = (): Theme => parseTheme(localStorage.getItem(storageKey));
+
+	/** Persist only explicit themes so System continues following the media query. */
+	function storeTheme(theme: Theme): void {
+		localStorage.setItem(storageKey, theme === 'light' || theme === 'dark' ? theme : '');
+	}
+
+	/** Resolve System to the currently effective light or dark document theme. */
+	function resolvedTheme(theme: Theme): Exclude<Theme, 'auto'> {
+		return theme === 'auto' ? (mediaQuery.matches ? 'light' : 'dark') : theme;
+	}
+
+	/** Synchronize desktop and mobile custom theme-picker instances. */
+	function syncCustomPickers(theme: Theme): void {
+		document.querySelectorAll<StarlightThemeSelect>('starlight-theme-select').forEach((picker) => {
+			picker.sync(theme);
+		});
+	}
+
+	/** Apply, persist, and broadcast one theme selection without a page reload. */
+	function onThemeChange(theme: Theme): void {
+		themeProvider.updatePickers(theme);
+		document.documentElement.dataset.theme = resolvedTheme(theme);
+		storeTheme(theme);
+		syncCustomPickers(theme);
+	}
+
+	/** Accessible popover controller that preserves Starlight's storage contract. */
+	class StarlightThemeSelect extends HTMLElement {
+		private trigger: HTMLButtonElement | null = null;
+		private menu: HTMLElement | null = null;
+		private options: HTMLButtonElement[] = [];
+		private wasOpenOnPointerDown = false;
+
+		/** Bind idempotent picker interaction and synchronize its initial state. */
+		connectedCallback(): void {
+			this.trigger = this.querySelector<HTMLButtonElement>('.theme-trigger');
+			this.menu = this.querySelector<HTMLElement>('.theme-menu');
+			this.options = Array.from(this.querySelectorAll<HTMLButtonElement>('.theme-option'));
+
+			this.trigger?.addEventListener('pointerdown', () => {
+				this.wasOpenOnPointerDown = Boolean(this.menu?.matches(':popover-open'));
+			});
+			this.trigger?.addEventListener('pointercancel', () => {
+				this.wasOpenOnPointerDown = false;
+			});
+			this.trigger?.addEventListener('click', () => this.toggleMenu());
+			this.trigger?.addEventListener('keydown', (event) => this.onTriggerKeydown(event));
+			this.menu?.addEventListener('keydown', (event) => this.onMenuKeydown(event));
+			this.menu?.addEventListener('toggle', () => this.onMenuToggle());
+			this.options.forEach((option) => {
+				option.addEventListener('click', () => this.chooseOption(option));
+			});
+
+			window.addEventListener('resize', this.positionMenu);
+			window.addEventListener('scroll', this.positionMenu, true);
+			this.sync(loadTheme());
+		}
+
+		/** Remove global positioning listeners when Astro replaces the element. */
+		disconnectedCallback(): void {
+			window.removeEventListener('resize', this.positionMenu);
+			window.removeEventListener('scroll', this.positionMenu, true);
+		}
+
+		/** Update labels, radio state, tab stops, and the native fallback select. */
+		sync(theme: Theme): void {
+			const label = labels[theme];
+			const select = this.querySelector<HTMLSelectElement>('select');
+			const currentLabel = this.querySelector<HTMLElement>('.current-label');
+			if (select) select.value = theme;
+			if (currentLabel) currentLabel.textContent = label;
+			if (this.trigger) this.trigger.setAttribute('aria-label', `Theme: ${label}. Change appearance`);
+
+			this.options.forEach((option) => {
+				const active = option.dataset.themeValue === theme;
+				option.setAttribute('aria-checked', String(active));
+				option.tabIndex = active ? 0 : -1;
+			});
+		}
+
+		/** Open, position, and focus the currently selected menu option. */
+		private openMenu(): void {
+			if (!this.menu || this.menu.matches(':popover-open')) return;
+			this.menu.showPopover();
+			this.positionMenu();
+			this.options.find((option) => option.getAttribute('aria-checked') === 'true')?.focus();
+		}
+
+		/** Toggle once per activation while avoiding pointerdown popover races. */
+		private toggleMenu(): void {
+			if (this.wasOpenOnPointerDown) {
+				this.wasOpenOnPointerDown = false;
+				this.closeMenu();
+				return;
+			}
+			if (this.menu?.matches(':popover-open')) this.closeMenu();
+			else this.openMenu();
+		}
+
+		/** Close the popover and optionally return focus to its trigger. */
+		private closeMenu(restoreFocus = false): void {
+			if (this.menu?.matches(':popover-open')) this.menu.hidePopover();
+			if (restoreFocus) this.trigger?.focus();
+		}
+
+		/** Apply the selected radio option and restore trigger focus. */
+		private chooseOption(option: HTMLButtonElement): void {
+			onThemeChange(parseTheme(option.dataset.themeValue));
+			this.closeMenu(true);
+		}
+
+		/** Open from arrow keys and focus the first or last radio option. */
+		private onTriggerKeydown(event: KeyboardEvent): void {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+				event.preventDefault();
+				this.openMenu();
+				const target = event.key === 'ArrowUp' ? this.options.at(-1) : this.options[0];
+				target?.focus();
+			}
+		}
+
+		/** Implement wrapping radio-menu navigation plus Home, End, and Escape. */
+		private onMenuKeydown(event: KeyboardEvent): void {
+			const currentIndex = this.options.indexOf(document.activeElement as HTMLButtonElement);
+			let nextIndex: number | undefined;
+
+			switch (event.key) {
+				case 'ArrowDown':
+					nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % this.options.length;
+					break;
+				case 'ArrowUp':
+					nextIndex = currentIndex <= 0 ? this.options.length - 1 : currentIndex - 1;
+					break;
+				case 'Home':
+					nextIndex = 0;
+					break;
+				case 'End':
+					nextIndex = this.options.length - 1;
+					break;
+				case 'Escape':
+					event.preventDefault();
+					this.closeMenu(true);
+					return;
+				default:
+					return;
+			}
+
+			event.preventDefault();
+			this.options[nextIndex]?.focus();
+		}
+
+		/** Reflect native popover state in ARIA and refresh viewport positioning. */
+		private onMenuToggle(): void {
+			const open = Boolean(this.menu?.matches(':popover-open'));
+			this.trigger?.setAttribute('aria-expanded', String(open));
+			if (open) this.positionMenu();
+		}
+
+		/** Anchor the menu to its trigger while keeping it inside the viewport. */
+		private positionMenu = (): void => {
+			if (!this.trigger || !this.menu?.matches(':popover-open')) return;
+
+			const viewportInset = 12;
+			const gap = 10;
+			const triggerRect = this.trigger.getBoundingClientRect();
+			const menuRect = this.menu.getBoundingClientRect();
+			const availableBelow = window.innerHeight - triggerRect.bottom - viewportInset;
+			const canOpenAbove = triggerRect.top - viewportInset >= menuRect.height + gap;
+			const opensUp = availableBelow < menuRect.height + gap && canOpenAbove;
+			const top = opensUp
+				? triggerRect.top - menuRect.height - gap
+				: Math.min(triggerRect.bottom + gap, window.innerHeight - menuRect.height - viewportInset);
+			const left = Math.min(
+				Math.max(viewportInset, triggerRect.right - menuRect.width),
+				window.innerWidth - menuRect.width - viewportInset,
+			);
+
+			this.menu.dataset.direction = opensUp ? 'up' : 'down';
+			this.menu.style.top = `${Math.max(viewportInset, top)}px`;
+			this.menu.style.left = `${left}px`;
+		};
+	}
+
+	if (!customElements.get('starlight-theme-select')) {
+		customElements.define('starlight-theme-select', StarlightThemeSelect);
+	}
+
+	mediaQuery.addEventListener('change', () => {
+		if (loadTheme() === 'auto') onThemeChange('auto');
+	});
+
+	onThemeChange(loadTheme());
+</script>
+
+<style>
+	@layer starlight.components {
+		starlight-theme-select {
+			display: inline-flex;
+		}
+
+		.theme-select-native {
+			display: none;
+		}
+
+		.theme-trigger {
+			display: inline-flex;
+			width: 2.75rem;
+			min-width: 2.75rem;
+			height: 2.75rem;
+			align-items: center;
+			justify-content: center;
+			gap: 0.55rem;
+			border: 1px solid transparent;
+			border-radius: var(--radius-md);
+			background: transparent;
+			color: var(--at-ink-soft);
+			cursor: pointer;
+			font: 650 0.76rem/1 var(--at-font-code);
+			letter-spacing: 0.025em;
+			padding: 0;
+			transition:
+				background-color var(--duration-feedback) var(--ease-out-quart),
+				border-color var(--duration-feedback) var(--ease-out-quart),
+				color var(--duration-feedback) var(--ease-out-quart);
+		}
+
+		.theme-trigger:hover,
+		.theme-trigger[aria-expanded='true'] {
+			border-color: var(--border);
+			background: var(--muted);
+			color: var(--at-ink);
+		}
+
+		.theme-trigger[aria-expanded='true'] {
+			box-shadow: var(--shadow-sm);
+		}
+
+		.theme-trigger:active {
+			background: var(--accent);
+		}
+
+		.theme-trigger :global(svg) {
+			width: 1.15rem;
+			height: 1.15rem;
+		}
+
+		.current-label,
+		.trigger-caret {
+			display: none;
+		}
+
+		:global(.mobile-preferences) .theme-trigger {
+			width: auto;
+			padding-inline: 0.75rem;
+		}
+
+		:global(.mobile-preferences) .current-label,
+		:global(.mobile-preferences) .trigger-caret {
+			display: inline-flex;
+		}
+
+		:global(.mobile-preferences) .trigger-caret {
+			width: 0.72rem;
+			height: 0.72rem;
+			margin-inline-start: 0.15rem;
+		}
+
+		.theme-menu {
+			--theme-menu-muted: color-mix(in oklch, var(--at-ink) 76%, var(--at-paper-raised));
+
+			position: fixed;
+			inset: auto;
+			width: min(13rem, calc(100vw - 1.5rem));
+			margin: 0;
+			border: 1px solid var(--border);
+			border-radius: var(--radius-lg);
+			background: var(--popover);
+			box-shadow: var(--shadow-lg);
+			color: var(--at-ink);
+			overflow: visible;
+			padding: 0.72rem;
+		}
+
+		.theme-menu:popover-open {
+			animation: theme-menu-in var(--duration-state) var(--ease-out-expo);
+		}
+
+		.theme-menu[data-direction='up'] {
+			--theme-menu-offset: 0.4rem;
+		}
+
+		.theme-menu[data-direction='down'] {
+			--theme-menu-offset: -0.4rem;
+		}
+
+		.theme-menu::backdrop {
+			background: transparent;
+		}
+
+		.menu-heading,
+		.menu-note {
+			margin: 0;
+			font-family: var(--at-font-code);
+			text-transform: uppercase;
+		}
+
+		.menu-heading {
+			color: var(--at-ink);
+			font-size: 0.68rem;
+			font-weight: 750;
+			letter-spacing: 0.105em;
+			padding: 0.25rem 0.35rem 0.55rem;
+		}
+
+		.menu-rule {
+			height: 1px;
+			margin: 0 -0.72rem 0.35rem;
+			background: var(--border);
+		}
+
+		.theme-option {
+			position: relative;
+			display: grid;
+			width: 100%;
+			min-height: 2.75rem;
+			grid-template-columns: 1.35rem 1fr 1rem;
+			align-items: center;
+			gap: 0.62rem;
+			border: 0;
+			border-radius: var(--radius-sm);
+			background: transparent;
+			color: var(--theme-menu-muted);
+			cursor: pointer;
+			font: 600 0.9rem/1.2 var(--at-font-body);
+			padding: 0.5rem 0.45rem;
+			text-align: start;
+		}
+
+		.theme-option:hover,
+		.theme-option:focus-visible {
+			background: var(--accent);
+			color: var(--at-ink);
+		}
+
+		.theme-option[aria-checked='true'] {
+			background: var(--primary-surface);
+			color: var(--primary-strong);
+			font-weight: 700;
+		}
+
+		.theme-option:active {
+			background: var(--muted);
+		}
+
+		.option-icon,
+		.option-check {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.option-icon {
+			color: var(--theme-menu-muted);
+		}
+
+		.option-check {
+			color: var(--primary-strong);
+			opacity: 0;
+			transform: translateX(-0.2rem);
+			transition:
+				opacity var(--duration-feedback) var(--ease-out-quart),
+				transform var(--duration-feedback) var(--ease-out-expo);
+		}
+
+		.theme-option[aria-checked='true'] .option-check {
+			opacity: 1;
+			transform: translateX(0);
+		}
+
+		.menu-note {
+			border-top: 1px solid var(--border);
+			color: var(--theme-menu-muted);
+			font-size: 0.58rem;
+			letter-spacing: 0.075em;
+			margin: 0.35rem -0.72rem -0.72rem;
+			padding: 0.58rem 1.07rem 0.64rem;
+		}
+
+		@keyframes theme-menu-in {
+			from {
+				opacity: 0;
+				transform: translateY(var(--theme-menu-offset));
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.theme-menu:popover-open,
+			.option-check {
+				animation: none;
+				transition: none;
+			}
+		}
+	}
+</style>

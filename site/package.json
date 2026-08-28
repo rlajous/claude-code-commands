@@ -9,11 +9,15 @@
   "scripts": {
     "dev": "npm run sync:content && astro dev",
     "sync:content": "node scripts/sync-content.mjs",
-    "check": "npm run sync:content && astro check",
-    "build": "npm run sync:content && astro build && node scripts/postbuild.mjs",
-    "test": "npm run build && playwright test",
+    "check": "npm run sync:content && npm run test:unit && npm run test:design-system && npm run test:notification-assets && astro check",
+    "build": "npm run sync:content && npm run test:unit && npm run test:design-system && npm run test:notification-assets && astro build && node scripts/postbuild.mjs",
+    "test": "npm run build && npm run test:dev-route && playwright test",
+    "test:dev-route": "npm run sync:content && node scripts/test-dev-route.mjs",
     "test:site": "playwright test",
-    "test:lighthouse": "node scripts/lighthouse.mjs"
+    "test:lighthouse": "node scripts/lighthouse.mjs",
+    "test:unit": "node --test scripts/test_apng_parser.mjs scripts/test_http_timeout.mjs && python3 scripts/test_macos_capture_preferences.py",
+    "test:design-system": "node scripts/validate-design-system.mjs",
+    "test:notification-assets": "node scripts/validate-notification-assets.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.3",

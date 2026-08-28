@@ -24,3 +24,6 @@ site/public/assets/
 site/public/git-workflow/
 site/public/index.md
 site/public/llms.txt
+
+# Locally generated visual-evidence artifacts
+.artifacts/

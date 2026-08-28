@@ -1,0 +1,9 @@
+---
+interface Props { class?: string; index?: string; }
+const { class: className, index } = Astro.props;
+---
+<article data-slot="item" class:list={['ui-item', className]}>
+  {index && <span class="ui-item-index" aria-hidden="true">{index}</span>}
+  <div class="ui-item-content"><slot /></div>
+  <slot name="aside" />
+</article>
