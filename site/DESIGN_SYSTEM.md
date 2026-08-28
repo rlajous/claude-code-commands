@@ -32,6 +32,7 @@ Run `npm run test:design-system` to detect token drift. Add a token only when a 
 - Tabs use one shared selection indicator and roving focus. Popovers use the native top layer and restore focus on dismissal.
 - Motion explains state or sequence. The landing page has one entrance choreography, one in-view evidence sequence, and brief control feedback.
 - Keep labels concrete and host-aware: `/skill-name` for Claude Code and `$skill-name` for Codex.
+- Community evidence is rendered from a checked-in snapshot, then progressively enhanced from the public GitHub API near the viewport. GitHub profile and avatar URLs are the only permitted third-party runtime resources; failures must leave the snapshot intact.
 
 ## Reference material
 

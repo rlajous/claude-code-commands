@@ -1,0 +1,31 @@
+{
+  "capturedAt": "2026-08-28T14:10:16Z",
+  "stars": 30,
+  "forks": 2,
+  "contributors": [
+    {
+      "login": "rlajous",
+      "contributions": 26,
+      "htmlUrl": "https://github.com/rlajous",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/40175251?v=4"
+    },
+    {
+      "login": "sebasfavaron",
+      "contributions": 9,
+      "htmlUrl": "https://github.com/sebasfavaron",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/19996944?v=4"
+    },
+    {
+      "login": "saccoe",
+      "contributions": 1,
+      "htmlUrl": "https://github.com/saccoe",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/3680995?v=4"
+    },
+    {
+      "login": "sfavaron-hu",
+      "contributions": 1,
+      "htmlUrl": "https://github.com/sfavaron-hu",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/178426337?v=4"
+    }
+  ]
+}

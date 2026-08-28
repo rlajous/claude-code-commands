@@ -79,6 +79,7 @@ export default defineConfig({
           items: [
             { label: 'Git Workflow', link: '/git-workflow/' },
             { label: 'Installation', link: '/git-workflow/installation/' },
+            { label: 'Contributing', link: '/git-workflow/contributing/' },
           ],
         },
         {

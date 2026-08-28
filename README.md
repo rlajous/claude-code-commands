@@ -2,7 +2,7 @@
 
 An agent-neutral package of 20 skills, eight specialized agents, and opt-in hooks for Git, pull requests, releases, QA, and desktop notifications. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
-[Documentation](https://agents.navarrolajous.com/) · [Installation](https://agents.navarrolajous.com/git-workflow/installation/) · [Latest release](https://github.com/rlajous/claude-code-commands/releases/latest)
+[Documentation](https://agents.navarrolajous.com/) · [Installation](https://agents.navarrolajous.com/git-workflow/installation/) · [Contributing](https://agents.navarrolajous.com/git-workflow/contributing/) · [Latest release](https://github.com/rlajous/claude-code-commands/releases/latest)
 
 [![Agent Tooling documentation showing Git Workflow support for Claude Code and Codex.](docs/assets/agent-tooling-site.png)](https://agents.navarrolajous.com/)
 
@@ -217,6 +217,8 @@ $update --force
 ```
 
 ## Development
+
+Community contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing shared skills, agents, hooks, packaging, or the documentation site.
 
 After changing a canonical agent, regenerate the committed Codex definitions:
 

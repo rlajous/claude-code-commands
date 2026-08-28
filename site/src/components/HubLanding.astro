@@ -4,12 +4,14 @@ import Button from './ui/Button.astro';
 import Card from './ui/Card.astro';
 import CardContent from './ui/CardContent.astro';
 import CardHeader from './ui/CardHeader.astro';
+import CommunityLedger from './CommunityLedger.astro';
 import IconGlyph from './ui/IconGlyph.astro';
 import Item from './ui/Item.astro';
 import Kbd from './ui/Kbd.astro';
 import NotificationStage from './NotificationStage.astro';
 import TabPanel from './ui/TabPanel.astro';
 import Tabs from './ui/Tabs.astro';
+import communitySnapshot from '../data/github-community.json';
 
 const version = import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION;
 const skillCount = import.meta.env.PUBLIC_GIT_WORKFLOW_SKILL_COUNT;
@@ -67,8 +69,9 @@ const workflow = [
       <p>From issue to release, give your agent a workflow it can follow—and your team evidence it can trust.</p>
       <div class="hero-actions">
         <Button href="/git-workflow/installation/">Install Git Workflow <IconGlyph name="arrow-right" /></Button>
-        <Button href="https://github.com/rlajous/claude-code-commands" variant="outline">
-          <IconGlyph name="github" /> View on GitHub
+        <Button href="https://github.com/rlajous/claude-code-commands" variant="outline" class="hero-github-action" ariaLabel={`View Git Workflow on GitHub. ${communitySnapshot.stars} stars`}>
+          <span class="hero-github-label"><IconGlyph name="github" /> View on GitHub</span>
+          <span class="hero-star-count" aria-hidden="true"><IconGlyph name="star" size={13} /><span data-community-stars>{communitySnapshot.stars}</span></span>
         </Button>
       </div>
       <p class="hero-assurance">
@@ -229,6 +232,8 @@ $status</code></pre>
       ))}
     </div>
   </section>
+
+  <CommunityLedger />
 
   <section class="closing-call" aria-labelledby="closing-title" data-reveal>
     <Badge variant="secondary">Open source · MIT licensed</Badge>
