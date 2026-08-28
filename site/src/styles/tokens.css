@@ -168,6 +168,7 @@
   --sl-content-width: 48rem;
   --sl-content-pad-x: clamp(1rem, 3vw, 2rem);
   --sl-nav-height: 4rem;
+
   color-scheme: light;
 }
 
@@ -220,5 +221,6 @@
   --sl-color-gray-5: var(--border);
   --sl-color-gray-6: var(--muted);
   --sl-color-black: var(--background);
+
   color-scheme: dark;
 }

@@ -44,11 +44,16 @@ def run(*args: str, input_bytes: bytes | None = None) -> subprocess.CompletedPro
 
 
 def read_global_setting(name: str) -> dict[str, Any]:
-    """Capture whether a global default exists and its normalized text value."""
+    """Capture one global default, treating only macOS' missing-key error as absence."""
     try:
         value = run("defaults", "read", "NSGlobalDomain", name).stdout.decode().strip()
-    except subprocess.CalledProcessError:
-        return {"present": False, "value": None}
+    except subprocess.CalledProcessError as error:
+        diagnostics = b"\n".join(filter(None, (error.stdout, error.stderr))).decode(
+            errors="replace"
+        )
+        if "does not exist" in diagnostics.casefold():
+            return {"present": False, "value": None}
+        raise
     return {"present": True, "value": value}
 
 

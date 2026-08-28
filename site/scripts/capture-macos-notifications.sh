@@ -15,6 +15,7 @@ surface_pid=""
 preferences_before=""
 script_editor_started=0
 runner_snapshot_created=0
+preserve_temporary_dir=0
 
 usage() {
   cat <<'EOF'
@@ -99,6 +100,8 @@ cleanup() {
     if ! python3 "$preference_script" restore --snapshot "$runner_snapshot" \
       >>"$output_dir/notification-preferences.log" 2>&1; then
       printf '%s\n' 'Unable to restore the runner macOS preferences; see notification-preferences.log.' >&2
+      printf 'Recovery snapshot retained at: %s\n' "$runner_snapshot" >&2
+      preserve_temporary_dir=1
       exit_code=1
     fi
     restart_notification_services
@@ -111,7 +114,9 @@ cleanup() {
   if [ "$script_editor_started" -eq 1 ]; then
     osascript -e 'tell application id "com.apple.ScriptEditor2" to quit' >/dev/null 2>&1 || true
   fi
-  rm -rf "$temporary_dir"
+  if [ "$preserve_temporary_dir" -eq 0 ]; then
+    rm -rf "$temporary_dir"
+  fi
 
   if [ "$mode" = "local" ] && [ -n "$preferences_before" ]; then
     local preferences_after

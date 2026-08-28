@@ -29,6 +29,7 @@ class FakeDefaults:
         self.calls: list[tuple[str, ...]] = []
         self.fail_exports = 0
         self.fail_imports = 0
+        self.fail_reads: set[str] = set()
 
     def __call__(
         self,
@@ -46,8 +47,14 @@ class FakeDefaults:
             return subprocess.CompletedProcess(args, 0, output, b"")
         if command[:2] == ("read", "NSGlobalDomain"):
             name = command[2]
+            if name in self.fail_reads:
+                raise subprocess.CalledProcessError(1, args, stderr=b"permission denied")
             if name not in self.globals:
-                raise subprocess.CalledProcessError(1, args, stderr=b"missing")
+                raise subprocess.CalledProcessError(
+                    1,
+                    args,
+                    stderr=b"The domain/default pair does not exist",
+                )
             return subprocess.CompletedProcess(args, 0, f"{self.globals[name]}\n".encode(), b"")
         if command[:2] == ("write", "NSGlobalDomain"):
             self.globals[command[2]] = command[4]
@@ -114,6 +121,15 @@ class PreferenceLifecycleTests(unittest.TestCase):
         """Refuse prepare authorization when Notification Center cannot be backed up."""
         fake = FakeDefaults()
         fake.fail_exports = 1
+        with tempfile.TemporaryDirectory() as directory, patch.object(PREFERENCES, "run", fake):
+            with self.assertRaises(subprocess.CalledProcessError):
+                PREFERENCES.write_snapshot(self.snapshot_path(directory))
+        self.assertFalse(any(call[1] in {"write", "import", "delete"} for call in fake.calls))
+
+    def test_unexpected_global_read_failure_prevents_all_mutation(self) -> None:
+        """Propagate permission and transport failures instead of recording false absence."""
+        fake = FakeDefaults()
+        fake.fail_reads.add("AppleInterfaceStyle")
         with tempfile.TemporaryDirectory() as directory, patch.object(PREFERENCES, "run", fake):
             with self.assertRaises(subprocess.CalledProcessError):
                 PREFERENCES.write_snapshot(self.snapshot_path(directory))

@@ -29,6 +29,18 @@ for (const route of primaryRoutes) {
   });
 }
 
+test('landing hero wraps without overflow below the supported mobile viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'One Chromium project covers the narrow viewport regression.');
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/');
+  await expect(page.locator('.hero-line').first()).toHaveCSS('white-space', 'normal');
+  const dimensions = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+});
+
 test('landing page presents both hosts and real evidence', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: /Ship software with agents/ })).toBeVisible();
