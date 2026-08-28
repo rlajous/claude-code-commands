@@ -463,6 +463,34 @@ test('Mermaid workflows render as responsive process maps while Markdown keeps t
   }
 });
 
+test('documentation tables fill the content width and reflow into labeled records', async ({ page }, testInfo) => {
+  await page.goto('/git-workflow/review-watch/');
+  const table = page.locator('table').filter({ hasText: 'Show the drafted review and request confirmation' });
+  await expect(table).toHaveAttribute('data-responsive-table', '');
+  await expect(table.locator('th').first()).toHaveAttribute('scope', 'col');
+  await expect(table.locator('tbody td').first()).toHaveAttribute('data-label', 'Value');
+  await expect(table.locator('.table-cell-value')).toHaveCount(6);
+
+  const geometry = await table.evaluate((element) => ({
+    display: getComputedStyle(element).display,
+    width: element.getBoundingClientRect().width,
+    parentWidth: element.parentElement?.getBoundingClientRect().width ?? 0,
+    headerClip: getComputedStyle((element as HTMLTableElement).tHead!).clipPath,
+    firstRowDisplay: getComputedStyle((element as HTMLTableElement).tBodies[0].rows[0]).display,
+    documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  expect(geometry.documentOverflow).toBeLessThanOrEqual(1);
+
+  if (testInfo.project.name === 'desktop') {
+    expect(geometry.display).toBe('table');
+    expect(Math.abs(geometry.width - geometry.parentWidth)).toBeLessThanOrEqual(1);
+  } else {
+    expect(geometry.display).toBe('block');
+    expect(geometry.headerClip).toBe('inset(50%)');
+    expect(geometry.firstRowDisplay).toBe('grid');
+  }
+});
+
 test('mobile documentation navigation opens without hiding core controls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'The menu trigger is only visible on mobile.');
   await page.goto('/git-workflow/notifications/');

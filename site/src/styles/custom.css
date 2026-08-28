@@ -178,20 +178,53 @@ site-search dialog {
 .sl-markdown-content a:not([class]) { color: var(--primary-strong); text-underline-offset: 0.2em; }
 .sl-markdown-content a:not([class]):hover { color: var(--primary-hover); }
 
-.sl-markdown-content table {
+.sl-markdown-content table[data-responsive-table] {
+  display: table;
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--card);
+  box-shadow: var(--shadow-sm);
   font-size: 0.88rem;
   overflow: hidden;
+  table-layout: auto;
 }
 
-.sl-markdown-content th {
+.sl-markdown-content table[data-responsive-table] th {
   background: var(--muted);
   color: var(--foreground);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.sl-markdown-content table[data-responsive-table] :where(th, td) {
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-xs);
+  text-align: left;
+  vertical-align: top;
+}
+
+.sl-markdown-content table[data-responsive-table] :where(th, td) + :where(th, td) {
+  border-left: 1px solid var(--border);
+}
+
+.sl-markdown-content table[data-responsive-table] tbody tr:last-child > td { border-bottom: 0; }
+.sl-markdown-content table[data-responsive-table] tbody tr:nth-child(even) { background: var(--muted); }
+.sl-markdown-content table[data-responsive-table] td[data-primary='true'] { color: var(--foreground); font-weight: 650; }
+.sl-markdown-content table[data-responsive-table] .table-cell-value { min-width: 0; overflow-wrap: anywhere; }
+.sl-markdown-content table[data-responsive-table] .table-cell-value > :first-child { margin-top: 0; }
+.sl-markdown-content table[data-responsive-table] .table-cell-value > :last-child { margin-bottom: 0; }
+.sl-markdown-content table[data-responsive-table] td:has(.table-cell-value > img) { padding: var(--space-2xs); }
+
+.sl-markdown-content table[data-responsive-table] td code {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .sl-markdown-content :not(pre) > code {
@@ -357,6 +390,66 @@ site-search dialog {
   color: var(--muted-foreground);
   font: 700 var(--text-caption)/1.2 var(--font-mono);
   text-transform: uppercase;
+}
+
+@media (max-width: 50rem) {
+  .sl-markdown-content table[data-responsive-table] {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .sl-markdown-content table[data-responsive-table] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sl-markdown-content table[data-responsive-table] tbody {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .sl-markdown-content table[data-responsive-table] tbody tr {
+    display: grid;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .sl-markdown-content table[data-responsive-table] tbody td {
+    display: grid;
+    align-items: start;
+    gap: var(--space-xs);
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-xs);
+    grid-template-columns: minmax(5rem, 0.55fr) minmax(0, 1.45fr);
+  }
+
+  .sl-markdown-content table[data-responsive-table] tbody td:last-child { border-bottom: 0; }
+
+  .sl-markdown-content table[data-responsive-table] tbody td::before {
+    color: var(--muted-foreground);
+    content: attr(data-label);
+    font: 700 var(--text-caption)/1.35 var(--font-mono);
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  .sl-markdown-content table[data-responsive-table] tbody td:has(.table-cell-value > img) {
+    gap: var(--space-2xs);
+    padding: var(--space-xs);
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @container (max-width: 38rem) {
