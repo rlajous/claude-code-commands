@@ -24,7 +24,7 @@ npm run test:site
 npm run test:lighthouse
 ```
 
-The Lighthouse runner stores reports locally under `.lighthouseci/`; it does not upload results. The site loads no analytics, remote fonts, or third-party runtime resources.
+The Lighthouse runner stores reports locally under `.lighthouseci/`; it does not upload results. The site loads no analytics or remote fonts. The landing page makes two deferred, unauthenticated GitHub API requests for repository counters and contributors, and loads contributor avatars only from `avatars.githubusercontent.com`; a checked-in snapshot remains usable when those resources are unavailable.
 
 ## Content rules
 
@@ -33,6 +33,7 @@ The Lighthouse runner stores reports locally under `.lighthouseci/`; it does not
 - Site-specific hub copy belongs in `src/components/HubLanding.astro`.
 - Do not commit `dist/`, generated content, responsive derivatives, test results, or dependencies.
 - Keep Claude invocation as `/skill-name` and Codex invocation as `$skill-name`.
+- Keep runtime requests limited to the documented GitHub community endpoints. Validate all remote data and retain a complete static fallback.
 
 ## Deployment and custom domain
 

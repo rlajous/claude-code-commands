@@ -1,0 +1,363 @@
+---
+import snapshot from '../data/github-community.json';
+import Badge from './ui/Badge.astro';
+import Button from './ui/Button.astro';
+import IconGlyph from './ui/IconGlyph.astro';
+
+const version = import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION;
+const repositoryUrl = 'https://github.com/rlajous/claude-code-commands';
+const visibleContributors = snapshot.contributors.slice(0, 12);
+const snapshotDate = new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(new Date(snapshot.capturedAt));
+
+/** Derive a stable two-character fallback without exposing extra profile data. */
+const initialsFor = (login: string) => login.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || 'GH';
+---
+
+<github-community data-community-root>
+  <section id="community" class="community-section" aria-labelledby="community-title" data-reveal>
+    <header class="community-heading">
+      <div>
+        <Badge variant="outline">Built in public</Badge>
+        <h2 id="community-title">The workflow gets better in the open.</h2>
+      </div>
+      <div class="community-intro">
+        <p>Every star, fork, and contribution helps turn one developer’s workflow into shared infrastructure for agent-assisted software.</p>
+        <p class="community-freshness">
+          <span class="community-source-mark" aria-hidden="true"></span>
+          <span data-community-source>GitHub snapshot</span>
+          <time data-community-time datetime={snapshot.capturedAt}>{snapshotDate}</time>
+        </p>
+      </div>
+    </header>
+
+    <div class="community-ledger">
+      <nav class="community-metrics" aria-label="GitHub repository activity">
+        <a href={`${repositoryUrl}/stargazers`} aria-label={`${snapshot.stars} GitHub stars. View stargazers`}>
+          <span><IconGlyph name="star" size={15} />Stars</span>
+          <strong data-community-stars>{snapshot.stars}</strong>
+          <IconGlyph name="arrow-right" size={15} />
+        </a>
+        <a href={`${repositoryUrl}/forks`} aria-label={`${snapshot.forks} GitHub forks. View forks`}>
+          <span><IconGlyph name="fork" size={15} />Forks</span>
+          <strong data-community-forks>{snapshot.forks}</strong>
+          <IconGlyph name="arrow-right" size={15} />
+        </a>
+        <a href={`${repositoryUrl}/graphs/contributors`} aria-label={`${snapshot.contributors.length} contributors. View contributor graph`}>
+          <span><IconGlyph name="users" size={15} />Contributors</span>
+          <strong data-community-total>{snapshot.contributors.length}</strong>
+          <IconGlyph name="arrow-right" size={15} />
+        </a>
+        <a href={`${repositoryUrl}/releases/latest`} aria-label={`Latest release ${version}. View release notes`}>
+          <span><IconGlyph name="tag" size={15} />Latest release</span>
+          <strong>v{version}</strong>
+          <IconGlyph name="arrow-right" size={15} />
+        </a>
+      </nav>
+
+      <div class="community-contributors">
+        <div class="contributors-heading">
+          <div>
+            <p class="community-eyebrow">People behind the commits</p>
+            <h3>Built by humans, used by agents.</h3>
+          </div>
+          <a href={`${repositoryUrl}/graphs/contributors`}>View everyone <IconGlyph name="arrow-right" size={14} /></a>
+        </div>
+
+        <ul data-community-contributors aria-label="Repository contributors">
+          {visibleContributors.map((contributor) => (
+            <li>
+              <a href={contributor.htmlUrl} aria-label={`${contributor.login}, ${contributor.contributions} ${contributor.contributions === 1 ? 'contribution' : 'contributions'}`}>
+                <span class="contributor-avatar" data-contributor-avatar>
+                  <span aria-hidden="true">{initialsFor(contributor.login)}</span>
+                  <img
+                    src={contributor.avatarUrl}
+                    alt=""
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                  />
+                </span>
+                <span class="contributor-identity"><strong>@{contributor.login}</strong><small>{contributor.contributions} {contributor.contributions === 1 ? 'contribution' : 'contributions'}</small></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <p class="contributors-overflow" data-community-overflow hidden></p>
+        <div class="community-actions">
+          <Button href="/git-workflow/contributing/">Contribute to Git Workflow <IconGlyph name="arrow-right" /></Button>
+          <Button href={repositoryUrl} variant="ghost"><IconGlyph name="github" />View the repository</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</github-community>
+
+<script>
+  interface GitHubContributor {
+    type: 'User';
+    login: string;
+    contributions: number;
+    htmlUrl: string;
+    avatarUrl: string;
+  }
+
+  interface CommunityData {
+    stars: number;
+    forks: number;
+    contributors: GitHubContributor[];
+  }
+
+  interface CachedCommunityData extends CommunityData {
+    storedAt: number;
+  }
+
+  const REPOSITORY_API = 'https://api.github.com/repos/rlajous/claude-code-commands';
+  const CONTRIBUTORS_API = `${REPOSITORY_API}/contributors?per_page=100`;
+  const CACHE_KEY = 'agent-tooling:github-community:v1';
+  const CACHE_DURATION = 15 * 60 * 1000;
+  const REQUEST_TIMEOUT = 4_000;
+  const MAX_VISIBLE_CONTRIBUTORS = 12;
+
+  /** Accept only finite, non-negative GitHub counters before touching the page. */
+  const validCount = (value: unknown): value is number => (
+    typeof value === 'number' && Number.isInteger(value) && value >= 0
+  );
+
+  /** Restrict remote links to the two GitHub origins explicitly allowed by the site contract. */
+  const validGitHubUrl = (value: unknown, host: 'github.com' | 'avatars.githubusercontent.com') => {
+    if (typeof value !== 'string') return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && url.hostname === host;
+    } catch {
+      return false;
+    }
+  };
+
+  /** Normalize a GitHub contributor record and reject bots or incomplete external data. */
+  const parseContributor = (value: unknown): GitHubContributor | undefined => {
+    if (!value || typeof value !== 'object') return undefined;
+    const record = value as Record<string, unknown>;
+    if (
+      record.type !== 'User'
+      || typeof record.login !== 'string'
+      || !record.login.trim()
+      || /(?:\[bot\]|[-_]bot)$/i.test(record.login)
+      || !validCount(record.contributions)
+      || !validGitHubUrl(record.html_url ?? record.htmlUrl, 'github.com')
+      || !validGitHubUrl(record.avatar_url ?? record.avatarUrl, 'avatars.githubusercontent.com')
+    ) return undefined;
+
+    return {
+      type: 'User',
+      login: record.login,
+      contributions: record.contributions,
+      htmlUrl: String(record.html_url ?? record.htmlUrl),
+      avatarUrl: String(record.avatar_url ?? record.avatarUrl),
+    };
+  };
+
+  /** Validate cached or network data as one all-or-nothing community snapshot. */
+  const parseCommunityData = (value: unknown): CommunityData | undefined => {
+    if (!value || typeof value !== 'object') return undefined;
+    const record = value as Record<string, unknown>;
+    if (!validCount(record.stars) || !validCount(record.forks) || !Array.isArray(record.contributors)) return undefined;
+    const contributors = record.contributors
+      .map(parseContributor)
+      .filter((contributor): contributor is GitHubContributor => Boolean(contributor))
+      .sort((left, right) => right.contributions - left.contributions || left.login.localeCompare(right.login));
+    if (contributors.length === 0) return undefined;
+    return { stars: record.stars, forks: record.forks, contributors };
+  };
+
+  /** Build a safe two-letter fallback from a public GitHub login. */
+  const contributorInitials = (login: string) => login.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || 'GH';
+
+  class GitHubCommunity extends HTMLElement {
+    private observer?: IntersectionObserver;
+
+    /** Defer all storage and network work until the ledger approaches the viewport. */
+    connectedCallback() {
+      if (this.dataset.initialized === 'true') return;
+      this.dataset.initialized = 'true';
+      this.bindAvatarFallbacks(this);
+
+      if (!('IntersectionObserver' in window)) {
+        void this.loadCommunityData();
+        return;
+      }
+
+      this.observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        this.observer?.disconnect();
+        void this.loadCommunityData();
+      }, { rootMargin: '320px 0px', threshold: 0.01 });
+      this.observer.observe(this);
+    }
+
+    /** Release the viewport observer when Astro removes this page instance. */
+    disconnectedCallback() {
+      this.observer?.disconnect();
+    }
+
+    /** Use a fresh validated cache or fetch both GitHub resources under one deadline. */
+    private async loadCommunityData() {
+      const cached = this.readCache();
+      if (cached) {
+        this.render(cached);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      try {
+        const [repositoryResponse, contributorsResponse] = await Promise.all([
+          fetch(REPOSITORY_API, { signal: controller.signal }),
+          fetch(CONTRIBUTORS_API, { signal: controller.signal }),
+        ]);
+        if (!repositoryResponse.ok || !contributorsResponse.ok) return;
+
+        const [repository, contributors] = await Promise.all([
+          repositoryResponse.json(),
+          contributorsResponse.json(),
+        ]);
+        const data = parseCommunityData({
+          stars: repository?.stargazers_count,
+          forks: repository?.forks_count,
+          contributors,
+        });
+        if (!data) return;
+
+        this.writeCache(data);
+        this.render(data);
+      } catch {
+        // The checked-in snapshot remains visible for network, timeout, and storage failures.
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }
+
+    /** Read only current, schema-valid cache records and discard stale or corrupt values. */
+    private readCache(): CommunityData | undefined {
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as Partial<CachedCommunityData> | null;
+        const now = Date.now();
+        if (!cached || !validCount(cached.storedAt) || cached.storedAt > now || now - cached.storedAt >= CACHE_DURATION) {
+          return undefined;
+        }
+        return parseCommunityData(cached);
+      } catch {
+        return undefined;
+      }
+    }
+
+    /** Persist the minimal public community payload without making storage a requirement. */
+    private writeCache(data: CommunityData) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, storedAt: Date.now() }));
+      } catch {
+        // Private browsing and full storage must not prevent the live page update.
+      }
+    }
+
+    /** Replace snapshot values using text nodes and validated URLs only. */
+    private render(data: CommunityData) {
+      if (!this.isConnected) return;
+      document.querySelectorAll<HTMLElement>('[data-community-stars]').forEach((element) => {
+        element.textContent = data.stars.toLocaleString('en-US');
+      });
+      document.querySelectorAll<HTMLElement>('[data-community-forks]').forEach((element) => {
+        element.textContent = data.forks.toLocaleString('en-US');
+      });
+      document.querySelectorAll<HTMLElement>('[data-community-total]').forEach((element) => {
+        element.textContent = data.contributors.length.toLocaleString('en-US');
+      });
+
+      const heroLink = document.querySelector<HTMLAnchorElement>('.hero-github-action');
+      heroLink?.setAttribute('aria-label', `View Git Workflow on GitHub. ${data.stars.toLocaleString('en-US')} stars`);
+
+      const metrics = this.querySelectorAll<HTMLAnchorElement>('.community-metrics a');
+      metrics[0]?.setAttribute('aria-label', `${data.stars} GitHub stars. View stargazers`);
+      metrics[1]?.setAttribute('aria-label', `${data.forks} GitHub forks. View forks`);
+      metrics[2]?.setAttribute('aria-label', `${data.contributors.length} contributors. View contributor graph`);
+
+      const list = this.querySelector<HTMLUListElement>('[data-community-contributors]');
+      if (list) {
+        list.replaceChildren(...data.contributors.slice(0, MAX_VISIBLE_CONTRIBUTORS).map((contributor) => this.contributorItem(contributor)));
+        this.bindAvatarFallbacks(list);
+      }
+
+      const overflow = this.querySelector<HTMLElement>('[data-community-overflow]');
+      if (overflow) {
+        const remaining = Math.max(0, data.contributors.length - MAX_VISIBLE_CONTRIBUTORS);
+        overflow.hidden = remaining === 0;
+        overflow.textContent = remaining > 0 ? `+${remaining} more human contributors on GitHub` : '';
+      }
+
+      const source = this.querySelector<HTMLElement>('[data-community-source]');
+      const time = this.querySelector<HTMLTimeElement>('[data-community-time]');
+      if (source) source.textContent = 'Live from GitHub';
+      if (time) {
+        time.dateTime = new Date().toISOString();
+        time.textContent = 'updated now';
+      }
+      this.dataset.communityState = 'live';
+    }
+
+    /** Construct one accessible contributor link without interpolating remote HTML. */
+    private contributorItem(contributor: GitHubContributor) {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = contributor.htmlUrl;
+      link.setAttribute('aria-label', `${contributor.login}, ${contributor.contributions} ${contributor.contributions === 1 ? 'contribution' : 'contributions'}`);
+
+      const avatar = document.createElement('span');
+      avatar.className = 'contributor-avatar';
+      avatar.dataset.contributorAvatar = '';
+      const initials = document.createElement('span');
+      initials.ariaHidden = 'true';
+      initials.textContent = contributorInitials(contributor.login);
+      const image = document.createElement('img');
+      image.src = contributor.avatarUrl;
+      image.alt = '';
+      image.width = 48;
+      image.height = 48;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.referrerPolicy = 'no-referrer';
+      avatar.append(initials, image);
+
+      const identity = document.createElement('span');
+      identity.className = 'contributor-identity';
+      const login = document.createElement('strong');
+      login.textContent = `@${contributor.login}`;
+      const contributions = document.createElement('small');
+      contributions.textContent = `${contributor.contributions} ${contributor.contributions === 1 ? 'contribution' : 'contributions'}`;
+      identity.append(login, contributions);
+      link.append(avatar, identity);
+      item.append(link);
+      return item;
+    }
+
+    /** Reveal initials if a remote avatar is unavailable without shifting the contributor row. */
+    private bindAvatarFallbacks(root: ParentNode) {
+      root.querySelectorAll<HTMLImageElement>('[data-contributor-avatar] img').forEach((image) => {
+        if (image.dataset.fallbackBound === 'true') return;
+        image.dataset.fallbackBound = 'true';
+        image.addEventListener('error', () => {
+          image.closest<HTMLElement>('[data-contributor-avatar]')?.setAttribute('data-avatar-error', 'true');
+        }, { once: true });
+      });
+    }
+  }
+
+  if (!customElements.get('github-community')) customElements.define('github-community', GitHubCommunity);
+</script>

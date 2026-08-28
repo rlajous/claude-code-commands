@@ -17,6 +17,14 @@ export const contentMap = [
     order: 2,
   },
   {
+    source: 'CONTRIBUTING.md',
+    slug: 'git-workflow/contributing',
+    title: 'Contributing',
+    description: 'Contribute to Git Workflow while preserving shared Claude Code and Codex behavior, canonical resources, tests, and documentation quality.',
+    section: 'Start',
+    order: 3,
+  },
+  {
     source: 'docs/REVIEW_WATCH.md',
     slug: 'git-workflow/review-watch',
     title: 'Review Watch',

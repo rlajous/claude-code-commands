@@ -6,6 +6,7 @@ on:
     paths:
       - "site/**"
       - "README.md"
+      - "CONTRIBUTING.md"
       - "INSTALLATION.md"
       - "COMMANDS.md"
       - "CONFIGURATION.md"

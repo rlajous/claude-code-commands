@@ -1,8 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { unified } from '@astrojs/markdown-remark';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import starlight from '@astrojs/starlight';
+import responsiveTables from './scripts/rehype-responsive-tables.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const manifest = JSON.parse(readFileSync(new URL('../.codex-plugin/plugin.json', import.meta.url), 'utf8'));
@@ -14,6 +16,9 @@ const agentCount = readdirSync(new URL('../agents/', import.meta.url), { withFil
 export default defineConfig({
   site: 'https://agents.navarrolajous.com',
   output: 'static',
+  markdown: {
+    processor: unified({ rehypePlugins: [responsiveTables] }),
+  },
   vite: {
     define: {
       'import.meta.env.PUBLIC_GIT_WORKFLOW_VERSION': JSON.stringify(manifest.version),
@@ -79,6 +84,7 @@ export default defineConfig({
           items: [
             { label: 'Git Workflow', link: '/git-workflow/' },
             { label: 'Installation', link: '/git-workflow/installation/' },
+            { label: 'Contributing', link: '/git-workflow/contributing/' },
           ],
         },
         {

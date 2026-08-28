@@ -173,6 +173,66 @@ function responsiveMarkdownImages(markdown) {
   );
 }
 
+/** Convert the small supported Mermaid flowchart subset into semantic, responsive process maps. */
+function renderFlowcharts(markdown, source) {
+  let diagramIndex = 0;
+  return markdown.replace(/```mermaid\s*\n([\s\S]*?)```/g, (_, definition) => {
+    diagramIndex += 1;
+    const lines = definition.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!/^flowchart\s+(?:LR|RL|TD|TB)$/.test(lines.shift() ?? '')) {
+      throw new Error(`Unsupported Mermaid diagram in ${source}: only flowcharts are accepted`);
+    }
+
+    const labels = new Map();
+    const edges = [];
+    for (const line of lines) {
+      const edge = line.match(/^([A-Za-z][\w-]*)(?:\[([^\]]+)\])?\s*-->\s*(?:\|([^|]+)\|\s*)?([A-Za-z][\w-]*)(?:\[([^\]]+)\])?$/);
+      if (!edge) throw new Error(`Unsupported Mermaid edge in ${source}: ${line}`);
+      const [, sourceId, sourceLabel, edgeLabel, targetId, targetLabel] = edge;
+      if (sourceLabel) labels.set(sourceId, sourceLabel);
+      if (targetLabel) labels.set(targetId, targetLabel);
+      edges.push({ sourceId, targetId, label: edgeLabel?.trim() ?? '' });
+    }
+    if (edges.length === 0) throw new Error(`Empty Mermaid flowchart in ${source}`);
+
+    const groups = [];
+    const groupBySource = new Map();
+    for (const edge of edges) {
+      let group = groupBySource.get(edge.sourceId);
+      if (!group) {
+        group = { sourceId: edge.sourceId, edges: [] };
+        groupBySource.set(edge.sourceId, group);
+        groups.push(group);
+      }
+      group.edges.push(edge);
+    }
+
+    const cleanLabel = (value) => escapeHtml(value.replace(/<br\s*\/?\s*>/gi, ' · ').replace(/<[^>]+>/g, ''));
+    const title = source === 'docs/REVIEW_WATCH.md'
+      ? 'From review request to ready for merge'
+      : source === 'docs/NOTIFICATIONS.md'
+        ? 'One daemon, two notification channels'
+        : `Workflow ${diagramIndex}`;
+    const diagramId = `workflow-${normalizeRelative(source).replace(/[^a-z0-9]+/gi, '-')}-${diagramIndex}`;
+    const steps = groups.map((group, index) => {
+      const targets = group.edges.map((edge) => {
+        const state = /blocking|request_changes/i.test(`${edge.label} ${labels.get(edge.targetId) ?? ''}`)
+          ? 'blocking'
+          : /clean|approve|ready/i.test(`${edge.label} ${labels.get(edge.targetId) ?? ''}`)
+            ? 'positive'
+            : 'neutral';
+        const edgeLabel = edge.label
+          ? `<span class="workflow-edge-label">${cleanLabel(edge.label)}</span>`
+          : '';
+        return `<li class="workflow-target" data-state="${state}">${edgeLabel}<strong>${cleanLabel(labels.get(edge.targetId) ?? edge.targetId)}</strong></li>`;
+      }).join('');
+      return `<li class="workflow-step"><div class="workflow-source"><span>${String(index + 1).padStart(2, '0')}</span><strong>${cleanLabel(labels.get(group.sourceId) ?? group.sourceId)}</strong></div><span class="workflow-connector" aria-hidden="true"></span><ul class="workflow-targets">${targets}</ul></li>`;
+    }).join('');
+
+    return `<figure class="workflow-diagram" aria-labelledby="${diagramId}"><figcaption id="${diagramId}"><span>Process map</span><strong>${escapeHtml(title)}</strong><small>${groups.length} handoffs</small></figcaption><ol class="workflow-steps">${steps}</ol></figure>`;
+  });
+}
+
 /** Build deterministic Starlight frontmatter for one declarative content entry. */
 function frontmatter(entry) {
   const values = [
@@ -214,7 +274,8 @@ for (const entry of contentMap) {
     throw new Error(`Missing canonical content source: ${entry.source}`, { cause: error });
   }
 
-  const body = await rewriteMarkdown(stripFirstHeading(stripFrontmatter(markdown)).trim(), entry.source);
+  const markdownBody = await rewriteMarkdown(stripFirstHeading(stripFrontmatter(markdown)).trim(), entry.source);
+  const body = renderFlowcharts(markdownBody, entry.source);
   const rendered = `${frontmatter(entry)}${body}\n`;
   const generatedPath = join(generatedDocs, `${entry.slug}.md`);
   await mkdir(dirname(generatedPath), { recursive: true });
@@ -222,7 +283,7 @@ for (const entry of contentMap) {
 
   const mirrorPath = join(publicRoot, entry.slug, 'index.md');
   await mkdir(dirname(mirrorPath), { recursive: true });
-  await writeFile(mirrorPath, `# ${entry.title}\n\n> ${entry.description}\n\n${body}\n`);
+  await writeFile(mirrorPath, `# ${entry.title}\n\n> ${entry.description}\n\n${markdownBody}\n`);
   generatedEntries.push({ ...entry, route: routeForSlug(entry.slug) });
 }
 

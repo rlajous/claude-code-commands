@@ -1,7 +1,45 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const primaryRoutes = ['/', '/git-workflow/', '/git-workflow/review-watch/'];
+const repositoryApi = 'https://api.github.com/repos/rlajous/claude-code-commands';
+const contributorsApi = `${repositoryApi}/contributors?per_page=100`;
+const communityCacheKey = 'agent-tooling:github-community:v1';
+
+/** Return one complete human contributor fixture using the production GitHub origins. */
+function contributor(login: string, contributions: number) {
+  return {
+    type: 'User',
+    login,
+    contributions,
+    html_url: `https://github.com/${login}`,
+    avatar_url: `https://avatars.githubusercontent.com/u/${contributions + 1000}?v=4`,
+  };
+}
+
+/** Fulfill the two public GitHub endpoints with deterministic community data. */
+async function mockCommunityApi(page: Page, options: {
+  stars?: number;
+  forks?: number;
+  contributors?: unknown[];
+  status?: number;
+} = {}) {
+  const requests: string[] = [];
+  await page.route(`${repositoryApi}**`, async (route) => {
+    const url = route.request().url();
+    requests.push(url);
+    const body = url === contributorsApi
+      ? (options.contributors ?? [contributor('rlajous', 26)])
+      : { stargazers_count: options.stars ?? 42, forks_count: options.forks ?? 3 };
+    await route.fulfill({
+      status: options.status ?? 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  });
+  await page.route('https://avatars.githubusercontent.com/**', (route) => route.abort());
+  return requests;
+}
 
 /** Calculate the WCAG contrast ratio for two computed RGB colors. */
 function contrastRatio(foreground: string, background: string) {
@@ -56,6 +94,181 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
     images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)
   ))).toBe(true);
   await expect(page.locator('.brief-preview')).toHaveAttribute('href', '/git-workflow/examples/pr-23/');
+});
+
+test('community data is deferred, validated, sorted, and limited to twelve humans', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers the shared data contract.');
+  const humans = [
+    contributor('rlajous', 50),
+    ...Array.from({ length: 13 }, (_, index) => contributor(`contributor-${String(index + 1).padStart(2, '0')}`, 40 - index)),
+  ];
+  const requests = await mockCommunityApi(page, {
+    stars: 128,
+    forks: 17,
+    contributors: [
+      ...humans.reverse(),
+      { ...contributor('release-bot', 999), type: 'Bot' },
+      { type: 'User', login: '', contributions: 12 },
+    ],
+  });
+
+  await page.goto('/');
+  await expect(page.locator('[data-community-source]')).toHaveText('GitHub snapshot');
+  expect(requests).toEqual([]);
+
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-community-source]')).toHaveText('Live from GitHub');
+  expect(requests.sort()).toEqual([contributorsApi, repositoryApi].sort());
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('128');
+  await expect(page.locator('[data-community-forks]')).toHaveText('17');
+  await expect(page.locator('[data-community-total]')).toHaveText('14');
+  await expect(page.locator('[data-community-contributors] li')).toHaveCount(12);
+  await expect(page.locator('[data-community-contributors] li').first()).toContainText('@rlajous');
+  await expect(page.locator('[data-community-contributors]')).not.toContainText('release-bot');
+  await expect(page.locator('[data-community-overflow]')).toHaveText('+2 more human contributors on GitHub');
+  await expect(page.locator('.hero-github-action')).toHaveAttribute('aria-label', 'View Git Workflow on GitHub. 128 stars');
+  await expect(page.getByRole('link', { name: '128 GitHub stars. View stargazers' })).toHaveAttribute('href', 'https://github.com/rlajous/claude-code-commands/stargazers');
+});
+
+test('community cache prevents repeat API calls until it expires', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers the shared cache contract.');
+  await page.addInitScript(({ key }) => {
+    localStorage.setItem(key, JSON.stringify({
+      storedAt: Date.now(),
+      stars: 77,
+      forks: 8,
+      contributors: [{
+        type: 'User',
+        login: 'cached-user',
+        contributions: 5,
+        htmlUrl: 'https://github.com/cached-user',
+        avatarUrl: 'https://avatars.githubusercontent.com/u/1005?v=4',
+      }],
+    }));
+  }, { key: communityCacheKey });
+  let requestCount = 0;
+  await page.route(`${repositoryApi}**`, (route) => {
+    requestCount += 1;
+    return route.abort();
+  });
+  await page.route('https://avatars.githubusercontent.com/**', (route) => route.abort());
+
+  for (let visit = 0; visit < 2; visit += 1) {
+    await page.goto('/');
+    await page.locator('#community').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-community-source]')).toHaveText('Live from GitHub');
+    await expect(page.locator('[data-community-stars]').first()).toHaveText('77');
+  }
+  expect(requestCount).toBe(0);
+});
+
+test('expired community cache refetches GitHub and replaces stale values', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers cache expiry.');
+  await page.addInitScript(({ key }) => {
+    localStorage.setItem(key, JSON.stringify({
+      storedAt: Date.now() - (16 * 60 * 1000),
+      stars: 1,
+      forks: 1,
+      contributors: [{
+        type: 'User', login: 'stale', contributions: 1,
+        htmlUrl: 'https://github.com/stale', avatarUrl: 'https://avatars.githubusercontent.com/u/1001?v=4',
+      }],
+    }));
+  }, { key: communityCacheKey });
+  const requests = await mockCommunityApi(page, { stars: 91, forks: 11 });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('91');
+  expect(requests).toHaveLength(2);
+});
+
+test('future-dated community cache is rejected and refetched', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers invalid future cache timestamps.');
+  await page.addInitScript(({ key }) => {
+    localStorage.setItem(key, JSON.stringify({
+      storedAt: Date.now() + (60 * 1000),
+      stars: 1,
+      forks: 1,
+      contributors: [{
+        type: 'User', login: 'future', contributions: 1,
+        htmlUrl: 'https://github.com/future', avatarUrl: 'https://avatars.githubusercontent.com/u/1001?v=4',
+      }],
+    }));
+  }, { key: communityCacheKey });
+  const requests = await mockCommunityApi(page, { stars: 92, forks: 12 });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('92');
+  expect(requests).toHaveLength(2);
+});
+
+test('GitHub errors and malformed data preserve the complete static snapshot', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers fallback behavior.');
+  await mockCommunityApi(page, { status: 403 });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
+  await expect(page.locator('[data-community-source]')).toHaveText('GitHub snapshot');
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('30');
+  await expect(page.locator('[data-community-contributors] li')).toHaveCount(4);
+  await expect(page.getByRole('link', { name: 'Contribute to Git Workflow' })).toHaveAttribute('href', '/git-workflow/contributing/');
+
+  await page.unrouteAll({ behavior: 'wait' });
+  await page.route(`${repositoryApi}**`, (route) => route.fulfill({
+    status: 200,
+    headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+    body: JSON.stringify(route.request().url() === contributorsApi ? [{ type: 'User', login: 'unsafe', contributions: 2, html_url: 'https://example.com/unsafe', avatar_url: 'https://example.com/avatar.png' }] : { stargazers_count: 'many', forks_count: -1 }),
+  }));
+  await page.reload();
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
+  await expect(page.locator('[data-community-source]')).toHaveText('GitHub snapshot');
+  await expect(page.locator('[data-community-contributors]')).not.toContainText('unsafe');
+});
+
+test('community requests abort after the deadline without replacing the snapshot', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers the four-second request deadline.');
+  await page.route(`${repositoryApi}**`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    await route.fulfill({ status: 200, body: '{}' }).catch(() => undefined);
+  });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(4_250);
+  await expect(page.locator('[data-community-source]')).toHaveText('GitHub snapshot');
+  await expect(page.locator('[data-community-stars]').first()).toHaveText('30');
+});
+
+test('community avatars fall back to initials and long contributor names do not overflow', async ({ page }) => {
+  const longName = 'a-very-long-human-contributor-name-for-responsive-layouts';
+  await mockCommunityApi(page, { contributors: [contributor(longName, 12), contributor('rlajous', 10)] });
+  await page.goto('/');
+  await page.locator('#community').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-community-source]')).toHaveText('Live from GitHub');
+  await expect(page.locator('[data-contributor-avatar][data-avatar-error="true"]').first()).toBeVisible();
+  const dimensions = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+});
+
+test('community ledger is accessible in light and dark themes', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'One desktop project covers both shared theme states.');
+  await page.route(`${repositoryApi}**`, (route) => route.abort());
+  await page.route('https://avatars.githubusercontent.com/**', (route) => route.abort());
+  for (const theme of ['light', 'dark']) {
+    await page.addInitScript((preference) => localStorage.setItem('starlight-theme', preference), theme);
+    await page.goto('/');
+    await page.locator('#community').scrollIntoViewIfNeeded();
+    await expect(page.locator('#community')).toHaveAttribute('data-reveal-state', 'visible');
+    await page.waitForTimeout(600);
+    const results = await new AxeBuilder({ page })
+      .include('#community')
+      .exclude('astro-dev-toolbar')
+      .analyze();
+    expect(results.violations).toEqual([]);
+  }
 });
 
 test('notification evidence plays once, pauses, replays, and supports direct selection', async ({ page }) => {
@@ -225,6 +438,59 @@ test('documentation shell exposes navigation, command search, and active sidebar
   await expect(page.getByRole('dialog', { name: 'Search' })).not.toBeVisible();
 });
 
+test('Mermaid workflows render as responsive process maps while Markdown keeps the source', async ({ page, request }) => {
+  const diagrams = [
+    { route: '/git-workflow/review-watch/', markdown: '/git-workflow/review-watch/index.md', steps: 8, title: 'From review request to ready for merge' },
+    { route: '/git-workflow/notifications/', markdown: '/git-workflow/notifications/index.md', steps: 7, title: 'One daemon, two notification channels' },
+  ];
+
+  for (const diagram of diagrams) {
+    await page.goto(diagram.route);
+    const figure = page.locator('.workflow-diagram');
+    await expect(figure).toBeVisible();
+    await expect(figure.locator('figcaption')).toContainText(diagram.title);
+    await expect(figure.locator('.workflow-step')).toHaveCount(diagram.steps);
+    await expect(page.getByText('flowchart LR', { exact: true })).toHaveCount(0);
+    const dimensions = await figure.evaluate((element) => ({
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    }));
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+
+    const markdown = await request.get(diagram.markdown);
+    expect(markdown.ok()).toBe(true);
+    expect(await markdown.text()).toContain('```mermaid');
+  }
+});
+
+test('documentation tables fill the content width and reflow into labeled records', async ({ page }, testInfo) => {
+  await page.goto('/git-workflow/review-watch/');
+  const table = page.locator('table').filter({ hasText: 'Show the drafted review and request confirmation' });
+  await expect(table).toHaveAttribute('data-responsive-table', '');
+  await expect(table.locator('th').first()).toHaveAttribute('scope', 'col');
+  await expect(table.locator('tbody td').first()).toHaveAttribute('data-label', 'Value');
+  await expect(table.locator('.table-cell-value')).toHaveCount(6);
+
+  const geometry = await table.evaluate((element) => ({
+    display: getComputedStyle(element).display,
+    width: element.getBoundingClientRect().width,
+    parentWidth: element.parentElement?.getBoundingClientRect().width ?? 0,
+    headerClip: getComputedStyle((element as HTMLTableElement).tHead!).clipPath,
+    firstRowDisplay: getComputedStyle((element as HTMLTableElement).tBodies[0].rows[0]).display,
+    documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  expect(geometry.documentOverflow).toBeLessThanOrEqual(1);
+
+  if (testInfo.project.name === 'desktop') {
+    expect(geometry.display).toBe('table');
+    expect(Math.abs(geometry.width - geometry.parentWidth)).toBeLessThanOrEqual(1);
+  } else {
+    expect(geometry.display).toBe('block');
+    expect(geometry.headerClip).toBe('inset(50%)');
+    expect(geometry.firstRowDisplay).toBe('grid');
+  }
+});
+
 test('mobile documentation navigation opens without hiding core controls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'The menu trigger is only visible on mobile.');
   await page.goto('/git-workflow/notifications/');
@@ -241,6 +507,14 @@ test('documentation exposes canonical, Markdown, llms, and structured data', asy
   await expect(page.locator('link[rel="describedby"]')).toHaveAttribute('href', 'https://agents.navarrolajous.com/git-workflow/llms.txt');
   const structuredData = await page.locator('script[type="application/ld+json"]').textContent();
   expect(structuredData).toContain('SoftwareSourceCode');
+});
+
+test('contributing guide is published with canonical and agent-readable alternatives', async ({ page }) => {
+  await page.goto('/git-workflow/contributing/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Contributing' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://agents.navarrolajous.com/git-workflow/contributing/');
+  await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute('href', 'https://agents.navarrolajous.com/git-workflow/contributing/index.md');
+  await expect(page.locator('.sidebar-content a[aria-current="page"]')).toContainText('Contributing');
 });
 
 test('product documentation prioritizes its above-the-fold evidence image', async ({ page }) => {
