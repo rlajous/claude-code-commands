@@ -224,6 +224,152 @@ site-search dialog {
 .pagination-links a:hover { border-color: var(--secondary-strong) !important; background: var(--accent); }
 .pagination-links .link-title { font-size: 1rem !important; font-weight: 700; }
 
+/* Build-time flowcharts: canonical Markdown keeps Mermaid, while the human page gets a responsive process map. */
+.workflow-diagram {
+  container-type: inline-size;
+  margin-block: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.workflow-diagram figcaption {
+  display: grid;
+  align-items: center;
+  gap: var(--space-3xs) var(--space-xs);
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  padding: var(--space-xs) var(--space-sm);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.workflow-diagram figcaption > span,
+.workflow-diagram figcaption > small {
+  color: var(--muted-foreground);
+  font: 700 var(--text-caption)/1.2 var(--font-mono);
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.workflow-diagram figcaption > strong {
+  color: var(--foreground);
+  font-size: var(--text-label);
+  line-height: 1.3;
+}
+
+.workflow-steps,
+.workflow-targets {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.workflow-step {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  grid-template-columns: minmax(9.5rem, 0.8fr) 2rem minmax(0, 1.4fr);
+}
+
+.workflow-step + .workflow-step { border-top: 1px solid var(--border); }
+
+.workflow-source,
+.workflow-target {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--popover);
+  color: var(--foreground);
+}
+
+.workflow-source {
+  display: grid;
+  min-height: 3.25rem;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-xs);
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.workflow-source > span {
+  color: var(--primary-strong);
+  font: 700 var(--text-caption)/1 var(--font-mono);
+}
+
+.workflow-source > strong,
+.workflow-target > strong {
+  min-width: 0;
+  font-size: var(--text-label);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.workflow-connector {
+  position: relative;
+  display: block;
+  height: 1rem;
+}
+
+.workflow-connector::before {
+  position: absolute;
+  top: 50%;
+  right: 0.2rem;
+  left: 0;
+  height: 1px;
+  background: var(--border-strong);
+  content: '';
+}
+
+.workflow-connector::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  color: var(--primary-strong);
+  content: '›';
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: translateY(-52%);
+}
+
+.workflow-targets {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2xs);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.workflow-target {
+  display: grid;
+  min-height: 3.25rem;
+  align-content: center;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-xs);
+}
+
+.workflow-target[data-state='positive'] { border-color: var(--secondary-hover); background: var(--success-surface); }
+.workflow-target[data-state='blocking'] { border-color: var(--primary); background: var(--primary-surface); }
+
+.workflow-edge-label {
+  color: var(--muted-foreground);
+  font: 700 var(--text-caption)/1.2 var(--font-mono);
+  text-transform: uppercase;
+}
+
+@container (max-width: 38rem) {
+  .workflow-diagram figcaption { grid-template-columns: minmax(0, 1fr) auto; }
+  .workflow-diagram figcaption > span { grid-column: 1 / -1; }
+  .workflow-step { align-items: stretch; grid-template-columns: 1.5rem minmax(0, 1fr); }
+  .workflow-source { grid-column: 1 / -1; }
+  .workflow-connector { width: 1.5rem; height: 100%; min-height: 1.75rem; grid-column: 1; }
+  .workflow-connector::before { top: 0; right: auto; bottom: 0.2rem; left: 50%; width: 1px; height: auto; }
+  .workflow-connector::after { top: auto; right: auto; bottom: -0.1rem; left: 50%; content: '⌄'; transform: translateX(-50%); }
+  .workflow-targets { grid-column: 2; }
+}
+
 /* Shared shadcn-inspired primitives */
 .ui-button {
   display: inline-flex;

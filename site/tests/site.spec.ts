@@ -438,6 +438,31 @@ test('documentation shell exposes navigation, command search, and active sidebar
   await expect(page.getByRole('dialog', { name: 'Search' })).not.toBeVisible();
 });
 
+test('Mermaid workflows render as responsive process maps while Markdown keeps the source', async ({ page, request }) => {
+  const diagrams = [
+    { route: '/git-workflow/review-watch/', markdown: '/git-workflow/review-watch/index.md', steps: 8, title: 'From review request to ready for merge' },
+    { route: '/git-workflow/notifications/', markdown: '/git-workflow/notifications/index.md', steps: 7, title: 'One daemon, two notification channels' },
+  ];
+
+  for (const diagram of diagrams) {
+    await page.goto(diagram.route);
+    const figure = page.locator('.workflow-diagram');
+    await expect(figure).toBeVisible();
+    await expect(figure.locator('figcaption')).toContainText(diagram.title);
+    await expect(figure.locator('.workflow-step')).toHaveCount(diagram.steps);
+    await expect(page.getByText('flowchart LR', { exact: true })).toHaveCount(0);
+    const dimensions = await figure.evaluate((element) => ({
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    }));
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+
+    const markdown = await request.get(diagram.markdown);
+    expect(markdown.ok()).toBe(true);
+    expect(await markdown.text()).toContain('```mermaid');
+  }
+});
+
 test('mobile documentation navigation opens without hiding core controls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'The menu trigger is only visible on mobile.');
   await page.goto('/git-workflow/notifications/');
