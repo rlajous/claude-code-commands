@@ -102,7 +102,7 @@ import re
 from pathlib import Path
 
 skills = sorted(Path("skills").glob("*/SKILL.md"))
-assert len(skills) == 20, len(skills)
+assert len(skills) == 21, len(skills)
 for path in skills:
     text = path.read_text()
     match = re.match(r"^---\n(.*?)\n---\n+(.*)$", text, re.S)
@@ -118,7 +118,7 @@ for path in skills:
     if lines > 500:
         print(f"WARN {path} has {lines} lines")
 PY
-then ok "20 shared skills have valid neutral instructions"
+then ok "21 shared skills have valid neutral instructions"
 else err "skill count, frontmatter, or runtime-neutral wording failed validation"
 fi
 
@@ -128,7 +128,7 @@ from pathlib import Path
 root = Path.cwd()
 link = root / ".agents" / "skills"
 assert link.is_symlink() and link.readlink() == Path("../skills")
-assert len(list(link.resolve().glob("*/SKILL.md"))) == 20
+assert len(list(link.resolve().glob("*/SKILL.md"))) == 21
 
 resources = (
     "skills/review-watch/scripts/review-watch.sh",

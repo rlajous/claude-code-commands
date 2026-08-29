@@ -25,8 +25,8 @@ cp "$ROOT_DIR/scripts/review-watch.sh" "$ROOT_DIR/scripts/review-event.sh" \
 
 [ -L "$ROOT_DIR/.agents/skills" ] || fail ".agents/skills is not a symlink"
 [ "$(readlink "$ROOT_DIR/.agents/skills")" = "../skills" ] || fail ".agents/skills target is not ../skills"
-[ "$(find -L "$ROOT_DIR/.agents/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')" = "20" ] \
-  || fail "Codex local discovery does not expose 20 skills"
+[ "$(find -L "$ROOT_DIR/.agents/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')" = "21" ] \
+  || fail "Codex local discovery does not expose 21 skills"
 
 for resource in \
   skills/review-watch/scripts/review-watch.sh \

@@ -27,6 +27,7 @@ This repository is the dual-runtime **Git Workflow** package. Claude Code consum
 skills/                    # Skills (each an invocable slash command via SKILL.md)
 ├── setup/SKILL.md         # Interactive setup wizard
 ├── start/SKILL.md         # Create feature branch from ticket
+├── plan-tdd/SKILL.md      # Design a reviewed TDD plan before coding
 ├── tdd/SKILL.md           # Test-Driven Development workflow
 ├── commit/SKILL.md        # Stage and commit with conventions
 ├── finish/SKILL.md        # Create PR with full description
@@ -123,6 +124,7 @@ Users can install via:
 | ---------------- | ---------------------------------------------- |
 | `/setup`         | Interactive setup for MCP servers and config   |
 | `/start`         | Create feature branch from ticket ID           |
+| `/plan-tdd`      | Design a reviewed TDD plan (HTML + YAML) before coding |
 | `/tdd`           | Implement ticket using TDD (RED-GREEN-REFACTOR)|
 | `/commit`        | Stage and commit with formatted message        |
 | `/finish`        | Push branch and create PR                      |

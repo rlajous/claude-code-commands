@@ -1,6 +1,6 @@
 # Git Workflow
 
-An agent-neutral package of 20 skills, eight specialized agents, and opt-in hooks for Git, pull requests, releases, QA, and desktop notifications. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
+An agent-neutral package of 21 skills, eight specialized agents, and opt-in hooks for Git, pull requests, releases, QA, and desktop notifications. The same repository supports Claude Code and Codex without maintaining two copies of the workflows.
 
 [Documentation](https://agents.navarrolajous.com/) · [Installation](https://agents.navarrolajous.com/git-workflow/installation/) · [Contributing](https://agents.navarrolajous.com/git-workflow/contributing/) · [Latest release](https://github.com/rlajous/claude-code-commands/releases/latest)
 
@@ -38,7 +38,7 @@ For unprefixed project skills, copy `skills/` to `.claude/skills/`, `agents/` to
 
 ## Install for Codex
 
-Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 20 directories under `skills/`. Then run the setup skill in the target project:
+Install or load this repository as a Codex plugin. Its `.codex-plugin/plugin.json` exposes all 21 directories under `skills/`. Then run the setup skill in the target project:
 
 ```text
 $setup
@@ -50,7 +50,7 @@ Use `$setup --host codex`, `$setup --host both`, or `$setup --dry-run` to make h
 
 During local plugin development, this repository can be loaded from a checkout with Codex's plugin installation/development workflow. No marketplace or universal-directory mutation is performed by this package.
 
-For checkout-local development, Codex also discovers the same 20 skills through the committed
+For checkout-local development, Codex also discovers the same 21 skills through the committed
 `.agents/skills -> ../skills` symlink. Use either the installed plugin or checkout-local discovery
 in a session, not both, because duplicate skill names appear as separate entries.
 
@@ -93,6 +93,7 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `setup` | Configure the workflow and install project agents |
 | `update` | Safely synchronize skills, agents, templates, and metadata |
 | `start` | Create a feature branch from a ticket |
+| `plan-tdd` | Design a reviewed TDD plan (HTML + YAML) before writing code |
 | `tdd` | Implement a ticket test-first |
 | `commit` | Create a formatted commit |
 | `finish` | Push and open a pull request |
