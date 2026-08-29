@@ -56,12 +56,14 @@ cat pyproject.toml 2>/dev/null | grep pytest || ls .pytest_cache 2>/dev/null
 
 ```json
 {
-  "testFramework": "jest|vitest|pytest|cargo|go",
-  "testCommand": "npm test|pnpm vitest|pytest|cargo test|go test ./...",
-  "testFilePattern": "*.test.ts|*.spec.ts|*_test.py|*_test.go",
+  "testFramework": "jest|vitest|mocha|ava|pytest|unittest|cargo|go",
+  "testCommand": "npm test|pnpm vitest|pytest|python -m unittest|cargo test|go test ./...",
+  "testFilePattern": "*.test.ts|*.spec.ts|*_test.py|test_*.py|*_test.go",
   "relatedFiles": ["src/services/auth.ts", "tests/auth.test.ts"]
 }
 ```
+
+The `testFramework` value must be one the detection tables above can produce; keep it in sync with the skeleton conventions below so every detected framework has a matching stub.
 
 If no framework is detected, record `testFramework: "unknown"` and still emit behavior cycles and assertions — the run command can be filled in during `/tdd`.
 
@@ -75,11 +77,27 @@ describe('BC-001 <behavior>', () => {
   it.todo('<then>');            // or: it('<then>', () => { expect(false).toBe(true); });
 });
 
+# Mocha (*.test.js, test/*.js)
+describe('BC-001 <behavior>', () => {
+  it('<then>');                 // pending (no callback); or: it('<then>', () => { throw new Error('not implemented'); });
+});
+
+# Ava (*.test.js)
+import test from 'ava';
+test.todo('BC-001 <behavior> — <then>');
+
 # pytest (*_test.py, test_*.py)
 import pytest
 @pytest.mark.skip(reason="BC-001 <behavior> — not implemented")
 def test_<then>():
     assert False
+
+# unittest (test_*.py)
+import unittest
+class BC001Behavior(unittest.TestCase):
+    @unittest.skip("BC-001 <behavior> — not implemented")
+    def test_<then>(self):
+        self.fail("not implemented")
 
 # Go (*_test.go)
 func TestBC001<Behavior>(t *testing.T) {

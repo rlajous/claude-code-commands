@@ -242,8 +242,10 @@ Keep it clean, not flashy: max content width ~1100px centered, generous spacing,
 
 ```html
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+      content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 ```
+
+`img-src data:` lets any embedded `data:` image (e.g. an inline diagram) render; without it those images fall back to `default-src 'none'` and are blocked. It keeps the page fully offline — no network origin is allowed.
 
 Before finishing, run the parser-based validator against the generated file:
 
@@ -255,12 +257,13 @@ This MUST exit successfully. If it reports a finding, remove the offending refer
 
 ## Step 9: Write Outputs
 
-Resolve the output base directory `{outputDir}` from configuration (`planTdd.outputDir`, default `.git-workflow/plan-tdd`). Determine the slug: ticket ID lowercased (e.g. `proj-123`), else kebab-case of the description (first ~50 chars). Create the folder and write both artifacts:
+Resolve the output base directory `{outputDir}` from configuration (`planTdd.outputDir`, default `.git-workflow/plan-tdd`). Determine the slug: ticket ID lowercased (e.g. `proj-123`), else kebab-case of the description (first ~50 chars). `{outputDir}` comes from repository configuration, so never interpolate it raw into a shell command — assign it to a quoted variable and use `--` to end option parsing so a value containing shell metacharacters cannot inject a command. Create the folder and write both artifacts:
 
 ```bash
-mkdir -p {outputDir}/<slug>
-# write plan.yaml   to {outputDir}/<slug>/plan.yaml
-# write index.html  to {outputDir}/<slug>/index.html
+OUT_DIR="{outputDir}/<slug>"   # quoted; {outputDir} resolved from config, slug from Step 9
+mkdir -p -- "$OUT_DIR"
+# write plan.yaml   to "$OUT_DIR/plan.yaml"
+# write index.html  to "$OUT_DIR/index.html"
 ```
 
 Use the same resolved `{outputDir}` for the write and for the report — do not hard-code the path.
@@ -312,7 +315,7 @@ Resolve configuration from `.git-workflow/config.yaml` first, then the legacy `.
 | Scenario                                             | Action                                                             |
 | ---------------------------------------------------- | ------------------------------------------------------------------ |
 | No description and no ticket in arguments            | Ask the user what they want to build, then continue                |
-| Ticket ID given but tracker unavailable/unauthorized | Note it, continue from the description alone                       |
+| Ticket ID given but tracker unavailable/unauthorized | If the arguments also included a usable description, note the lookup failure and continue from it. If the ticket was the only input, do not design a speculative plan — ask the user for a description, or stop with a clear error. |
 | Test framework cannot be detected                    | Record `test_framework: unknown`, still emit cycles and assertions |
 | Risk boundaries left unanswered in Step 5            | Record them as `open_questions` and mark related scenarios `not_covered` |
 | HTML validator reports a finding                     | Remove the offending reference and re-run until it exits 0         |
