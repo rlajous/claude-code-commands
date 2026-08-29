@@ -29,7 +29,7 @@ codex = json.loads(Path(".codex-plugin/plugin.json").read_text())
 versions = {claude["version"], codex["version"]}
 versions.add(market["metadata"]["version"])
 versions.update(plugin["version"] for plugin in market["plugins"])
-assert versions == {"2.6.0"}, versions
+assert versions == {"2.7.0"}, versions
 assert claude["name"] == codex["name"] == "git-workflow"
 assert len(market["plugins"]) == 1
 assert market["plugins"][0]["name"] == "git-workflow"
