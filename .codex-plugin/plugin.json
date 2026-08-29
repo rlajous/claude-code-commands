@@ -1,6 +1,6 @@
 {
   "name": "git-workflow",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Production-ready Git workflow automation for pull requests, releases, QA, code review, and local notifications",
   "author": {
     "name": "rlajous",

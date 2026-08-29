@@ -1,6 +1,6 @@
 # Skills reference
 
-Git Workflow provides the same 20 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
+Git Workflow provides the same 21 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
 
 ## Skill format
 
@@ -116,6 +116,7 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 | Command | Description | Arguments |
 |---------|-------------|-----------|
 | `/start` | Create feature branch from ticket | `[ticket-id]` |
+| `/plan-tdd` | Design a reviewed TDD plan (HTML brief + YAML) before writing code | `[description or ticket-id]` |
 | `/tdd` | Implement ticket using TDD (RED-GREEN-REFACTOR) | `<ticket-id>` |
 | `/commit` | Stage and commit with formatting | - |
 | `/finish` | Create PR with description | - |

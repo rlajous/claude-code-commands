@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.7.0
+
+### Added
+
+- Add the `/plan-tdd` and `$plan-tdd` skill that turns a description or ticket into a reviewed TDD
+  plan — clarifying questions for missing context, RED-GREEN-REFACTOR behavior cycles with an
+  explicit risk matrix (privilege escalation, data leakage, impersonation), and a self-contained
+  HTML brief plus machine-readable `plan.yaml` that `/tdd` implements.
+
 ## 2.6.0
 
 ### Added
