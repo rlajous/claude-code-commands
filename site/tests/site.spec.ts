@@ -86,7 +86,7 @@ test('landing page presents both hosts and real evidence', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Codex' })).toBeVisible();
   await expect(page.getByLabel('Claude Code and Codex use one shared workflow')).toContainText('One shared workflow');
   await expect(page.getByRole('heading', { name: 'Ready for review' })).toBeVisible();
-  await expect(page.getByText('20 shared skills', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('21 shared skills', { exact: true }).first()).toBeVisible();
   const notificationImages = page.locator('[data-notification-image]');
   await expect(notificationImages).toHaveCount(3);
   await notificationImages.last().scrollIntoViewIfNeeded();
