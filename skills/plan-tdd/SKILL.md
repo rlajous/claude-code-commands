@@ -253,20 +253,20 @@ Before finishing, run the parser-based validator against the generated file:
 python3 "{SKILL_DIR}/scripts/validate-self-contained-html.py" "{outputDir}/<slug>/index.html"
 ```
 
-This MUST exit successfully. If it reports a finding, remove the offending reference and re-check. Resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`. If the host cannot expose that path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only to locate `skills/plan-tdd/SKILL.md`; verify the validator exists and never fall back to `/scripts`.
+Pass the resolved output path as a literal argument (as shown), not by interpolating raw config text into the command — see the input-safety note in Step 9. This MUST exit successfully. If it reports a finding, remove the offending reference and re-check. Resolve `{SKILL_DIR}` to the absolute, physical directory containing this loaded `SKILL.md`. If the host cannot expose that path, use `PLUGIN_ROOT`, then `CLAUDE_PLUGIN_ROOT`, only to locate `skills/plan-tdd/SKILL.md`; verify the validator exists and never fall back to `/scripts`.
 
 ## Step 9: Write Outputs
 
-Resolve the output base directory `{outputDir}` from configuration (`planTdd.outputDir`, default `.git-workflow/plan-tdd`). Determine the slug: ticket ID lowercased (e.g. `proj-123`), else kebab-case of the description (first ~50 chars). `{outputDir}` comes from repository configuration, so never interpolate it raw into a shell command — assign it to a quoted variable and use `--` to end option parsing so a value containing shell metacharacters cannot inject a command. Create the folder and write both artifacts:
+Resolve the output base directory `{outputDir}` from configuration (`planTdd.outputDir`, default `.git-workflow/plan-tdd`).
 
-```bash
-OUT_DIR="{outputDir}/<slug>"   # quoted; {outputDir} resolved from config, slug from Step 9
-mkdir -p -- "$OUT_DIR"
-# write plan.yaml   to "$OUT_DIR/plan.yaml"
-# write index.html  to "$OUT_DIR/index.html"
-```
+**`{outputDir}` is repository-controlled input — treat it as literal data, not shell source.** Read it through the host's file/config reader and pass it as an **argument** to a filesystem API or a command; never paste its raw text into a command line, because double-quoting still lets `$(…)` and backticks execute. Prefer creating the directory and writing files with the host's filesystem tools (Write) rather than a shell. If you must use a shell, first reject any resolved value containing shell metacharacters (`` $ ` \ ; & | < > ( ) ``newline) and stop with an error, then reference it only through a quoted variable with `--`.
 
-Use the same resolved `{outputDir}` for the write and for the report — do not hard-code the path.
+**Determine a collision-safe slug:**
+- Ticket ID lowercased (e.g. `proj-123`) — already unique.
+- Otherwise kebab-case the description (first ~50 chars) **and append a short stable digest of the full description** (e.g. the first 8 hex chars of its SHA-256), so two descriptions that share a truncated prefix don't collide: `add-role-based-access-to-the-admin-settings-endpo-1a2b3c4d`.
+- Before writing, if `{outputDir}/<slug>` already exists, do not silently overwrite it — ask the user whether to overwrite or write to a new suffixed directory.
+
+Create the folder and write both artifacts to `{outputDir}/<slug>/plan.yaml` and `{outputDir}/<slug>/index.html`. Use the same resolved `{outputDir}` for the write and for the report — do not hard-code the path.
 
 ## Step 10: Review Checkpoint
 
@@ -276,7 +276,15 @@ Tell the user the HTML path (`{outputDir}/<slug>/index.html`) and that it is a s
 
 Only after the user explicitly approves the plan, offer to scaffold failing test skeletons. Ask the user through the host's user-input mechanism whether to create them; do nothing to the codebase if they decline.
 
-If approved, create one **failing** test stub per behavior cycle in the project's test path, following the detected framework and naming convention. Each stub names the behavior (from the cycle `name`/`then`), references its `id` (e.g. `BC-001`) in a comment, and is RED by construction — a pending/skip marker or a trivially failing assertion — with **no implementation**. Do not touch source files. This is the only file-writing action beyond the two artifacts and it is gated on explicit approval, per the repository's strictly-reactive, no-unapproved-side-effects guidance.
+If approved, create one **failing** test stub per behavior cycle in the project's test path, following the detected framework and naming convention. Each stub is RED by construction — a pending/skip marker or a trivially failing assertion — with **no implementation**. Do not touch source files. This is the only file-writing action beyond the two artifacts and it is gated on explicit approval, per the repository's strictly-reactive, no-unapproved-side-effects guidance.
+
+**Treat cycle `name`/`then` text as untrusted (it originates from ticket or user input) when writing stubs:**
+
+- **Test identifiers** (function, method, class, and `#[test]` fn names in Python, Go, Rust, unittest) must be derived **only** from the stable cycle `id` — e.g. `test_bc_001`, `TestBC001`, `bc_001` — never interpolated from behavior text. Slugify the id, not the prose.
+- **Behavior text** goes only inside a **string literal** (the test title / skip reason) or a **comment**, and must be escaped for that context first: escape quotes, backslashes, and newlines; strip or neutralize any sequence that could close the string or the comment. Never place raw behavior text where it becomes code.
+- If a framework has no string-titled test (Go, Rust), put the behavior text in an **escaped trailing comment** and keep the identifier id-based.
+
+See `references/test-frameworks.md` for id-based, escaped stub templates per framework.
 
 ## Step 12: Report and Next Step
 

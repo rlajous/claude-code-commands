@@ -69,43 +69,47 @@ If no framework is detected, record `testFramework: "unknown"` and still emit be
 
 # Skeleton Stub Conventions by Framework
 
-Use these to scaffold one RED (failing/pending) stub per behavior cycle in Step 11. Each stub names the behavior, references its `BC-00N` id in a comment, and contains no implementation.
+Use these to scaffold one RED (failing/pending) stub per behavior cycle in Step 11, and contain no implementation.
+
+**Security: cycle `name`/`then` text is untrusted (it comes from the ticket or user input).**
+- Derive every **identifier** (function / method / class / fn name) from the stable cycle **id** only — `bc_001` / `TestBC001` / `test_bc_001`. Never build an identifier from behavior text.
+- Put behavior text only inside a **string literal** or a **comment**, and **escape it for that context first** (quotes, backslashes, newlines, and any sequence that could close the string or comment). The `<behavior>` / `<then>` placeholders below stand for that already-escaped text.
 
 ```text
-# Jest / Vitest (*.test.ts, *.spec.ts)
-describe('BC-001 <behavior>', () => {
+# Jest / Vitest (*.test.ts, *.spec.ts)   — behavior text lives in escaped string titles
+describe('BC-001: <behavior>', () => {
   it.todo('<then>');            // or: it('<then>', () => { expect(false).toBe(true); });
 });
 
 # Mocha (*.test.js, test/*.js)
-describe('BC-001 <behavior>', () => {
+describe('BC-001: <behavior>', () => {
   it('<then>');                 // pending (no callback); or: it('<then>', () => { throw new Error('not implemented'); });
 });
 
 # Ava (*.test.js)
 import test from 'ava';
-test.todo('BC-001 <behavior> — <then>');
+test.todo('BC-001: <behavior> — <then>');
 
-# pytest (*_test.py, test_*.py)
+# pytest (*_test.py, test_*.py)   — identifier from the id; text only in the escaped skip reason
 import pytest
-@pytest.mark.skip(reason="BC-001 <behavior> — not implemented")
-def test_<then>():
+@pytest.mark.skip(reason="BC-001: <behavior> — not implemented")
+def test_bc_001():
     assert False
 
 # unittest (test_*.py)
 import unittest
-class BC001Behavior(unittest.TestCase):
-    @unittest.skip("BC-001 <behavior> — not implemented")
-    def test_<then>(self):
+class TestBC001(unittest.TestCase):
+    @unittest.skip("BC-001: <behavior> — not implemented")
+    def test_bc_001(self):
         self.fail("not implemented")
 
-# Go (*_test.go)
-func TestBC001<Behavior>(t *testing.T) {
-    t.Skip("BC-001 <behavior> — not implemented")  // or: t.Fatal("not implemented")
+# Go (*_test.go)   — id-based name; text only in the escaped skip string
+func TestBC001(t *testing.T) {
+    t.Skip("BC-001: <behavior> — not implemented")  // or: t.Fatal("not implemented")
 }
 
-# Rust (in a #[cfg(test)] mod)
+# Rust (in a #[cfg(test)] mod)   — id-based fn name; text only in the escaped ignore reason
 #[test]
-#[ignore = "BC-001 <behavior> — not implemented"]
-fn bc_001_<then>() { unimplemented!() }
+#[ignore = "BC-001: <behavior> — not implemented"]
+fn bc_001() { unimplemented!() }
 ```
