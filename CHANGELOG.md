@@ -4,6 +4,10 @@
 
 ### Added
 
+- Add the `/plan-tdd` and `$plan-tdd` skill that turns a description or ticket into a reviewed TDD
+  plan — clarifying questions for missing context, RED-GREEN-REFACTOR behavior cycles with an
+  explicit risk matrix (privilege escalation, data leakage, impersonation), and a self-contained
+  HTML brief plus machine-readable `plan.yaml` that `/tdd` implements.
 - Add the opt-in `/notifications` and `$notifications` skill for main-agent completion alerts and
   new `APPROVED`, `CHANGES_REQUESTED`, or `COMMENTED` reviews on pull requests you authored.
 - Register Claude Code and Codex `Stop` hooks without modifying user-global configuration, with

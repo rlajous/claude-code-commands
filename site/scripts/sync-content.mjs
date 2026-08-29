@@ -249,7 +249,7 @@ function frontmatter(entry) {
       'template: splash',
       'hero:',
       '  title: Git Workflow',
-      '  tagline: Twenty cross-agent skills for shipping software with evidence and control.',
+      '  tagline: Twenty-one cross-agent skills for shipping software with evidence and control.',
       '  actions:',
       '    - text: Install Git Workflow',
       '      link: /git-workflow/installation/',
