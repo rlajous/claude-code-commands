@@ -137,6 +137,7 @@ Users can install via:
 | `/rfc`           | Create an auto-numbered RFC document           |
 | `/review-request`| Draft a paste-ready PR review request          |
 | `/standup`       | Async standup (Did / Next / Blockers)          |
+| `/close-customer-loop` | Verify a customer/partner fix is live in prod and the reporter was told, before closing a ticket |
 | `/update`        | Update skills/agents from source repo          |
 | `/clean-gone`    | Delete local branches gone on the remote and their worktrees |
 | `/status`        | Show workflow position and the recommended next step         |

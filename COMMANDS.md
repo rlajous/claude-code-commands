@@ -1,6 +1,6 @@
 # Skills reference
 
-Git Workflow provides the same 21 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
+Git Workflow provides the same 22 skills to Claude Code and Codex. Invoke a skill as `/name` in Claude and `$name` in Codex; marketplace-installed Claude skills may use `/git-workflow:name`.
 
 ## Skill format
 
@@ -150,7 +150,8 @@ The tables show Claude syntax. Replace the leading `/` with `$` in Codex.
 
 | Command | Description | Arguments |
 |---------|-------------|-----------|
-| `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity | `[--since <when>] [--author <user>]` |
+| `/standup` | Generate an async standup (Did / Next / Blockers) from recent activity | `[--since <when>] [--author <user>] [--org <org>]` |
+| `/close-customer-loop` | Verify a customer/partner-reported fix is live in prod and the reporter has been told, before closing the ticket | - |
 
 ## Using Commands
 
