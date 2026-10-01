@@ -109,6 +109,7 @@ Invoke a skill as `/name` in Claude and `$name` in Codex.
 | `rfc` | Create an RFC |
 | `review-request` | Draft a review request |
 | `standup` | Summarize recent work |
+| `close-customer-loop` | Verify a prod fix for a customer/partner report before closing the ticket |
 | `status` | Show workflow state and next action |
 | `clean-gone` | Remove gone branches and linked worktrees safely |
 

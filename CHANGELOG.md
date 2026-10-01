@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.8.0
+
+### Added
+
+- Add the `/close-customer-loop` and `$close-customer-loop` skill that enforces verifying a
+  customer/partner-reported fix live in production and replying in the original thread before a
+  ticket is marked Done, plus the two acceptance-criteria lines to add when creating such tickets.
+
 ## 2.7.0
 
 ### Added
