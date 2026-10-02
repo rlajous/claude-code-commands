@@ -336,7 +336,7 @@ then ok "review-remediation safety and compatibility assertions"
 else err "review-remediation safety or compatibility assertions failed"
 fi
 
-for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-notifications.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh skills/notifications/scripts/activity-watch.sh skills/notifications/scripts/notification-tools.sh skills/notifications/scripts/notify.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
+for script in hooks/review-commit.sh scripts/review-watch.sh scripts/review-event.sh scripts/notify.sh scripts/test-notifications.sh scripts/test-review-watch.sh scripts/test-review-event.sh scripts/test-self-contained-html.sh scripts/test-review-hook.sh scripts/test-runtime-state.sh scripts/test-sync-project.sh scripts/test-skill-resource-paths.sh scripts/test-generate-codex-agents.sh scripts/sync-agent-skills.sh scripts/test-sync-agent-skills.sh skills/notifications/scripts/activity-watch.sh skills/notifications/scripts/notification-tools.sh skills/notifications/scripts/notify.sh skills/review-watch/scripts/review-watch.sh skills/review-watch/scripts/notify.sh skills/review-watch/scripts/review-watch-tools.sh skills/review/scripts/review-event.sh; do
   if bash -n "$script"; then ok "$script syntax"; else err "$script syntax"; fi
 done
 
@@ -354,6 +354,7 @@ if bash scripts/test-runtime-state.sh >/dev/null; then ok "runtime state precede
 if bash scripts/test-sync-project.sh >/dev/null; then ok "setup/update synchronization behavior"; else err "setup/update synchronization behavior"; fi
 if bash scripts/test-skill-resource-paths.sh >/dev/null; then ok "skill-local resources and compatibility wrappers"; else err "skill-local resource paths or wrappers"; fi
 if bash scripts/test-generate-codex-agents.sh >/dev/null; then ok "Codex agent generator safety"; else err "Codex agent generator safety"; fi
+if bash scripts/test-sync-agent-skills.sh >/dev/null; then ok "user-wide skill sync"; else err "user-wide skill sync"; fi
 if python3 scripts/test-codex-plugin-validator.py >/dev/null; then ok "Codex manifest negative fixtures"; else err "Codex manifest negative fixtures"; fi
 
 if node scripts/status-report.mjs | grep -q '<!doctype html>'; then
