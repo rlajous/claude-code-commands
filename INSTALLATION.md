@@ -52,6 +52,41 @@ cp claude-code-commands/.codex/agents/*.toml your-project/.codex/agents/
 
 Do not copy over existing project agents without reviewing the diff. `$setup --force` and `$update --force` are the explicit replacement paths. Use `--host codex`, `--host claude`, or `--host both` to select project assets, and use `--dry-run` for a write-free preview.
 
+## User-wide installation for every agent
+
+To use the same unprefixed skills (`/review-request` in Claude, `$review-request` in Codex) in
+every repository and every local agent, link this checkout instead of installing the plugin:
+
+```bash
+git clone https://github.com/rlajous/claude-code-commands.git ~/claude-code-commands
+ln -s ~/claude-code-commands/scripts/sync-agent-skills.sh ~/.local/bin/sync-agent-skills
+sync-agent-skills
+```
+
+`~/.agents/skills` becomes the shared skill store, read by Codex and other agents that follow the
+shared skills convention. Each run of the script:
+
+- links this checkout's skills into the store, and its named agents into `~/.claude/agents` and
+  `$CODEX_HOME/agents` (default `~/.codex/agents`);
+- moves skill directories created in `~/.claude/skills` or `$CODEX_HOME/skills` into the store and
+  leaves a symlink, so a skill created from any agent is shared;
+- links claude.ai synced skills into the store, except Claude-only ones (`CLAUDE_ONLY_SKILLS`,
+  default `docs morning import-memory`);
+- links every store skill into `~/.claude/skills`, and removes Codex symlinks that would duplicate a
+  store skill.
+
+Run it again after `git pull` to pick up new skills, or run it automatically from a Claude Code
+`SessionStart` hook or cron:
+
+```text
+*/10 * * * * $HOME/.local/bin/sync-agent-skills >/dev/null 2>&1
+```
+
+Set `SKILL_SOURCES` to a space-separated list of `skills/` directories to share more checkouts. Do
+not combine this mode with the marketplace plugin: Claude would list each skill twice, and Codex
+does not merge duplicate skill names. Plugin hooks are not registered in this mode; see
+[HOOKS.md](HOOKS.md) and the notifications section below for manual registration.
+
 ## Project configuration
 
 Both hosts use the same canonical configuration:

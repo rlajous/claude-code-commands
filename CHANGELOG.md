@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add `scripts/sync-agent-skills.sh` for a user-wide installation shared by every local agent:
+  `~/.agents/skills` becomes the canonical store, this checkout's skills and named agents are
+  linked for Claude Code and Codex without a plugin prefix, skills created in `~/.claude/skills` or
+  `$CODEX_HOME/skills` are adopted into the store, and claude.ai synced skills are shared with
+  non-Claude agents.
+
 ## 2.8.0
 
 ### Added
